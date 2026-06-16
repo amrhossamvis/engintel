@@ -114,12 +114,14 @@ export default function GlobalSettingsPage() {
             className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition font-mono text-sm"
           />
           <p className="text-xs text-gray-400 mt-2">
-            Create a <strong className="text-gray-600">Classic PAT</strong> at{' '}
+            <strong className="text-gray-600">Personal accounts:</strong> Create a Classic PAT at{' '}
             <a href="https://github.com/settings/tokens/new" target="_blank" rel="noreferrer"
               className="text-blue-500 underline hover:text-blue-700">github.com/settings/tokens</a>{' '}
-            with the <span className="font-mono font-semibold text-gray-600">copilot</span> scope checked.
-            Your GitHub account must have an active <strong className="text-gray-600">GitHub Copilot subscription</strong>.
-            Leave blank to use <span className="font-mono text-gray-600">gh auth token</span> (local dev only).
+            with the <span className="font-mono font-semibold text-gray-600">copilot</span> scope.
+            {' '}<strong className="text-gray-600">Enterprise/Business accounts (EMU):</strong>{' '}
+            PATs are not supported — leave this field <strong className="text-gray-600">empty</strong> and run{' '}
+            <span className="font-mono text-gray-600">gh auth login</span> on the server instead
+            (the app will use the OAuth token from <span className="font-mono text-gray-600">gh auth token</span> automatically).
           </p>
         </div>
 

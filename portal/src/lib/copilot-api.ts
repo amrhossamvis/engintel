@@ -95,8 +95,15 @@ async function tryGetSessionToken(githubToken: string): Promise<string | null> {
 
 /**
  * Resolve the correct API base URL and auth token for the account type.
- * - Business/EMU: use PAT directly as Bearer, api.business.githubcopilot.com
- * - Personal: exchange for session token, api.githubcopilot.com
+ *
+ * - Personal accounts: exchange PAT for session token → api.githubcopilot.com
+ * - Business/EMU accounts: PATs (ghp_) are NOT accepted by the business endpoint.
+ *   Only OAuth tokens (gho_) work. These come from `gh auth login` (OAuth device flow).
+ *   So for business accounts, the token MUST be a gho_ OAuth token.
+ *
+ * Token type detection:
+ *   - gho_ prefix → OAuth token → try business endpoint first, fall back to personal
+ *   - ghp_ prefix → classic PAT → try session exchange (personal), error if EMU
  */
 async function resolveApiConfig(githubToken: string): Promise<{
   apiBase: string;
@@ -114,16 +121,26 @@ async function resolveApiConfig(githubToken: string): Promise<{
     }
   }
 
-  // Auto-detect: try session token exchange first
+  // OAuth tokens (gho_) work directly on the business endpoint
+  if (githubToken.startsWith('gho_')) {
+    tokenTypeCache.set(githubToken, 'business');
+    return { apiBase: COPILOT_API_BUSINESS, bearerToken: githubToken };
+  }
+
+  // Classic PAT (ghp_) or other: try session token exchange (personal accounts)
   const sessionToken = await tryGetSessionToken(githubToken);
   if (sessionToken) {
     tokenTypeCache.set(githubToken, 'personal');
     return { apiBase: COPILOT_API_PERSONAL, bearerToken: sessionToken };
   }
 
-  // Session token exchange returned null → Business/EMU account
-  tokenTypeCache.set(githubToken, 'business');
-  return { apiBase: COPILOT_API_BUSINESS, bearerToken: githubToken };
+  // Session token exchange returned null (404) → EMU/Business account with a PAT
+  // PATs are not supported on the business endpoint — must use OAuth token
+  throw new Error(
+    'GitHub Enterprise/Business accounts require an OAuth token (gho_), not a Classic PAT (ghp_). ' +
+    'Please run "gh auth login" on the server to authenticate with your enterprise account, ' +
+    'then leave the GitHub PAT field empty in Settings to use the gh CLI token automatically.'
+  );
 }
 
 /**
