@@ -114,7 +114,12 @@ export default function GlobalSettingsPage() {
             className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition font-mono text-sm"
           />
           <p className="text-xs text-gray-400 mt-2">
-            Needs <span className="font-mono font-semibold text-gray-600">copilot</span> scope. Leave blank to use <span className="font-mono text-gray-600">gh auth token</span> (local dev only).
+            Create a <strong className="text-gray-600">Classic PAT</strong> at{' '}
+            <a href="https://github.com/settings/tokens/new" target="_blank" rel="noreferrer"
+              className="text-blue-500 underline hover:text-blue-700">github.com/settings/tokens</a>{' '}
+            with the <span className="font-mono font-semibold text-gray-600">copilot</span> scope checked.
+            Your GitHub account must have an active <strong className="text-gray-600">GitHub Copilot subscription</strong>.
+            Leave blank to use <span className="font-mono text-gray-600">gh auth token</span> (local dev only).
           </p>
         </div>
 
