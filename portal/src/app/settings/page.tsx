@@ -134,13 +134,14 @@ export default function GlobalSettingsPage() {
                 </div>
                 <div className="bg-white border border-blue-200 rounded-lg px-2 py-1.5 text-center">
                   <p className="text-[10px] text-blue-500 font-semibold mb-0.5">Windows</p>
-                  <code className="font-mono text-blue-900 text-[11px] select-all">winget install gh</code>
+                  <a href="https://github.com/cli/cli/releases/latest" target="_blank" rel="noreferrer" className="font-mono text-blue-600 text-[11px] underline">Download MSI</a>
                 </div>
                 <div className="bg-white border border-blue-200 rounded-lg px-2 py-1.5 text-center">
                   <p className="text-[10px] text-blue-500 font-semibold mb-0.5">Linux</p>
                   <a href="https://github.com/cli/cli/blob/trunk/docs/install_linux.md" target="_blank" rel="noreferrer" className="font-mono text-blue-600 text-[11px] underline">see docs</a>
                 </div>
               </div>
+              <p className="text-blue-600 text-[11px]">💡 <span className="font-semibold">Windows corporate laptop?</span> Download the <a href="https://github.com/cli/cli/releases/latest" target="_blank" rel="noreferrer" className="underline">gh MSI installer</a> from GitHub releases — no admin rights or package manager needed. Or use <code className="font-mono">scoop install gh</code> if Scoop is available.</p>
               <p>Then authenticate and get your token:</p>
               <code className="block bg-white border border-blue-200 rounded-lg px-3 py-2 font-mono text-blue-900 select-all">
                 gh auth login --hostname github.com --git-protocol https --web
