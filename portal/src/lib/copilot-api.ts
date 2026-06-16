@@ -9,17 +9,27 @@
  *   2. `GITHUB_TOKEN` environment variable (set in Docker / CI)
  *   3. `gh auth token` CLI fallback (local dev only)
  *
- * The GitHub Copilot API does NOT accept classic PATs directly.
- * We exchange the PAT/OAuth token for a short-lived Copilot session token first.
+ * Enterprise/Business accounts (EMU):
+ *   - `copilot_internal/v2/token` returns 404 for EMU accounts
+ *   - Use the PAT directly as Bearer token
+ *   - API base: https://api.business.githubcopilot.com
+ *
+ * Personal/Individual accounts:
+ *   - Exchange PAT for session token via copilot_internal/v2/token
+ *   - API base: https://api.githubcopilot.com
  */
 
 import { execSync } from 'child_process';
 
-const COPILOT_API_BASE = 'https://api.githubcopilot.com';
+const COPILOT_API_BUSINESS = 'https://api.business.githubcopilot.com';
+const COPILOT_API_PERSONAL = 'https://api.githubcopilot.com';
 const DEFAULT_MODEL = 'gpt-4o';
 
 // Cache session tokens to avoid exchanging on every request (they last ~30 min)
 const sessionTokenCache = new Map<string, { token: string; expiresAt: number }>();
+
+// Cache which tokens are business vs personal (avoid repeated probing)
+const tokenTypeCache = new Map<string, 'business' | 'personal'>();
 
 function resolveGitHubToken(explicit?: string): string {
   // 1. Explicit token from caller
@@ -44,10 +54,10 @@ function resolveGitHubToken(explicit?: string): string {
 }
 
 /**
- * Exchange a GitHub PAT/OAuth token for a short-lived Copilot session token.
- * Classic PATs and fine-grained PATs both work via this exchange.
+ * Try to exchange a PAT for a Copilot session token (personal accounts).
+ * Returns null if the account is Enterprise/Business (EMU) — use PAT directly instead.
  */
-async function getCopilotSessionToken(githubToken: string): Promise<string> {
+async function tryGetSessionToken(githubToken: string): Promise<string | null> {
   const cached = sessionTokenCache.get(githubToken);
   if (cached && cached.expiresAt > Date.now() + 60_000) {
     return cached.token;
@@ -64,6 +74,9 @@ async function getCopilotSessionToken(githubToken: string): Promise<string> {
     },
   });
 
+  // 404 = EMU/Business account — session token exchange not supported
+  if (response.status === 404) return null;
+
   if (!response.ok) {
     const text = await response.text();
     throw new Error(
@@ -74,10 +87,43 @@ async function getCopilotSessionToken(githubToken: string): Promise<string> {
 
   const data = await response.json();
   const sessionToken = data.token as string;
-  const expiresAt = (data.expires_at as number) * 1000; // convert to ms
+  const expiresAt = (data.expires_at as number) * 1000;
 
   sessionTokenCache.set(githubToken, { token: sessionToken, expiresAt });
   return sessionToken;
+}
+
+/**
+ * Resolve the correct API base URL and auth token for the account type.
+ * - Business/EMU: use PAT directly as Bearer, api.business.githubcopilot.com
+ * - Personal: exchange for session token, api.githubcopilot.com
+ */
+async function resolveApiConfig(githubToken: string): Promise<{
+  apiBase: string;
+  bearerToken: string;
+}> {
+  // Check cache first
+  const cached = tokenTypeCache.get(githubToken);
+  if (cached === 'business') {
+    return { apiBase: COPILOT_API_BUSINESS, bearerToken: githubToken };
+  }
+  if (cached === 'personal') {
+    const sessionToken = await tryGetSessionToken(githubToken);
+    if (sessionToken) {
+      return { apiBase: COPILOT_API_PERSONAL, bearerToken: sessionToken };
+    }
+  }
+
+  // Auto-detect: try session token exchange first
+  const sessionToken = await tryGetSessionToken(githubToken);
+  if (sessionToken) {
+    tokenTypeCache.set(githubToken, 'personal');
+    return { apiBase: COPILOT_API_PERSONAL, bearerToken: sessionToken };
+  }
+
+  // Session token exchange returned null → Business/EMU account
+  tokenTypeCache.set(githubToken, 'business');
+  return { apiBase: COPILOT_API_BUSINESS, bearerToken: githubToken };
 }
 
 /**
@@ -94,12 +140,12 @@ export async function runCopilotPrompt(
   model: string = DEFAULT_MODEL
 ): Promise<string> {
   const rawToken = resolveGitHubToken(githubToken);
-  const sessionToken = await getCopilotSessionToken(rawToken);
+  const { apiBase, bearerToken } = await resolveApiConfig(rawToken);
 
-  const response = await fetch(`${COPILOT_API_BASE}/chat/completions`, {
+  const response = await fetch(`${apiBase}/chat/completions`, {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${sessionToken}`,
+      Authorization: `Bearer ${bearerToken}`,
       'Content-Type': 'application/json',
       'Editor-Version': 'vscode/1.85.0',
       'Editor-Plugin-Version': 'copilot/1.138.0',
@@ -137,12 +183,12 @@ export async function runCopilotChat(
   model: string = DEFAULT_MODEL
 ): Promise<string> {
   const rawToken = resolveGitHubToken(githubToken);
-  const sessionToken = await getCopilotSessionToken(rawToken);
+  const { apiBase, bearerToken } = await resolveApiConfig(rawToken);
 
-  const response = await fetch(`${COPILOT_API_BASE}/chat/completions`, {
+  const response = await fetch(`${apiBase}/chat/completions`, {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${sessionToken}`,
+      Authorization: `Bearer ${bearerToken}`,
       'Content-Type': 'application/json',
       'Editor-Version': 'vscode/1.85.0',
       'Editor-Plugin-Version': 'copilot/1.138.0',
