@@ -95,6 +95,16 @@ export default function GlobalSettingsPage() {
             placeholder="Enter your Azure DevOps Personal Access Token"
             className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
           />
+          <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 space-y-2">
+            <p className="font-semibold">🔑 How to get your ADO PAT token</p>
+            <ol className="list-decimal list-inside space-y-1 text-amber-700">
+              <li>Go to <a href="https://dev.azure.com/vfuk-digital/_usersSettings/tokens" target="_blank" rel="noreferrer" className="underline hover:text-amber-900">dev.azure.com/vfuk-digital → User Settings → Personal Access Tokens</a></li>
+              <li>Click <span className="font-semibold">New Token</span></li>
+              <li>Set expiry, select <span className="font-semibold">vfuk-digital</span> organization</li>
+              <li>Under <span className="font-semibold">Scopes</span>, select: <span className="font-mono">Code (Read)</span> and <span className="font-mono">Work Items (Read)</span></li>
+              <li>Click <span className="font-semibold">Create</span> and copy the token — it won&apos;t be shown again</li>
+            </ol>
+          </div>
         </div>
 
         {/* GitHub Token */}
@@ -116,11 +126,25 @@ export default function GlobalSettingsPage() {
           <div className="mt-3 space-y-2 text-xs text-gray-500">
             <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl space-y-1.5">
               <p className="font-semibold text-blue-800">🏢 Vodafone Enterprise account (recommended)</p>
-              <p>Run this on your local machine and paste the result here:</p>
+              <p className="text-blue-700">Don&apos;t have <span className="font-mono font-semibold">gh</span> installed? Install it first:</p>
+              <div className="grid grid-cols-3 gap-1.5">
+                <div className="bg-white border border-blue-200 rounded-lg px-2 py-1.5 text-center">
+                  <p className="text-[10px] text-blue-500 font-semibold mb-0.5">macOS</p>
+                  <code className="font-mono text-blue-900 text-[11px] select-all">brew install gh</code>
+                </div>
+                <div className="bg-white border border-blue-200 rounded-lg px-2 py-1.5 text-center">
+                  <p className="text-[10px] text-blue-500 font-semibold mb-0.5">Windows</p>
+                  <code className="font-mono text-blue-900 text-[11px] select-all">winget install gh</code>
+                </div>
+                <div className="bg-white border border-blue-200 rounded-lg px-2 py-1.5 text-center">
+                  <p className="text-[10px] text-blue-500 font-semibold mb-0.5">Linux</p>
+                  <a href="https://github.com/cli/cli/blob/trunk/docs/install_linux.md" target="_blank" rel="noreferrer" className="font-mono text-blue-600 text-[11px] underline">see docs</a>
+                </div>
+              </div>
+              <p>Then authenticate and get your token:</p>
               <code className="block bg-white border border-blue-200 rounded-lg px-3 py-2 font-mono text-blue-900 select-all">
                 gh auth login --hostname github.com --git-protocol https --web
               </code>
-              <p>Then copy your OAuth token:</p>
               <code className="block bg-white border border-blue-200 rounded-lg px-3 py-2 font-mono text-blue-900 select-all">
                 gh auth token
               </code>
