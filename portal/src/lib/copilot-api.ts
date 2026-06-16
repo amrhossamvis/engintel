@@ -214,7 +214,7 @@ export async function runCopilotChat(
     },
     body: JSON.stringify({
       model,
-      max_tokens: 8192,
+      max_tokens: 16384,
       temperature: 0.2,
       messages: [
         { role: 'system', content: systemPrompt },

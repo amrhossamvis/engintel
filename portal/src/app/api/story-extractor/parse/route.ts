@@ -150,14 +150,15 @@ async function listAndFetchFromADO(
 
 export async function POST(request: NextRequest) {
   try {
-    const { moduleName, iosPath, patToken } = await request.json();
+    const { moduleName, iosPath } = await request.json();
 
     if (!moduleName) {
       return NextResponse.json({ success: false, error: 'Missing moduleName' }, { status: 400 });
     }
 
     const resolvedIosPath = iosPath || 'MVA-iOS/VFUK-iOS/Modules';
-    const resolvedPatToken = patToken || '';
+    // Read PAT from header (consistent with discover and files routes)
+    const resolvedPatToken = request.headers.get('x-ado-pat') || '';
 
     // Parse iosPath: first segment = repo name, full path = scopePath within repo
     const parts = resolvedIosPath.split('/');

@@ -51,7 +51,7 @@ function EmptyState() {
       <div className="mt-8 grid grid-cols-3 gap-3 w-full max-w-sm">
         {[
           { icon: <Database size={14} />, label: 'Local Cache', desc: 'Results persist between sessions' },
-          { icon: <Cpu size={14} />, label: 'Claude Sonnet', desc: 'Powered by GitHub Copilot' },
+          { icon: <Cpu size={14} />, label: 'Claude Sonnet 4.5', desc: 'Powered by GitHub Copilot' },
           { icon: <BookMarked size={14} />, label: 'ADO Ready', desc: 'One-click copy to clipboard' },
         ].map((item) => (
           <div key={item.label} className="bg-white border border-gray-200 rounded-xl p-3 text-center shadow-sm">
@@ -200,8 +200,11 @@ export default function StoryExtractorPage() {
     setStatusMessage(`Parsing ${selectedModule} source files…`);
     const parseRes = await fetch('/api/story-extractor/parse', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ moduleName: selectedModule, iosPath, patToken }),
+      headers: {
+        'Content-Type': 'application/json',
+        ...(patToken ? { 'x-ado-pat': patToken } : {}),
+      },
+      body: JSON.stringify({ moduleName: selectedModule, iosPath }),
     });
     const parseData = await parseRes.json();
 
