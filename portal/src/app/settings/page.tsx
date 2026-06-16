@@ -97,32 +97,44 @@ export default function GlobalSettingsPage() {
           />
         </div>
 
-        {/* GitHub PAT */}
+        {/* GitHub Token */}
         <div className="bg-white rounded-2xl border border-gray-200 p-8">
           <div className="flex items-center gap-3 mb-6">
             <Github className="w-5 h-5 text-gray-700" />
-            <h2 className="text-lg font-semibold text-gray-900">GitHub PAT <span className="text-sm font-normal text-gray-500">(Copilot AI features)</span></h2>
+            <h2 className="text-lg font-semibold text-gray-900">GitHub Token <span className="text-sm font-normal text-gray-500">(Copilot AI features)</span></h2>
           </div>
           <p className="text-sm text-gray-600 mb-4">
-            Personal Access Token for GitHub Copilot API. Required for AI features (Story Extractor, RCA, Exec Dashboard insights) when deployed to a remote server or Docker container.
+            Your personal GitHub token for Copilot API. Each user must provide their own token — AI usage is billed against your individual Copilot quota.
           </p>
           <input
             type="password"
             value={githubPat}
             onChange={(e) => setGithubPat(e.target.value)}
-            placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+            placeholder="gho_  or  ghp_  token"
             className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition font-mono text-sm"
           />
-          <p className="text-xs text-gray-400 mt-2">
-            <strong className="text-gray-600">Personal accounts:</strong> Create a Classic PAT at{' '}
-            <a href="https://github.com/settings/tokens/new" target="_blank" rel="noreferrer"
-              className="text-blue-500 underline hover:text-blue-700">github.com/settings/tokens</a>{' '}
-            with the <span className="font-mono font-semibold text-gray-600">copilot</span> scope.
-            {' '}<strong className="text-gray-600">Enterprise/Business accounts (EMU):</strong>{' '}
-            PATs are not supported — leave this field <strong className="text-gray-600">empty</strong> and run{' '}
-            <span className="font-mono text-gray-600">gh auth login</span> on the server instead
-            (the app will use the OAuth token from <span className="font-mono text-gray-600">gh auth token</span> automatically).
-          </p>
+          <div className="mt-3 space-y-2 text-xs text-gray-500">
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl space-y-1.5">
+              <p className="font-semibold text-blue-800">🏢 Vodafone Enterprise account (recommended)</p>
+              <p>Run this on your local machine and paste the result here:</p>
+              <code className="block bg-white border border-blue-200 rounded-lg px-3 py-2 font-mono text-blue-900 select-all">
+                gh auth login --hostname github.com --git-protocol https --web
+              </code>
+              <p>Then copy your OAuth token:</p>
+              <code className="block bg-white border border-blue-200 rounded-lg px-3 py-2 font-mono text-blue-900 select-all">
+                gh auth token
+              </code>
+              <p className="text-blue-600">The token starts with <span className="font-mono font-bold">gho_</span> — paste it above.</p>
+            </div>
+            <div className="p-3 bg-gray-50 border border-gray-200 rounded-xl">
+              <p className="font-semibold text-gray-700">👤 Personal GitHub account</p>
+              <p className="mt-1">Create a Classic PAT at{' '}
+                <a href="https://github.com/settings/tokens/new" target="_blank" rel="noreferrer"
+                  className="text-blue-500 underline hover:text-blue-700">github.com/settings/tokens</a>{' '}
+                with the <span className="font-mono font-semibold text-gray-700">copilot</span> scope. Token starts with <span className="font-mono font-bold">ghp_</span>.
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* iOS Source Path */}
