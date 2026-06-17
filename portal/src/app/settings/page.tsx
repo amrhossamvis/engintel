@@ -26,7 +26,7 @@ const NAV: { id: Section; label: string; icon: React.ReactNode; badge?: string }
 /* ── tiny helpers ── */
 function SectionCard({ children }: { children: React.ReactNode }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 divide-y divide-gray-100 overflow-hidden shadow-sm">
+    <div className="bg-white rounded-2xl border border-gray-200 divide-y divide-gray-100 shadow-sm">
       {children}
     </div>
   );
