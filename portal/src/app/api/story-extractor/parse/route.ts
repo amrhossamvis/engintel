@@ -257,8 +257,8 @@ export async function POST(request: NextRequest) {
         {
           success: false,
           error:
-            `Local module path not found and no PAT token provided. ` +
-            `Please configure your ADO PAT token in Settings.`,
+            `Module not found on this server and no ADO PAT token provided. ` +
+            `Please configure your ADO PAT token and iOS Source Path in Settings.`,
         },
         { status: 200 }
       );

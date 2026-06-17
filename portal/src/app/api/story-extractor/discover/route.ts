@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
         .filter((d) => d.isDirectory() && !EXCLUDED_NAMES.has(d.name))
         .map((d) => d.name)
         .sort((a, b) => a.localeCompare(b));
-      return NextResponse.json({ success: true, modules, source: 'local', basePath: localBase });
+      return NextResponse.json({ success: true, modules, source: 'local' });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       return NextResponse.json(
@@ -86,7 +86,7 @@ export async function GET(request: NextRequest) {
         success: false,
         modules: [],
         error:
-          `Local path not found (${localBase}) and no PAT token provided. ` +
+          `iOS source path not found on this server. ` +
           `Please configure your ADO PAT token and iOS Source Path in Settings.`,
       },
       { status: 200 }
