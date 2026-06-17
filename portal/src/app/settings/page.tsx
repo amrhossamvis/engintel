@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { AppHeader } from '@/components/AppHeader';
-import { Key, Save, CheckCircle, Plus, Trash2, Settings, Users, GitBranch, Layers, Github } from 'lucide-react';
+import { Key, Save, CheckCircle, Plus, Trash2, Settings, Users, GitBranch, Layers, Github, Search, ChevronDown, Loader2, RefreshCw, AlertCircle } from 'lucide-react';
 
 export type TeamConfig = {
   organization: string;
@@ -18,6 +18,14 @@ export default function GlobalSettingsPage() {
   const [repos, setRepos] = useState<string[]>([]);
   const [newRepo, setNewRepo] = useState('');
   const [saved, setSaved] = useState(false);
+
+  // Team picker state
+  const [availableTeams, setAvailableTeams] = useState<string[]>([]);
+  const [teamsLoading, setTeamsLoading] = useState(false);
+  const [teamsError, setTeamsError] = useState('');
+  const [openDropdownIndex, setOpenDropdownIndex] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const savedToken = localStorage.getItem('ado_pat_token') || '';
@@ -36,6 +44,40 @@ export default function GlobalSettingsPage() {
     }
   }, []);
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setOpenDropdownIndex(null);
+        setSearchQuery('');
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const fetchAvailableTeams = async (token?: string) => {
+    const pat = token ?? patToken;
+    if (!pat.trim()) {
+      setTeamsError('Enter your ADO PAT token first, then click refresh.');
+      return;
+    }
+    setTeamsLoading(true);
+    setTeamsError('');
+    try {
+      const res = await fetch('/api/ado-teams?organization=vfuk-digital&project=Digital', {
+        headers: { 'x-ado-pat': pat },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to fetch teams');
+      setAvailableTeams(data.teams || []);
+    } catch (err: any) {
+      setTeamsError(err.message || 'Could not load teams from ADO.');
+    } finally {
+      setTeamsLoading(false);
+    }
+  };
+
   const handleSave = () => {
     localStorage.setItem('ado_pat_token', patToken);
     localStorage.setItem('github_pat_token', githubPat);
@@ -48,6 +90,10 @@ export default function GlobalSettingsPage() {
 
   const addTeam = () => {
     setTeams([...teams, { organization: 'vfuk-digital', project: 'Digital', team: '' }]);
+    // Auto-fetch teams list if not loaded yet
+    if (availableTeams.length === 0 && !teamsLoading) {
+      fetchAvailableTeams();
+    }
   };
   const updateTeam = (index: number, field: keyof TeamConfig, value: string) => {
     const updated = [...teams];
@@ -55,6 +101,16 @@ export default function GlobalSettingsPage() {
     setTeams(updated);
   };
   const removeTeam = (index: number) => setTeams(teams.filter((_, i) => i !== index));
+
+  const selectTeam = (index: number, teamName: string) => {
+    updateTeam(index, 'team', teamName);
+    setOpenDropdownIndex(null);
+    setSearchQuery('');
+  };
+
+  const filteredTeams = availableTeams.filter(t =>
+    t.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const addRepo = () => {
     const trimmed = newRepo.trim();
@@ -197,16 +253,37 @@ export default function GlobalSettingsPage() {
               <Users className="w-5 h-5 text-gray-700" />
               <h2 className="text-lg font-semibold text-gray-900">Teams</h2>
             </div>
-            <button onClick={addTeam}
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-800 transition">
-              <Plus className="w-4 h-4" /> Add Team
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => fetchAvailableTeams()}
+                disabled={teamsLoading}
+                title="Load teams from ADO"
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-800 transition disabled:opacity-40"
+              >
+                {teamsLoading
+                  ? <Loader2 className="w-4 h-4 animate-spin" />
+                  : <RefreshCw className="w-4 h-4" />}
+                {availableTeams.length > 0 ? `${availableTeams.length} teams` : 'Load teams'}
+              </button>
+              <span className="text-gray-300">|</span>
+              <button onClick={addTeam}
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-800 transition">
+                <Plus className="w-4 h-4" /> Add Team
+              </button>
+            </div>
           </div>
           <p className="text-sm text-gray-600 mb-2">ADO teams to track across all initiatives.</p>
-          <p className="text-xs text-gray-400 mb-6">
+          <p className="text-xs text-gray-400 mb-4">
             Organization: <span className="font-mono font-medium text-gray-600">vfuk-digital</span> &nbsp;|&nbsp;
             Project: <span className="font-mono font-medium text-gray-600">Digital</span> &nbsp;(fixed)
           </p>
+
+          {teamsError && (
+            <div className="flex items-start gap-2 mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700">
+              <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+              <span>{teamsError}</span>
+            </div>
+          )}
 
           {teams.length === 0 && (
             <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-xl">
@@ -215,17 +292,99 @@ export default function GlobalSettingsPage() {
             </div>
           )}
 
-          <div className="space-y-3">
+          <div className="space-y-3" ref={dropdownRef}>
             {teams.map((team, index) => (
               <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-200">
                 <span className="text-xs text-gray-400 font-mono whitespace-nowrap">vfuk-digital / Digital /</span>
-                <input
-                  type="text"
-                  value={team.team}
-                  onChange={(e) => updateTeam(index, 'team', e.target.value)}
-                  placeholder="Team name"
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+
+                {/* Dropdown picker */}
+                <div className="relative flex-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (openDropdownIndex === index) {
+                        setOpenDropdownIndex(null);
+                        setSearchQuery('');
+                      } else {
+                        setOpenDropdownIndex(index);
+                        setSearchQuery('');
+                        if (availableTeams.length === 0 && !teamsLoading) {
+                          fetchAvailableTeams();
+                        }
+                      }
+                    }}
+                    className="w-full flex items-center justify-between px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                  >
+                    <span className={team.team ? 'text-gray-900' : 'text-gray-400'}>
+                      {team.team || 'Select a team…'}
+                    </span>
+                    <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${openDropdownIndex === index ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {openDropdownIndex === index && (
+                    <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
+                      {/* Search */}
+                      <div className="p-2 border-b border-gray-100">
+                        <div className="flex items-center gap-2 px-2 py-1.5 bg-gray-50 rounded-lg">
+                          <Search className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                          <input
+                            autoFocus
+                            type="text"
+                            value={searchQuery}
+                            onChange={e => setSearchQuery(e.target.value)}
+                            placeholder="Search teams…"
+                            className="flex-1 bg-transparent text-sm outline-none text-gray-700 placeholder-gray-400"
+                          />
+                        </div>
+                      </div>
+
+                      {/* List */}
+                      <div className="max-h-52 overflow-y-auto">
+                        {teamsLoading ? (
+                          <div className="flex items-center justify-center gap-2 py-6 text-sm text-gray-500">
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Loading teams…
+                          </div>
+                        ) : filteredTeams.length === 0 ? (
+                          <div className="py-6 text-center text-sm text-gray-400">
+                            {availableTeams.length === 0
+                              ? 'No teams loaded. Click "Load teams" first.'
+                              : 'No teams match your search.'}
+                          </div>
+                        ) : (
+                          filteredTeams.map(name => (
+                            <button
+                              key={name}
+                              type="button"
+                              onClick={() => selectTeam(index, name)}
+                              className={`w-full text-left px-4 py-2.5 text-sm hover:bg-blue-50 hover:text-blue-700 transition ${
+                                team.team === name ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'
+                              }`}
+                            >
+                              {name}
+                            </button>
+                          ))
+                        )}
+                      </div>
+
+                      {/* Manual entry fallback */}
+                      {!teamsLoading && searchQuery && !availableTeams.includes(searchQuery) && (
+                        <div className="border-t border-gray-100 p-2">
+                          <button
+                            type="button"
+                            onClick={() => selectTeam(index, searchQuery)}
+                            className="w-full text-left px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition"
+                          >
+                            <span className="text-gray-400">Use &quot;</span>
+                            <span className="font-medium text-gray-800">{searchQuery}</span>
+                            <span className="text-gray-400">&quot; as-is</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
                 <button onClick={() => removeTeam(index)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition">
                   <Trash2 className="w-4 h-4" />
                 </button>
