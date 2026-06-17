@@ -57,8 +57,8 @@ function EmptyState() {
         ].map((item) => (
           <div key={item.label} className="bg-white border border-gray-200 rounded-xl p-3 text-center shadow-sm">
             <div className="flex justify-center mb-1.5 text-gray-400">{item.icon}</div>
-            <div className="text-[11px] font-semibold text-gray-600 mb-0.5">{item.label}</div>
-            <div className="text-[10px] text-gray-400 leading-tight">{item.desc}</div>
+            <div className="text-xs font-semibold text-gray-600 mb-0.5">{item.label}</div>
+            <div className="text-xs text-gray-400 leading-tight">{item.desc}</div>
           </div>
         ))}
       </div>
@@ -74,11 +74,11 @@ function CacheStatusBadge({ lastAnalyzedAt }: { lastAnalyzedAt: string }) {
   return (
     <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-lg">
       <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-      <Database size={11} className="text-emerald-600" />
-      <span className="text-[11px] text-emerald-700 font-medium">Loaded from Local Cache</span>
-      <span className="text-[11px] text-emerald-400">·</span>
-      <Clock size={10} className="text-emerald-500" />
-      <span className="text-[11px] text-emerald-600">Last Synced {formatted}</span>
+      <Database size={12} className="text-emerald-600" />
+      <span className="text-xs text-emerald-700 font-medium">Loaded from Local Cache</span>
+      <span className="text-xs text-emerald-400">·</span>
+      <Clock size={11} className="text-emerald-500" />
+      <span className="text-xs text-emerald-600">Last Synced {formatted}</span>
     </div>
   );
 }
@@ -343,8 +343,8 @@ export default function StoryExtractorPage() {
         <aside className="w-72 shrink-0 border-r border-gray-200 flex flex-col bg-white overflow-y-auto shadow-sm">
           <div className="px-4 pt-5 pb-3 border-b border-gray-100">
             <div className="flex items-center gap-2">
-              <Layers size={13} className="text-gray-400" />
-              <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest">
+              <Layers size={14} className="text-gray-400" />
+              <span className="text-xs font-semibold text-gray-500 uppercase tracking-widest">
                 Scope &amp; Files
               </span>
             </div>
@@ -353,17 +353,17 @@ export default function StoryExtractorPage() {
           <div className="px-4 space-y-4 py-4">
             {/* Module Selector */}
             <div className="space-y-1.5">
-              <label className="text-[10px] text-gray-500 font-semibold uppercase tracking-wider">
+              <label className="text-xs text-gray-500 font-semibold uppercase tracking-wider">
                 Target Module
               </label>
               {modulesError ? (
                 <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-xl">
-                  <AlertCircle size={13} className="text-red-500 mt-0.5 shrink-0" />
+                  <AlertCircle size={14} className="text-red-500 mt-0.5 shrink-0" />
                   <div>
-                    <p className="text-[11px] text-red-600 leading-relaxed font-medium">{modulesError}</p>
+                    <p className="text-xs text-red-600 leading-relaxed font-medium">{modulesError}</p>
                     <button
                       onClick={() => window.location.href = '/settings'}
-                      className="text-[11px] text-red-500 underline mt-1 hover:text-red-700"
+                      className="text-xs text-red-500 underline mt-1 hover:text-red-700"
                     >
                       Configure iOS path in Settings →
                     </button>
@@ -419,16 +419,16 @@ export default function StoryExtractorPage() {
             {/* Status Message */}
             {statusMessage && (
               <div className={`
-                flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] border
+                flex items-center gap-2 px-3 py-2 rounded-xl text-xs border
                 ${status === 'error'
                   ? 'bg-red-50 border-red-200 text-red-600'
                   : status === 'complete'
                   ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
                   : 'bg-blue-50 border-blue-200 text-blue-600'}
               `}>
-                {isBusy ? <Spinner size={11} />
-                  : status === 'error' ? <AlertCircle size={11} />
-                  : status === 'complete' ? <Check size={11} />
+                {isBusy ? <Spinner size={12} />
+                  : status === 'error' ? <AlertCircle size={12} />
+                  : status === 'complete' ? <Check size={12} />
                   : null}
                 <span>{statusMessage}</span>
               </div>
@@ -438,10 +438,10 @@ export default function StoryExtractorPage() {
             {error && (
               <div className="p-3 bg-red-50 border border-red-200 rounded-xl space-y-1">
                 <div className="flex items-center gap-1.5">
-                  <AlertCircle size={12} className="text-red-500" />
-                  <span className="text-[11px] font-semibold text-red-600">Analysis Error</span>
+                  <AlertCircle size={13} className="text-red-500" />
+                  <span className="text-xs font-semibold text-red-600">Analysis Error</span>
                 </div>
-                <p className="text-[10px] text-red-500 leading-relaxed font-mono break-all">{error}</p>
+                <p className="text-xs text-red-500 leading-relaxed font-mono break-all">{error}</p>
               </div>
             )}
 
@@ -455,19 +455,19 @@ export default function StoryExtractorPage() {
             {/* Module Stats */}
             {record && (
               <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 space-y-2">
-                <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
                   Module Stats
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="bg-white border border-gray-200 rounded-lg p-2 text-center shadow-sm">
                     <div className="text-lg font-bold text-gray-800 font-mono">{record.userStories.length}</div>
-                    <div className="text-[9px] text-gray-500 uppercase tracking-wider">Stories</div>
+                    <div className="text-xs text-gray-500 uppercase tracking-wider">Stories</div>
                   </div>
                   <div className="bg-white border border-gray-200 rounded-lg p-2 text-center shadow-sm">
                     <div className="text-lg font-bold text-gray-800 font-mono">
                       {record.userStories.reduce((acc, s) => acc + s.acceptanceCriteria.length, 0)}
                     </div>
-                    <div className="text-[9px] text-gray-500 uppercase tracking-wider">Criteria</div>
+                    <div className="text-xs text-gray-500 uppercase tracking-wider">Criteria</div>
                   </div>
                 </div>
               </div>
@@ -530,18 +530,18 @@ export default function StoryExtractorPage() {
                   )}
                   <div className="flex items-center gap-2">
                     <ChevronRight size={16} className="text-[#e60000]" />
-                    <h1 className="text-xl font-bold text-gray-900">{record.epicName}</h1>
+                    <h1 className="text-2xl font-bold text-gray-900">{record.epicName}</h1>
                   </div>
                   <div className="flex items-center gap-3 pl-6">
-                    <span className="text-xs text-gray-500">
+                    <span className="text-sm text-gray-500">
                       <span className="text-gray-700 font-medium">{record.moduleName}</span> module
                     </span>
                     <span className="text-gray-300">·</span>
-                    <span className="text-xs text-gray-500">
+                    <span className="text-sm text-gray-500">
                       <span className="text-gray-700 font-medium">{record.userStories.length}</span> user stories
                     </span>
                     <span className="text-gray-300">·</span>
-                    <span className="text-xs text-gray-500">
+                    <span className="text-sm text-gray-500">
                       <span className="text-gray-700 font-medium">
                         {record.userStories.reduce((acc, s) => acc + s.acceptanceCriteria.length, 0)}
                       </span>{' '}acceptance criteria
@@ -551,7 +551,7 @@ export default function StoryExtractorPage() {
                 <div className="flex items-center gap-2 shrink-0">
                   <button
                     onClick={handleCopyAll}
-                    className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium transition-all duration-200 border
+                    className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-medium transition-all duration-200 border
                       ${allCopied
                         ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
                         : 'bg-white border-gray-300 text-gray-600 hover:text-gray-900 hover:border-gray-400 shadow-sm'}`}
@@ -561,7 +561,7 @@ export default function StoryExtractorPage() {
                   <button
                     onClick={() => exportStoriesToExcel(record.userStories, record.moduleName, record.epicName)}
                     title="Export all stories to Excel"
-                    className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium transition-all duration-200 border bg-white border-gray-300 text-gray-600 hover:text-green-700 hover:border-green-400 shadow-sm"
+                    className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-medium transition-all duration-200 border bg-white border-gray-300 text-gray-600 hover:text-green-700 hover:border-green-400 shadow-sm"
                   >
                     <FileSpreadsheet size={12} />Export to Excel
                   </button>
@@ -583,11 +583,11 @@ export default function StoryExtractorPage() {
                 ))}
               </div>
 
-              <div className="pt-4 pb-2 flex items-center justify-between text-[10px] text-gray-400">
+              <div className="pt-4 pb-2 flex items-center justify-between text-xs text-gray-400">
                 <span className="font-mono">Generated by Claude Sonnet 4.5 via GitHub Copilot</span>
                 {record.lastAnalyzedAt && (
                   <span className="flex items-center gap-1">
-                    <RefreshCw size={9} />
+                    <RefreshCw size={11} />
                     {new Date(record.lastAnalyzedAt).toLocaleString('en-GB')}
                   </span>
                 )}

@@ -10,9 +10,9 @@ interface StoryFileManifestProps {
 
 function getFileIcon(filename: string) {
   const ext = filename.split('.').pop()?.toLowerCase();
-  if (ext === 'swift') return <span className="text-orange-500 text-[10px] font-bold font-mono">SW</span>;
-  if (ext === 'm') return <span className="text-blue-500 text-[10px] font-bold font-mono">OC</span>;
-  if (ext === 'h') return <span className="text-purple-500 text-[10px] font-bold font-mono">H</span>;
+  if (ext === 'swift') return <span className="text-orange-500 text-xs font-bold font-mono">SW</span>;
+  if (ext === 'm') return <span className="text-blue-500 text-xs font-bold font-mono">OC</span>;
+  if (ext === 'h') return <span className="text-purple-500 text-xs font-bold font-mono">H</span>;
   return <FileText size={11} className="text-gray-400" />;
 }
 
@@ -45,16 +45,16 @@ export default function StoryFileManifest({ files, totalChars }: StoryFileManife
       >
         <div className="flex items-center gap-2">
           <FileCode size={14} className="text-gray-500" />
-          <span className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
+          <span className="text-sm font-semibold text-gray-700 uppercase tracking-wider">
             File Manifest
           </span>
-          <span className="bg-gray-100 text-gray-500 text-[10px] font-mono px-1.5 py-0.5 rounded border border-gray-200">
+          <span className="bg-gray-100 text-gray-500 text-xs font-mono px-1.5 py-0.5 rounded border border-gray-200">
             {files.length}
           </span>
         </div>
         <div className="flex items-center gap-2">
           {totalChars !== undefined && (
-            <span className="text-[10px] text-gray-400 font-mono">{formatBytes(totalChars)}</span>
+            <span className="text-xs text-gray-400 font-mono">{formatBytes(totalChars)}</span>
           )}
           {isExpanded
             ? <ChevronDown size={13} className="text-gray-400" />
@@ -73,7 +73,7 @@ export default function StoryFileManifest({ files, totalChars }: StoryFileManife
                   {dir !== '(root)' && (
                     <div className="flex items-center gap-1.5 px-3 py-1 mt-1 bg-gray-50">
                       <ChevronRight size={10} className="text-gray-400" />
-                      <span className="text-[10px] text-gray-500 font-mono truncate">{dir}/</span>
+                      <span className="text-xs text-gray-500 font-mono truncate">{dir}/</span>
                     </div>
                   )}
                   {grouped[dir].map((filename) => (
@@ -84,7 +84,7 @@ export default function StoryFileManifest({ files, totalChars }: StoryFileManife
                       <div className="w-5 flex items-center justify-center shrink-0">
                         {getFileIcon(filename)}
                       </div>
-                      <span className="text-[11px] text-gray-600 font-mono truncate group-hover:text-gray-900 transition-colors">
+                      <span className="text-xs text-gray-600 font-mono truncate group-hover:text-gray-900 transition-colors">
                         {filename}
                       </span>
                     </div>

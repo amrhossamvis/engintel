@@ -103,7 +103,7 @@ export default function StoryCard({ story, index, onUpdate, moduleName = '', epi
       <div className="flex items-start gap-3 px-4 pt-4 pb-3">
         <div className="shrink-0 mt-0.5">
           <div className="w-7 h-7 rounded-lg bg-red-50 border border-red-200 flex items-center justify-center">
-            <span className="text-[10px] font-bold text-[#e60000] font-mono">
+            <span className="text-xs font-bold text-[#e60000] font-mono">
               {String(index + 1).padStart(2, '0')}
             </span>
           </div>
@@ -119,7 +119,7 @@ export default function StoryCard({ story, index, onUpdate, moduleName = '', epi
               className="w-full bg-white border border-amber-300 rounded-lg px-2.5 py-1.5 text-sm font-semibold text-gray-900 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition-colors"
             />
           ) : (
-            <h3 className="text-sm font-semibold text-gray-900 leading-snug">{story.title}</h3>
+            <h3 className="text-base font-semibold text-gray-900 leading-snug">{story.title}</h3>
           )}
         </div>
 
@@ -197,7 +197,7 @@ export default function StoryCard({ story, index, onUpdate, moduleName = '', epi
           <div className="space-y-1.5">
             <div className="flex items-center gap-1.5">
               <BookOpen size={11} className="text-gray-400" />
-              <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Description</span>
+              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Description</span>
             </div>
             {isEditing ? (
               <textarea
@@ -207,7 +207,7 @@ export default function StoryCard({ story, index, onUpdate, moduleName = '', epi
                 className="w-full bg-white border border-amber-300 rounded-lg px-2.5 py-2 text-xs text-gray-700 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition-colors resize-none leading-relaxed font-mono"
               />
             ) : (
-              <p className="text-xs text-gray-600 leading-relaxed pl-4 border-l-2 border-gray-200">
+              <p className="text-sm text-gray-600 leading-relaxed pl-4 border-l-2 border-gray-200">
                 {story.description}
               </p>
             )}
@@ -218,17 +218,17 @@ export default function StoryCard({ story, index, onUpdate, moduleName = '', epi
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5">
                 <ListChecks size={11} className="text-gray-400" />
-                <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Acceptance Criteria
                 </span>
-                <span className="text-[10px] text-gray-400 font-mono">
+                <span className="text-xs text-gray-400 font-mono">
                   ({isEditing ? editCriteria.length : story.acceptanceCriteria.length})
                 </span>
               </div>
               {isEditing && (
                 <button
                   onClick={handleAddCriterion}
-                  className="text-[10px] text-amber-600 hover:text-amber-700 flex items-center gap-1 font-medium"
+                  className="text-xs text-amber-600 hover:text-amber-700 flex items-center gap-1 font-medium"
                 >
                   + Add criterion
                 </button>
@@ -244,7 +244,7 @@ export default function StoryCard({ story, index, onUpdate, moduleName = '', epi
                         value={criterion}
                         onChange={(e) => handleCriterionChange(idx, e.target.value)}
                         rows={2}
-                        className="flex-1 bg-white border border-amber-200 rounded-lg px-2 py-1.5 text-[11px] text-gray-700 outline-none focus:border-amber-400 transition-colors resize-none font-mono leading-relaxed"
+                        className="flex-1 bg-white border border-amber-200 rounded-lg px-2 py-1.5 text-xs text-gray-700 outline-none focus:border-amber-400 transition-colors resize-none font-mono leading-relaxed"
                       />
                       <button
                         onClick={() => handleRemoveCriterion(idx)}
@@ -264,7 +264,7 @@ export default function StoryCard({ story, index, onUpdate, moduleName = '', epi
                         <div className={`mt-1.5 shrink-0 w-1.5 h-1.5 rounded-full
                           ${isGiven ? 'bg-blue-400' : isWhen ? 'bg-amber-400' : isThen ? 'bg-emerald-400' : 'bg-gray-300'}`}
                         />
-                        <p className={`text-[11px] leading-relaxed
+                        <p className={`text-sm leading-relaxed
                           ${isGiven ? 'text-blue-700' : isWhen ? 'text-amber-700' : isThen ? 'text-emerald-700' : 'text-gray-600'}`}
                         >
                           {criterion}
@@ -277,13 +277,13 @@ export default function StoryCard({ story, index, onUpdate, moduleName = '', epi
 
           {/* Story ID Footer */}
           <div className="pt-1 flex items-center justify-between border-t border-gray-100">
-            <span className="text-[9px] text-gray-300 font-mono">ID: {story.id}</span>
+            <span className="text-[11px] text-gray-300 font-mono">ID: {story.id}</span>
             {!isEditing && (
               <button
                 onClick={handleCopy}
-                className="text-[10px] text-gray-400 hover:text-gray-600 flex items-center gap-1 transition-colors"
+                className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1 transition-colors"
               >
-                <Copy size={9} /> Copy for ADO
+                <Copy size={11} /> Copy for ADO
               </button>
             )}
           </div>

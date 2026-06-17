@@ -73,14 +73,14 @@ export default function StoryExtractorAboutPage() {
             ].map((item) => (
               <div key={item.step} className="flex gap-4">
                 <div className="shrink-0 w-8 h-8 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center">
-                  <span className="text-[10px] font-bold text-gray-500 font-mono">{item.step}</span>
+                   <span className="text-xs font-bold text-gray-500 font-mono">{item.step}</span>
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     {item.icon}
                     <h3 className="text-sm font-semibold text-gray-800">{item.title}</h3>
                   </div>
-                  <p className="text-xs text-gray-500 leading-relaxed">{item.desc}</p>
+                   <p className="text-sm text-gray-500 leading-relaxed">{item.desc}</p>
                 </div>
               </div>
             ))}
@@ -122,8 +122,8 @@ export default function StoryExtractorAboutPage() {
             ].map((card) => (
               <div key={card.label} className={`rounded-xl border p-4 ${card.bg}`}>
                 <div className={`text-base font-bold font-mono mb-1 ${card.color}`}>{card.value}</div>
-                <div className="text-[11px] font-semibold text-gray-700 mb-1">{card.label}</div>
-                <div className="text-[10px] text-gray-500 leading-relaxed">{card.desc}</div>
+                <div className="text-xs font-semibold text-gray-700 mb-1">{card.label}</div>
+                <div className="text-xs text-gray-500 leading-relaxed">{card.desc}</div>
               </div>
             ))}
           </div>
@@ -165,7 +165,7 @@ export default function StoryExtractorAboutPage() {
           <p className="text-sm text-gray-600 leading-relaxed mb-4">
             The system prompt instructs Claude to act as an expert Agile Product Owner with the following constraints:
           </p>
-          <ul className="space-y-2 text-xs text-gray-500">
+          <ul className="space-y-2 text-sm text-gray-500">
             {[
               'Output ONLY raw JSON — no markdown fences, no preamble, no explanation.',
               'Every user story must have at minimum 3 acceptance criteria in Given/When/Then format.',
@@ -210,7 +210,7 @@ export default function StoryExtractorAboutPage() {
               <li key={item.label} className="flex items-center gap-3">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
                 <span>{item.label}</span>
-                <code className="ml-auto text-[11px] text-[#e60000] bg-red-50 border border-red-100 px-2 py-0.5 rounded font-mono">
+                <code className="ml-auto text-xs text-[#e60000] bg-red-50 border border-red-100 px-2 py-0.5 rounded font-mono">
                   {item.cmd}
                 </code>
               </li>
