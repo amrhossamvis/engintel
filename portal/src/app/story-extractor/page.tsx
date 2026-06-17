@@ -4,13 +4,14 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   Cpu, RefreshCw, Zap, AlertCircle, BookMarked,
   Clock, Layers, ChevronRight, Sparkles, Database,
-  RotateCcw, Copy, Check, BookOpen, Settings,
+  RotateCcw, Copy, Check, BookOpen, Settings, FileSpreadsheet,
 } from 'lucide-react';
 import StoryModuleSelector from '@/components/StoryModuleSelector';
 import StoryFileManifest from '@/components/StoryFileManifest';
 import StoryCard from '@/components/StoryCard';
 import { AppHeader } from '@/components/AppHeader';
 import { StoryModuleRecord, StoryUserStory, StoryAnalysisStatus } from '@/types';
+import { exportStoriesToExcel } from '@/lib/story-excel';
 
 const STATUS_STEPS: Record<StoryAnalysisStatus, { label: string; step: number }> = {
   idle: { label: 'Ready', step: 0 },
@@ -547,22 +548,38 @@ export default function StoryExtractorPage() {
                     </span>
                   </div>
                 </div>
-                <button
-                  onClick={handleCopyAll}
-                  className={`shrink-0 flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium transition-all duration-200 border
-                    ${allCopied
-                      ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
-                      : 'bg-white border-gray-300 text-gray-600 hover:text-gray-900 hover:border-gray-400 shadow-sm'}`}
-                >
-                  {allCopied ? <><Check size={12} />All Copied!</> : <><Copy size={12} />Copy All Stories</>}
-                </button>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={handleCopyAll}
+                    className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium transition-all duration-200 border
+                      ${allCopied
+                        ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                        : 'bg-white border-gray-300 text-gray-600 hover:text-gray-900 hover:border-gray-400 shadow-sm'}`}
+                  >
+                    {allCopied ? <><Check size={12} />All Copied!</> : <><Copy size={12} />Copy All Stories</>}
+                  </button>
+                  <button
+                    onClick={() => exportStoriesToExcel(record.userStories, record.moduleName, record.epicName)}
+                    title="Export all stories to Excel"
+                    className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium transition-all duration-200 border bg-white border-gray-300 text-gray-600 hover:text-green-700 hover:border-green-400 shadow-sm"
+                  >
+                    <FileSpreadsheet size={12} />Export to Excel
+                  </button>
+                </div>
               </div>
 
               <div className="h-px bg-gray-200" />
 
               <div className="space-y-3">
                 {record.userStories.map((story, idx) => (
-                  <StoryCard key={story.id} story={story} index={idx} onUpdate={handleStoryUpdate} />
+                  <StoryCard
+                    key={story.id}
+                    story={story}
+                    index={idx}
+                    onUpdate={handleStoryUpdate}
+                    moduleName={record.moduleName}
+                    epicName={record.epicName}
+                  />
                 ))}
               </div>
 

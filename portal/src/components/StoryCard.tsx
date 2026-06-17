@@ -3,14 +3,18 @@
 import { useState, useRef, useEffect } from 'react';
 import {
   Copy, Check, ChevronDown, ChevronUp,
-  Edit3, Save, X, ListChecks, BookOpen, Hash,
+  Edit3, Save, X, ListChecks, BookOpen, Hash, FileSpreadsheet,
 } from 'lucide-react';
 import { StoryUserStory } from '@/types';
+import { exportStoriesToExcel } from '@/lib/story-excel';
 
 interface StoryCardProps {
   story: StoryUserStory;
   index: number;
   onUpdate: (updated: StoryUserStory) => void;
+  /** Module name + epic name needed for the Excel filename / sheet */
+  moduleName?: string;
+  epicName?: string;
 }
 
 function formatForClipboard(story: StoryUserStory): string {
@@ -27,8 +31,9 @@ ${ac}
 ──────────────────────────────────────────`;
 }
 
-export default function StoryCard({ story, index, onUpdate }: StoryCardProps) {
+export default function StoryCard({ story, index, onUpdate, moduleName = '', epicName = '' }: StoryCardProps) {
   const [copied, setCopied] = useState(false);
+  const [exported, setExported] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);
 
@@ -149,6 +154,22 @@ export default function StoryCard({ story, index, onUpdate }: StoryCardProps) {
                 `}
               >
                 {copied ? <><Check size={12} />Copied!</> : <><Copy size={12} />Copy</>}
+              </button>
+              <button
+                onClick={() => {
+                  exportStoriesToExcel([story], moduleName, epicName);
+                  setExported(true);
+                  setTimeout(() => setExported(false), 2000);
+                }}
+                title="Export this story to Excel"
+                className={`
+                  flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-200
+                  ${exported
+                    ? 'bg-emerald-50 border border-emerald-200 text-emerald-700'
+                    : 'bg-gray-50 border border-gray-200 text-gray-500 hover:text-green-700 hover:border-green-300 opacity-0 group-hover:opacity-100'}
+                `}
+              >
+                {exported ? <><Check size={12} />Exported!</> : <><FileSpreadsheet size={12} />Excel</>}
               </button>
               <button
                 onClick={handleEditStart}
