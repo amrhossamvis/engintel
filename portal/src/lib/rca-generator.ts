@@ -250,7 +250,7 @@ Respond with ONLY a JSON object in this exact format:
       "impactOnOtherComponents": true,
       "impactDetails": "Details if impact is true, otherwise omit",
       "relatedWorkItemId": "${bugData.id}"
-    }`);
+    }`, githubToken);
 
       // Use detected issue type or fallback to parsed value
       let finalIssueType = detectedIssueType;
