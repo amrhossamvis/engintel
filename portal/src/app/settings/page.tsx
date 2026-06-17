@@ -16,7 +16,6 @@ export default function GlobalSettingsPage() {
   const [iosPath, setIosPath] = useState('');
   const [teams, setTeams] = useState<TeamConfig[]>([]);
   const [repos, setRepos] = useState<string[]>([]);
-  const [newRepo, setNewRepo] = useState('');
   const [saved, setSaved] = useState(false);
 
   // Team picker state
@@ -26,6 +25,14 @@ export default function GlobalSettingsPage() {
   const [openDropdownIndex, setOpenDropdownIndex] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Repo picker state
+  const [availableRepos, setAvailableRepos] = useState<string[]>([]);
+  const [reposLoading, setReposLoading] = useState(false);
+  const [reposError, setReposError] = useState('');
+  const [repoDropdownOpen, setRepoDropdownOpen] = useState(false);
+  const [repoSearchQuery, setRepoSearchQuery] = useState('');
+  const repoDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const savedToken = localStorage.getItem('ado_pat_token') || '';
@@ -112,17 +119,53 @@ export default function GlobalSettingsPage() {
     t.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const addRepo = () => {
-    const trimmed = newRepo.trim();
-    if (trimmed && !repos.includes(trimmed)) {
-      setRepos([...repos, trimmed]);
-      setNewRepo('');
+  const fetchAvailableRepos = async (token?: string) => {
+    const pat = token ?? patToken;
+    if (!pat.trim()) {
+      setReposError('Enter your ADO PAT token first, then click refresh.');
+      return;
+    }
+    setReposLoading(true);
+    setReposError('');
+    try {
+      const res = await fetch('/api/ado-repos?organization=vfuk-digital&project=Digital', {
+        headers: { 'x-ado-pat': pat },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to fetch repositories');
+      setAvailableRepos(data.repos || []);
+    } catch (err: any) {
+      setReposError(err.message || 'Could not load repositories from ADO.');
+    } finally {
+      setReposLoading(false);
     }
   };
-  const removeRepo = (repo: string) => setRepos(repos.filter(r => r !== repo));
-  const handleRepoKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') { e.preventDefault(); addRepo(); }
+
+  // Close repo dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (repoDropdownRef.current && !repoDropdownRef.current.contains(e.target as Node)) {
+        setRepoDropdownOpen(false);
+        setRepoSearchQuery('');
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const selectRepo = (repoName: string) => {
+    if (!repos.includes(repoName)) {
+      setRepos([...repos, repoName]);
+    }
+    setRepoDropdownOpen(false);
+    setRepoSearchQuery('');
   };
+
+  const removeRepo = (repo: string) => setRepos(repos.filter(r => r !== repo));
+
+  const filteredRepos = availableRepos.filter(
+    r => r.toLowerCase().includes(repoSearchQuery.toLowerCase()) && !repos.includes(r)
+  );
 
   return (
     <div className="min-h-screen bg-[#fafafa]">
@@ -395,37 +438,120 @@ export default function GlobalSettingsPage() {
 
         {/* Repos pool */}
         <div className="bg-white rounded-2xl border border-gray-200 p-8">
-          <div className="flex items-center gap-3 mb-6">
-            <GitBranch className="w-5 h-5 text-gray-700" />
-            <h2 className="text-lg font-semibold text-gray-900">Repository Pool</h2>
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <GitBranch className="w-5 h-5 text-gray-700" />
+              <h2 className="text-lg font-semibold text-gray-900">Repository Pool</h2>
+            </div>
+            <button
+              onClick={() => fetchAvailableRepos()}
+              disabled={reposLoading}
+              title="Load repositories from ADO"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-800 transition disabled:opacity-40"
+            >
+              {reposLoading
+                ? <Loader2 className="w-4 h-4 animate-spin" />
+                : <RefreshCw className="w-4 h-4" />}
+              {availableRepos.length > 0 ? `${availableRepos.length} repos` : 'Load repos'}
+            </button>
           </div>
           <p className="text-sm text-gray-600 mb-2">
             Add all ADO repositories your teams work on. These will be available for selection in the AI Productivity Index
             and other initiatives that track PR metrics.
           </p>
-          <p className="text-xs text-gray-400 mb-6">
-            Example: <span className="font-mono text-gray-600">MVA-iOS</span>, <span className="font-mono text-gray-600">MVA-Android</span>, <span className="font-mono text-gray-600">mvax-api</span>
+          <p className="text-xs text-gray-400 mb-4">
+            Select from the list fetched from ADO, or type a name manually if needed.
           </p>
 
-          {/* Add repo input */}
-          <div className="flex gap-2 mb-4">
-            <input
-              type="text"
-              value={newRepo}
-              onChange={e => setNewRepo(e.target.value)}
-              onKeyDown={handleRepoKeyDown}
-              placeholder="Repository name (e.g. MVA-iOS)"
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
+          {reposError && (
+            <div className="flex items-start gap-2 mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700">
+              <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+              <span>{reposError}</span>
+            </div>
+          )}
+
+          {/* Dropdown picker */}
+          <div className="relative mb-4" ref={repoDropdownRef}>
             <button
-              onClick={addRepo}
-              disabled={!newRepo.trim()}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition disabled:opacity-40"
+              type="button"
+              onClick={() => {
+                if (!repoDropdownOpen && availableRepos.length === 0 && !reposLoading) {
+                  fetchAvailableRepos();
+                }
+                setRepoDropdownOpen(o => !o);
+                setRepoSearchQuery('');
+              }}
+              className="w-full flex items-center justify-between px-3 py-2.5 border border-gray-300 rounded-xl text-sm bg-white hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
             >
-              <Plus className="w-4 h-4" /> Add
+              <span className="text-gray-400">Select a repository to add…</span>
+              <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${repoDropdownOpen ? 'rotate-180' : ''}`} />
             </button>
+
+            {repoDropdownOpen && (
+              <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
+                {/* Search */}
+                <div className="p-2 border-b border-gray-100">
+                  <div className="flex items-center gap-2 px-2 py-1.5 bg-gray-50 rounded-lg">
+                    <Search className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                    <input
+                      autoFocus
+                      type="text"
+                      value={repoSearchQuery}
+                      onChange={e => setRepoSearchQuery(e.target.value)}
+                      placeholder="Search repositories…"
+                      className="flex-1 bg-transparent text-sm outline-none text-gray-700 placeholder-gray-400"
+                    />
+                  </div>
+                </div>
+
+                {/* List */}
+                <div className="max-h-52 overflow-y-auto">
+                  {reposLoading ? (
+                    <div className="flex items-center justify-center gap-2 py-6 text-sm text-gray-500">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Loading repositories…
+                    </div>
+                  ) : filteredRepos.length === 0 ? (
+                    <div className="py-6 text-center text-sm text-gray-400">
+                      {availableRepos.length === 0
+                        ? 'No repos loaded. Click "Load repos" first.'
+                        : repos.length === availableRepos.length
+                          ? 'All available repositories have been added.'
+                          : 'No repositories match your search.'}
+                    </div>
+                  ) : (
+                    filteredRepos.map(name => (
+                      <button
+                        key={name}
+                        type="button"
+                        onClick={() => selectRepo(name)}
+                        className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition"
+                      >
+                        {name}
+                      </button>
+                    ))
+                  )}
+                </div>
+
+                {/* Manual entry fallback */}
+                {!reposLoading && repoSearchQuery && !availableRepos.includes(repoSearchQuery) && (
+                  <div className="border-t border-gray-100 p-2">
+                    <button
+                      type="button"
+                      onClick={() => selectRepo(repoSearchQuery)}
+                      className="w-full text-left px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition"
+                    >
+                      <span className="text-gray-400">Use &quot;</span>
+                      <span className="font-medium text-gray-800">{repoSearchQuery}</span>
+                      <span className="text-gray-400">&quot; as-is</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
+          {/* Selected repos */}
           {repos.length === 0 ? (
             <div className="text-center py-6 border-2 border-dashed border-gray-200 rounded-xl">
               <GitBranch className="w-8 h-8 text-gray-300 mx-auto mb-2" />

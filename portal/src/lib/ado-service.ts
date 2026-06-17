@@ -637,6 +637,22 @@ export class ADOService {
     }
   }
 
+  async listAllRepositories(organization: string, project: string): Promise<any[]> {
+    const url = `https://dev.azure.com/${organization}/${project}/_apis/git/repositories?api-version=7.0`;
+
+    try {
+      const response = await axios.get(url, {
+        headers: { Authorization: this.authHeader },
+      });
+
+      const repos = response.data.value || [];
+      return repos;
+    } catch (error: any) {
+      logWarn(`Error listing repositories: ${error.message}`);
+      return [];
+    }
+  }
+
   async listAllTeams(organization: string, project: string): Promise<any[]> {
     const url = `https://dev.azure.com/${organization}/_apis/projects/${project}/teams?api-version=7.0`;
 
