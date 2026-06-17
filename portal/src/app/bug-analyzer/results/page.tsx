@@ -754,8 +754,8 @@ export default function ResultsPage() {
                              {bug.linked_prs.map((pr, idx) => {
                                const rawTitle = pr.title || 'Untitled PR';
                                const shortTitle = rawTitle
-                                 .replace(/\s*##.*$/s, '')
-                                 .replace(/\s*\n.*$/s, '')
+                                  .replace(/\s*##.*$/, '')
+                                  .replace(/\s*\n.*$/, '')
                                  .trim()
                                  .substring(0, 80);
                                const displayTitle = shortTitle + (rawTitle.trim().length > 80 || rawTitle.includes('##') ? '…' : '');
