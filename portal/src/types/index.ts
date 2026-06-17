@@ -77,6 +77,8 @@ export interface Change {
   targetServerItem: string;
 }
 
+export type AnalysisMethod = 'copilot' | 'rule-based';
+
 export interface BugAnalysisResult {
   id: number;
   title: string;
@@ -116,6 +118,12 @@ export interface BugAnalysisResult {
     latestChange?: string;
     notes?: string;
   };
+  /** How this result was produced */
+  analysisMethod?: AnalysisMethod;
+  /** True when this result was served from the persistent cache (not freshly analysed) */
+  fromCache?: boolean;
+  /** ISO timestamp of when the analysis was last run */
+  analyzedAt?: string;
 }
 
 export interface BugDataResult {

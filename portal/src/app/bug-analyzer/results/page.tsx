@@ -5,13 +5,13 @@ import { useRouter } from 'next/navigation';
 import { BugAnalysisResult, AnalysisSummary, RCAReport } from '@/types';
 import { logError } from '@/lib/logger';
 import { AppHeader } from '@/components/AppHeader';
-import { 
-  Bug, 
-  Home, 
-  Download, 
-  TrendingUp, 
-  AlertTriangle, 
-  CheckCircle2, 
+import {
+  Bug,
+  Home,
+  Download,
+  TrendingUp,
+  AlertTriangle,
+  CheckCircle2,
   HelpCircle,
   ChevronDown,
   ChevronUp,
@@ -21,10 +21,70 @@ import {
   Info,
   FileText,
   AlertCircle,
-  Loader2
+  Loader2,
+  RefreshCw,
+  Cpu,
+  GitBranch,
+  Archive,
+  ArrowLeft,
+  ExternalLink,
 } from 'lucide-react';
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts';
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+} from 'recharts';
 import * as XLSX from 'xlsx';
+
+// ── Analysis method badge ────────────────────────────────────────────────────
+function AnalysisMethodBadge({ method, fromCache }: { method?: string; fromCache?: boolean }) {
+  if (!method) return null;
+
+  const config = {
+    copilot: {
+      label: 'Copilot AI',
+      icon: <Cpu className="w-3 h-3" />,
+      className: 'bg-purple-100 text-purple-800 border border-purple-200',
+    },
+    'rule-based': {
+      label: 'Rule-based',
+      icon: <GitBranch className="w-3 h-3" />,
+      className: 'bg-blue-100 text-blue-800 border border-blue-200',
+    },
+  }[method] ?? {
+    label: method,
+    icon: null,
+    className: 'bg-gray-100 text-gray-600 border border-gray-200',
+  };
+
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span
+        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${config.className}`}
+        title={`Analysed using: ${config.label}`}
+      >
+        {config.icon}
+        {config.label}
+      </span>
+      {fromCache && (
+        <span
+          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500 border border-gray-200"
+          title="Loaded from persistent cache"
+        >
+          <Archive className="w-3 h-3" />
+          Cached
+        </span>
+      )}
+    </span>
+  );
+}
 
 export default function ResultsPage() {
   const router = useRouter();
@@ -34,6 +94,16 @@ export default function ResultsPage() {
   const [filterClassification, setFilterClassification] = useState<string>('ALL');
   const [rcaReports, setRcaReports] = useState<Record<number, RCAReport>>({});
   const [generatingRCA, setGeneratingRCA] = useState<number | null>(null);
+  const [reanalyzingBug, setReanalyzingBug] = useState<number | null>(null);
+
+  // Stored query context needed for re-analysis
+  const [queryUrl, setQueryUrl] = useState('');
+  const [sprintStart, setSprintStart] = useState('');
+  const [sprintEnd, setSprintEnd] = useState('');
+
+  const handleBack = () => {
+    router.push('/bug-analyzer');
+  };
 
   const handleNewAnalysis = () => {
     sessionStorage.removeItem('analysisResults');
@@ -50,7 +120,11 @@ export default function ResultsPage() {
     const parsedResults: BugAnalysisResult[] = JSON.parse(storedResults);
     setResults(parsedResults);
 
-    // Calculate summary
+    // Restore query context for re-analysis
+    setQueryUrl(sessionStorage.getItem('analysisQueryUrl') || '');
+    setSprintStart(sessionStorage.getItem('analysisSprintStart') || '');
+    setSprintEnd(sessionStorage.getItem('analysisSprintEnd') || '');
+
     const total = parsedResults.length;
     const progressions = parsedResults.filter((r) => r.classification === 'PROGRESSION').length;
     const regressions = parsedResults.filter((r) => r.classification === 'REGRESSION').length;
@@ -73,6 +147,8 @@ export default function ResultsPage() {
         Title: r.title,
         Classification: r.classification,
         Confidence: r.confidence,
+        'Analysis Method': r.analysisMethod || 'N/A',
+        'Analysed At': r.analyzedAt ? new Date(r.analyzedAt).toLocaleString() : 'N/A',
         'Issue Type': r.issue_type?.type || 'N/A',
         'Type Confidence': r.issue_type?.confidence || 'N/A',
         'Type Indicators': r.issue_type?.indicators.join(', ') || 'N/A',
@@ -96,7 +172,6 @@ export default function ResultsPage() {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Bug Analysis');
 
-    // Add summary sheet
     if (summary) {
       const summaryData = [
         ['Bug Analysis Summary', ''],
@@ -109,7 +184,6 @@ export default function ResultsPage() {
         ['Progression Rate', `${summary.progressionRate.toFixed(1)}%`],
         ['Regression Rate', `${summary.regressionRate.toFixed(1)}%`],
       ];
-
       const summaryWorksheet = XLSX.utils.aoa_to_sheet(summaryData);
       XLSX.utils.book_append_sheet(workbook, summaryWorksheet, 'Summary');
     }
@@ -119,14 +193,10 @@ export default function ResultsPage() {
 
   const getClassificationColor = (classification: string) => {
     switch (classification) {
-      case 'PROGRESSION':
-        return 'bg-red-100 text-red-800 border-red-200';
-      case 'REGRESSION':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'UNCLEAR':
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'PROGRESSION': return 'bg-red-100 text-red-800 border-red-200';
+      case 'REGRESSION': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'UNCLEAR': return 'bg-gray-100 text-gray-800 border-gray-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
@@ -141,6 +211,9 @@ export default function ResultsPage() {
 
   const getGithubPat = () =>
     typeof window !== 'undefined' ? localStorage.getItem('github_pat_token') || '' : '';
+
+  const getAdoPat = () =>
+    typeof window !== 'undefined' ? localStorage.getItem('ado_pat_token') || '' : '';
 
   const generateRCAReport = async (bug: BugAnalysisResult) => {
     setGeneratingRCA(bug.id);
@@ -170,6 +243,72 @@ export default function ResultsPage() {
     }
   };
 
+  // ── Re-analyze a single bug ──────────────────────────────────────────────
+  const reanalyzeBug = async (bug: BugAnalysisResult) => {
+    const patToken = getAdoPat();
+    if (!patToken || !queryUrl) {
+      alert('PAT token or query URL not available. Please run a new analysis from the main page.');
+      return;
+    }
+
+    setReanalyzingBug(bug.id);
+    try {
+      const githubPat = getGithubPat();
+      const response = await fetch('/api/analyze/reanalyze', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(githubPat ? { 'x-github-pat': githubPat } : {}),
+        },
+        body: JSON.stringify({
+          queryUrl,
+          patToken,
+          bugId: bug.id,
+          sprintStart,
+          sprintEnd,
+          useCopilot: true,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Re-analysis failed');
+      }
+
+      const data = await response.json();
+      const updated: BugAnalysisResult = data.result;
+
+      // Update local state
+      setResults((prev) => {
+        const next = prev.map((r) => (r.id === updated.id ? updated : r));
+        sessionStorage.setItem('analysisResults', JSON.stringify(next));
+        return next;
+      });
+
+      // Recalculate summary
+      setResults((prev) => {
+        const total = prev.length;
+        const progressions = prev.filter((r) => r.classification === 'PROGRESSION').length;
+        const regressions = prev.filter((r) => r.classification === 'REGRESSION').length;
+        const unclear = prev.filter((r) => r.classification === 'UNCLEAR').length;
+        setSummary({
+          total,
+          progressions,
+          regressions,
+          unclear,
+          progressionRate: total > 0 ? (progressions / total) * 100 : 0,
+          regressionRate: total > 0 ? (regressions / total) * 100 : 0,
+        });
+        return prev;
+      });
+    } catch (error: any) {
+      logError('Error re-analyzing bug:', error);
+      alert(`Re-analysis failed: ${error.message}`);
+    } finally {
+      setReanalyzingBug(null);
+    }
+  };
+
   const downloadRCAMarkdown = (bugId: number) => {
     const rca = rcaReports[bugId];
     if (!rca) return;
@@ -179,24 +318,18 @@ export default function ResultsPage() {
     markdown += `**Bug Title:** ${rca.bugTitle}\n`;
     markdown += `**Generated:** ${new Date(rca.generatedAt).toLocaleString()}\n\n`;
     markdown += `---\n\n`;
-
     markdown += `## Initial Analysis (Before Investigation)\n\n`;
     markdown += `### Observation\n${rca.initialAnalysis.observation}\n\n`;
     markdown += `### Suspected Cause\n${rca.initialAnalysis.suspectedCause}\n\n`;
     markdown += `### Next Steps\n`;
-    rca.initialAnalysis.nextSteps.forEach((step, idx) => {
-      markdown += `${idx + 1}. ${step}\n`;
-    });
+    rca.initialAnalysis.nextSteps.forEach((step, idx) => { markdown += `${idx + 1}. ${step}\n`; });
     markdown += `\n---\n\n`;
-
     markdown += `## RCA (After Fix is Finalized)\n\n`;
     markdown += `### Issue Type\n✓ ${rca.finalization.issueType}\n\n`;
     markdown += `### Scope of Issue\n${rca.finalization.scopeOfIssue}\n\n`;
     markdown += `### Fix Applied\n${rca.finalization.fixApplied}\n\n`;
     markdown += `### Changed Area\n`;
-    rca.finalization.changedArea.forEach(area => {
-      markdown += `- ${area}\n`;
-    });
+    rca.finalization.changedArea.forEach((area) => { markdown += `- ${area}\n`; });
     markdown += `\n`;
     markdown += `### Impact on Other Components\n`;
     markdown += `${rca.finalization.impactOnOtherComponents ? '✓ Yes' : '✗ No'}\n\n`;
@@ -238,19 +371,15 @@ export default function ResultsPage() {
   ].filter((entry) => entry.value > 0);
 
   const confidenceData = [
-    {
-      name: 'High',
-      count: results.filter((r) => r.confidence === 'HIGH').length,
-    },
-    {
-      name: 'Medium',
-      count: results.filter((r) => r.confidence === 'MEDIUM').length,
-    },
-    {
-      name: 'Low',
-      count: results.filter((r) => r.confidence === 'LOW').length,
-    },
+    { name: 'High', count: results.filter((r) => r.confidence === 'HIGH').length },
+    { name: 'Medium', count: results.filter((r) => r.confidence === 'MEDIUM').length },
+    { name: 'Low', count: results.filter((r) => r.confidence === 'LOW').length },
   ];
+
+  // Method breakdown for info bar
+  const cachedCount = results.filter((r) => r.fromCache).length;
+  const copilotCount = results.filter((r) => r.analysisMethod === 'copilot').length;
+  const ruleCount = results.filter((r) => r.analysisMethod === 'rule-based').length;
 
   return (
     <div className="min-h-screen bg-[#f5f5f5] text-[#1a1a1a]">
@@ -259,6 +388,13 @@ export default function ResultsPage() {
         subtitle={`${summary.total} bugs analyzed`}
         actions={
           <>
+            <button
+              onClick={handleBack}
+              className="inline-flex items-center gap-2 rounded-full border border-white/30 px-4 py-2 text-sm font-medium text-white hover:bg-white/10 transition"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back
+            </button>
             <button
               onClick={handleNewAnalysis}
               className="inline-flex items-center gap-2 rounded-full border border-white/30 px-4 py-2 text-sm font-medium text-white hover:bg-white/10 transition"
@@ -278,6 +414,32 @@ export default function ResultsPage() {
       />
 
       <main className="container mx-auto px-4 py-8">
+
+        {/* Analysis method info bar */}
+        {(cachedCount > 0 || copilotCount > 0 || ruleCount > 0) && (
+          <div className="flex flex-wrap items-center gap-3 mb-6 px-4 py-3 bg-white border border-gray-200 rounded-2xl shadow-sm text-sm text-gray-600">
+            <span className="font-medium text-gray-700">Analysis breakdown:</span>
+            {cachedCount > 0 && (
+              <span className="inline-flex items-center gap-1.5">
+                <Archive className="w-3.5 h-3.5 text-gray-400" />
+                <span className="font-semibold text-gray-800">{cachedCount}</span> from cache
+              </span>
+            )}
+            {copilotCount > 0 && (
+              <span className="inline-flex items-center gap-1.5">
+                <Cpu className="w-3.5 h-3.5 text-purple-500" />
+                <span className="font-semibold text-gray-800">{copilotCount}</span> via Copilot AI
+              </span>
+            )}
+            {ruleCount > 0 && (
+              <span className="inline-flex items-center gap-1.5">
+                <GitBranch className="w-3.5 h-3.5 text-blue-500" />
+                <span className="font-semibold text-gray-800">{ruleCount}</span> rule-based
+              </span>
+            )}
+          </div>
+        )}
+
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
@@ -374,13 +536,7 @@ export default function ResultsPage() {
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
-                  {filter === 'ALL'
-                    ? 'All'
-                    : filter === 'PROGRESSION'
-                    ? 'Progression'
-                    : filter === 'REGRESSION'
-                    ? 'Regression'
-                    : 'Unclear'}
+                  {filter === 'ALL' ? 'All' : filter === 'PROGRESSION' ? 'Progression' : filter === 'REGRESSION' ? 'Regression' : 'Unclear'}
                 </button>
               ))}
             </div>
@@ -400,21 +556,21 @@ export default function ResultsPage() {
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
                       <span className="text-sm font-mono text-gray-500">#{bug.id}</span>
                       <span
-                        className={`px-3 py-1 rounded-full text-xs font-semibold border ${getClassificationColor(
-                          bug.classification
-                        )}`}
+                        className={`px-3 py-1 rounded-full text-xs font-semibold border ${getClassificationColor(bug.classification)}`}
                       >
                         {bug.classification.replace('_', ' ')}
                       </span>
                       <span className={`px-2 py-1 rounded text-xs font-semibold ${getConfidenceBadge(bug.confidence)}`}>
                         {bug.confidence}
                       </span>
+                      {/* Analysis method badge */}
+                      <AnalysisMethodBadge method={bug.analysisMethod} fromCache={bug.fromCache} />
                     </div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">{bug.title}</h3>
-                    <div className="flex items-center gap-4 text-sm text-gray-600">
+                    <div className="flex items-center gap-4 text-sm text-gray-600 flex-wrap">
                       <span className="flex items-center gap-1">
                         <User className="w-4 h-4" />
                         {bug.assigned_to}
@@ -427,21 +583,55 @@ export default function ResultsPage() {
                         <Calendar className="w-4 h-4" />
                         {new Date(bug.created_date).toLocaleDateString()}
                       </span>
+                      {bug.analyzedAt && (
+                        <span className="flex items-center gap-1 text-gray-400 text-xs">
+                          <CheckCircle2 className="w-3 h-3" />
+                          Analysed {new Date(bug.analyzedAt).toLocaleDateString()}
+                        </span>
+                      )}
                     </div>
                   </div>
-                  <button className="p-2 hover:bg-gray-100 rounded-full transition">
-                    {expandedBug === bug.id ? (
-                      <ChevronUp className="w-5 h-5 text-gray-600" />
-                    ) : (
-                      <ChevronDown className="w-5 h-5 text-gray-600" />
-                    )}
-                  </button>
+
+                  <div className="flex items-center gap-2 ml-4">
+                    {/* Re-analyze button */}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); reanalyzeBug(bug); }}
+                      disabled={reanalyzingBug === bug.id}
+                      title="Re-analyze this bug"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border border-gray-300 bg-white text-gray-600 hover:bg-gray-50 hover:border-[#e60000] hover:text-[#e60000] disabled:opacity-50 disabled:cursor-not-allowed transition"
+                    >
+                      {reanalyzingBug === bug.id ? (
+                        <><Loader2 className="w-3 h-3 animate-spin" />Re-analyzing…</>
+                      ) : (
+                        <><RefreshCw className="w-3 h-3" />Re-analyze</>
+                      )}
+                    </button>
+
+                    <button className="p-2 hover:bg-gray-100 rounded-full transition">
+                      {expandedBug === bug.id ? (
+                        <ChevronUp className="w-5 h-5 text-gray-600" />
+                      ) : (
+                        <ChevronDown className="w-5 h-5 text-gray-600" />
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
 
               {expandedBug === bug.id && (
                 <div className="px-6 pb-6 border-t border-gray-200">
                   <div className="mt-4 space-y-4">
+
+                    {/* Analysis method detail */}
+                    {bug.analysisMethod && (
+                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                        <AnalysisMethodBadge method={bug.analysisMethod} />
+                        {bug.analyzedAt && (
+                          <span>· Last analysed {new Date(bug.analyzedAt).toLocaleString()}</span>
+                        )}
+                      </div>
+                    )}
+
                     <div className="bg-[#fff1f2] rounded-xl p-4 border border-[#fecdd3]">
                       <div className="flex items-start gap-2">
                         <Info className="w-5 h-5 text-[#e60000] mt-0.5 flex-shrink-0" />
@@ -546,14 +736,81 @@ export default function ResultsPage() {
                       </div>
                     )}
 
-                    {bug.pr_titles && (
-                      <div>
-                        <h4 className="font-semibold text-gray-900 mb-2">Linked Pull Requests</h4>
-                        <div className="bg-gray-50 rounded-xl p-3">
-                          <p className="text-sm text-gray-700">{bug.pr_titles}</p>
-                        </div>
-                      </div>
-                    )}
+                     {bug.linked_prs && bug.linked_prs.length > 0 && (() => {
+                       // Parse org + project from the stored ADO query URL
+                       // e.g. https://dev.azure.com/{org}/{project}/_queries/...
+                       const adoMatch = queryUrl.match(/https:\/\/dev\.azure\.com\/([^/]+)\/([^/]+)/);
+                       const adoOrg = adoMatch?.[1] ?? '';
+                       const adoProject = adoMatch?.[2] ?? '';
+
+                       return (
+                         <div>
+                           <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                             <GitPullRequest className="w-4 h-4 text-gray-500" />
+                             Linked Pull Requests
+                             <span className="text-xs font-normal text-gray-400">({bug.linked_prs.length})</span>
+                           </h4>
+                           <ul className="space-y-1.5">
+                             {bug.linked_prs.map((pr, idx) => {
+                               const rawTitle = pr.title || 'Untitled PR';
+                               const shortTitle = rawTitle
+                                 .replace(/\s*##.*$/s, '')
+                                 .replace(/\s*\n.*$/s, '')
+                                 .trim()
+                                 .substring(0, 80);
+                               const displayTitle = shortTitle + (rawTitle.trim().length > 80 || rawTitle.includes('##') ? '…' : '');
+                               const prDate = pr.creationDate
+                                 ? new Date(pr.creationDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+                                 : null;
+
+                               // Build ADO PR URL for real PRs (numeric id or non-commit string)
+                               const isCommit = typeof pr.id === 'string' && pr.id.startsWith('commit-');
+                               const prUrl =
+                                 !isCommit && adoOrg && adoProject && pr.repositoryName
+                                   ? `https://dev.azure.com/${adoOrg}/${encodeURIComponent(adoProject)}/_git/${encodeURIComponent(pr.repositoryName)}/pullrequest/${pr.id}`
+                                   : null;
+
+                               const rowContent = (
+                                 <>
+                                   <GitPullRequest className="w-3.5 h-3.5 text-purple-500 mt-0.5 flex-shrink-0" />
+                                   <div className="min-w-0 flex-1">
+                                     <p className="text-sm font-medium text-gray-800 truncate" title={rawTitle}>
+                                       {displayTitle}
+                                     </p>
+                                     {prDate && (
+                                       <p className="text-xs text-gray-400 mt-0.5">{prDate}</p>
+                                     )}
+                                   </div>
+                                   {prUrl && (
+                                     <ExternalLink className="w-3.5 h-3.5 text-gray-400 flex-shrink-0 mt-0.5" />
+                                   )}
+                                 </>
+                               );
+
+                               return prUrl ? (
+                                 <li key={`${pr.id}-${idx}`}>
+                                   <a
+                                     href={prUrl}
+                                     target="_blank"
+                                     rel="noopener noreferrer"
+                                     className="flex items-start gap-2 px-3 py-2 bg-gray-50 rounded-lg border border-gray-100 hover:bg-purple-50 hover:border-purple-200 transition"
+                                   >
+                                     {rowContent}
+                                   </a>
+                                 </li>
+                               ) : (
+                                 <li
+                                   key={`${pr.id}-${idx}`}
+                                   className="flex items-start gap-2 px-3 py-2 bg-gray-50 rounded-lg border border-gray-100"
+                                 >
+                                   {rowContent}
+                                 </li>
+                               );
+                             })}
+                           </ul>
+                         </div>
+                       );
+                     })()}
 
                     {/* RCA Section */}
                     <div className="border-t border-gray-200 pt-4">
@@ -569,15 +826,9 @@ export default function ResultsPage() {
                             className="px-4 py-2 bg-[#e60000] text-white rounded-full hover:bg-[#c30000] transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm"
                           >
                             {generatingRCA === bug.id ? (
-                              <>
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                                Generating...
-                              </>
+                              <><Loader2 className="w-4 h-4 animate-spin" />Generating...</>
                             ) : (
-                              <>
-                                <FileText className="w-4 h-4" />
-                                Generate RCA
-                              </>
+                              <><FileText className="w-4 h-4" />Generate RCA</>
                             )}
                           </button>
                         )}
@@ -586,18 +837,16 @@ export default function ResultsPage() {
                       {!rcaReports[bug.id] && (
                         <div className="bg-[#fff7ed] border border-[#fed7aa] rounded-xl p-3">
                           <p className="text-sm text-[#9a3412]">
-                            GitHub Copilot AI will generate this RCA. Make sure your GitHub PAT is configured in Settings, or set the <code className="font-mono bg-[#ffedd5] px-1 rounded">GITHUB_TOKEN</code> environment variable on the server.
+                            GitHub Copilot AI will generate this RCA. Make sure your GitHub PAT is configured in Settings, or set the{' '}
+                            <code className="font-mono bg-[#ffedd5] px-1 rounded">GITHUB_TOKEN</code> environment variable on the server.
                           </p>
                         </div>
                       )}
 
                       {rcaReports[bug.id] && (
                         <div className="space-y-4">
-                          {/* Initial Analysis */}
                           <div className="bg-white rounded-xl p-4 border border-gray-200">
-                            <h5 className="font-semibold text-blue-900 mb-3">
-                              Initial Analysis (Before Investigation)
-                            </h5>
+                            <h5 className="font-semibold text-blue-900 mb-3">Initial Analysis (Before Investigation)</h5>
                             <div className="space-y-3">
                               <div>
                                 <p className="text-xs font-semibold text-gray-600 mb-1">Observation</p>
@@ -618,11 +867,8 @@ export default function ResultsPage() {
                             </div>
                           </div>
 
-                          {/* RCA Finalization */}
                           <div className="bg-white rounded-xl p-4 border border-gray-200">
-                            <h5 className="font-semibold text-gray-900 mb-3">
-                              RCA (After Fix is Finalized)
-                            </h5>
+                            <h5 className="font-semibold text-gray-900 mb-3">RCA (After Fix is Finalized)</h5>
                             <div className="space-y-3">
                               <div className="grid grid-cols-2 gap-3">
                                 <div>
@@ -661,7 +907,6 @@ export default function ResultsPage() {
                             </div>
                           </div>
 
-                          {/* Download Button */}
                           <div className="flex justify-end">
                             <button
                               onClick={() => downloadRCAMarkdown(bug.id)}
