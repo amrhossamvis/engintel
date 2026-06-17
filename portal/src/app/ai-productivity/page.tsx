@@ -291,7 +291,6 @@ export default function AIProductivityPage() {
         title="AI Productivity Index"
         subtitle="Measure and prove AI ROI by correlating Copilot usage with engineering outcomes"
         icon={<Brain className="w-5 h-5 text-white" />}
-        gradient="bg-gradient-to-r from-purple-600 to-violet-700"
         actions={
           <div className="flex items-center gap-3">
             <select value={sprintCount} onChange={e => setSprintCount(Number(e.target.value))}

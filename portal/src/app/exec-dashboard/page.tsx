@@ -229,7 +229,6 @@ export default function ExecDashboardPage() {
         title="Executive Dashboard"
         subtitle="Engineering health, velocity, and quality at a glance"
         icon={<LayoutDashboard className="w-5 h-5 text-white" />}
-        gradient="bg-gradient-to-r from-slate-700 to-gray-900"
         actions={
           <div className="flex items-center gap-3">
             <select

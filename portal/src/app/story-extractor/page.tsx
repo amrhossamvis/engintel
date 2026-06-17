@@ -317,7 +317,6 @@ export default function StoryExtractorPage() {
         title="Story Extractor"
         subtitle="Claude Sonnet 4.5 · GitHub Copilot API"
         icon={<Zap className="w-5 h-5 text-white" />}
-        gradient="bg-gradient-to-r from-red-600 to-rose-700"
         actions={
           <div className="flex gap-2">
             <button

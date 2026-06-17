@@ -18,6 +18,7 @@ import {
   Zap,
   Layers,
 } from 'lucide-react';
+import { APP_THEMES } from '@/lib/app-config';
 
 type Initiative = {
   id: string;
@@ -27,14 +28,10 @@ type Initiative = {
   icon: React.ReactNode;
   href: string;
   status: 'active' | 'coming-soon';
-  priority: 'critical' | 'high' | 'medium';
   category: string;
-  gradient: string;
-  iconBg: string;
 };
 
 const initiatives: Initiative[] = [
-  // Sorted by feasibility: active first, then HIGH feasibility (fastest to build with existing tools), then MEDIUM
   {
     id: 'story-extractor',
     title: 'Story Extractor',
@@ -43,10 +40,7 @@ const initiatives: Initiative[] = [
     icon: <Layers className="w-6 h-6" />,
     href: '/story-extractor',
     status: 'active',
-    priority: 'critical',
     category: 'Agile & Backlog',
-    gradient: 'from-red-600 to-rose-700',
-    iconBg: 'bg-red-100 text-red-700',
   },
   {
     id: 'bug-analyzer',
@@ -56,10 +50,7 @@ const initiatives: Initiative[] = [
     icon: <Bug className="w-6 h-6" />,
     href: '/bug-analyzer',
     status: 'active',
-    priority: 'critical',
     category: 'Quality & Testing',
-    gradient: 'from-red-500 to-rose-600',
-    iconBg: 'bg-red-100 text-red-600',
   },
   {
     id: 'exec-dashboard',
@@ -69,10 +60,7 @@ const initiatives: Initiative[] = [
     icon: <LayoutDashboard className="w-6 h-6" />,
     href: '/exec-dashboard',
     status: 'active',
-    priority: 'critical',
     category: 'Leadership Intelligence',
-    gradient: 'from-slate-600 to-gray-800',
-    iconBg: 'bg-slate-100 text-slate-600',
   },
   {
     id: 'ai-productivity',
@@ -82,10 +70,7 @@ const initiatives: Initiative[] = [
     icon: <Brain className="w-6 h-6" />,
     href: '/ai-productivity',
     status: 'active',
-    priority: 'critical',
     category: 'AI Value Measurement',
-    gradient: 'from-purple-500 to-violet-600',
-    iconBg: 'bg-purple-100 text-purple-600',
   },
   {
     id: 'delivery-intel',
@@ -95,10 +80,7 @@ const initiatives: Initiative[] = [
     icon: <BarChart3 className="w-6 h-6" />,
     href: '/delivery-intel',
     status: 'coming-soon',
-    priority: 'critical',
     category: 'Delivery Excellence',
-    gradient: 'from-blue-500 to-indigo-600',
-    iconBg: 'bg-blue-100 text-blue-600',
   },
   {
     id: 'pr-review',
@@ -108,10 +90,7 @@ const initiatives: Initiative[] = [
     icon: <GitPullRequest className="w-6 h-6" />,
     href: '/pr-review',
     status: 'coming-soon',
-    priority: 'high',
     category: 'Engineering Productivity',
-    gradient: 'from-cyan-500 to-sky-600',
-    iconBg: 'bg-cyan-100 text-cyan-600',
   },
   {
     id: 'quality-predictor',
@@ -121,10 +100,7 @@ const initiatives: Initiative[] = [
     icon: <TestTube2 className="w-6 h-6" />,
     href: '/quality-predictor',
     status: 'coming-soon',
-    priority: 'high',
     category: 'Quality & Testing',
-    gradient: 'from-amber-500 to-orange-600',
-    iconBg: 'bg-amber-100 text-amber-600',
   },
   {
     id: 'release-scorer',
@@ -134,10 +110,7 @@ const initiatives: Initiative[] = [
     icon: <Shield className="w-6 h-6" />,
     href: '/release-scorer',
     status: 'coming-soon',
-    priority: 'high',
     category: 'Delivery Excellence',
-    gradient: 'from-rose-500 to-pink-600',
-    iconBg: 'bg-rose-100 text-rose-600',
   },
   {
     id: 'dependency-radar',
@@ -147,10 +120,7 @@ const initiatives: Initiative[] = [
     icon: <Network className="w-6 h-6" />,
     href: '/dependency-radar',
     status: 'coming-soon',
-    priority: 'high',
     category: 'Delivery Excellence',
-    gradient: 'from-indigo-500 to-blue-700',
-    iconBg: 'bg-indigo-100 text-indigo-600',
   },
   {
     id: 'test-gap',
@@ -160,10 +130,7 @@ const initiatives: Initiative[] = [
     icon: <TestTube2 className="w-6 h-6" />,
     href: '/test-gap',
     status: 'coming-soon',
-    priority: 'medium',
     category: 'Quality & Testing',
-    gradient: 'from-lime-500 to-green-600',
-    iconBg: 'bg-lime-100 text-lime-600',
   },
   {
     id: 'knowledge-copilot',
@@ -173,10 +140,7 @@ const initiatives: Initiative[] = [
     icon: <BookOpen className="w-6 h-6" />,
     href: '/knowledge-copilot',
     status: 'coming-soon',
-    priority: 'medium',
     category: 'Knowledge Management',
-    gradient: 'from-emerald-500 to-teal-600',
-    iconBg: 'bg-emerald-100 text-emerald-600',
   },
   {
     id: 'onboarding',
@@ -186,25 +150,9 @@ const initiatives: Initiative[] = [
     icon: <GraduationCap className="w-6 h-6" />,
     href: '/onboarding',
     status: 'coming-soon',
-    priority: 'medium',
     category: 'Engineering Productivity',
-    gradient: 'from-fuchsia-500 to-purple-700',
-    iconBg: 'bg-fuchsia-100 text-fuchsia-600',
   },
 ];
-
-function PriorityBadge({ priority }: { priority: string }) {
-  const styles = {
-    critical: 'bg-red-100 text-red-700 border-red-200',
-    high: 'bg-orange-100 text-orange-700 border-orange-200',
-    medium: 'bg-blue-100 text-blue-700 border-blue-200',
-  };
-  return (
-    <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider border ${styles[priority as keyof typeof styles]}`}>
-      {priority}
-    </span>
-  );
-}
 
 function StatusBadge({ status }: { status: string }) {
   if (status === 'active') {
@@ -288,30 +236,28 @@ export default function HubPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {initiatives.map((initiative) => {
             const isActive = initiative.status === 'active';
+            const theme = APP_THEMES[initiative.href];
 
             return (
               <Link
                 key={initiative.id}
                 href={initiative.href}
-                className="group relative bg-white rounded-2xl border border-gray-200 overflow-hidden transition-all duration-300 hover:border-red-200 hover:shadow-xl hover:shadow-red-500/5 cursor-pointer"
+                className="group relative bg-white rounded-2xl border border-gray-200 overflow-hidden transition-all duration-300 hover:border-gray-300 hover:shadow-xl hover:-translate-y-0.5 cursor-pointer"
               >
-                {/* Top gradient accent */}
-                <div className={`h-1 bg-gradient-to-r ${initiative.gradient}`} />
+                {/* Top gradient accent — sourced from APP_THEMES */}
+                <div className={`h-1 bg-gradient-to-r ${theme?.gradient}`} />
 
                 <div className="p-6">
                   {/* Header row */}
                   <div className="flex items-start justify-between mb-4">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${initiative.iconBg}`}>
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${theme?.iconBg}`}>
                       {initiative.icon}
                     </div>
-                    <div className="flex items-center gap-2">
-                      <PriorityBadge priority={initiative.priority} />
-                      <StatusBadge status={initiative.status} />
-                    </div>
+                    <StatusBadge status={initiative.status} />
                   </div>
 
                   {/* Content */}
-                  <h3 className="text-lg font-semibold mb-2 text-gray-900 group-hover:text-red-600 transition-colors">
+                  <h3 className="text-lg font-semibold mb-2 text-gray-900 group-hover:text-gray-700 transition-colors">
                     {initiative.shortTitle}
                   </h3>
                   <p className="text-sm leading-relaxed mb-4 text-gray-600">
@@ -323,8 +269,8 @@ export default function HubPage() {
                     <span className="text-xs font-medium text-gray-500">
                       {initiative.category}
                     </span>
-                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 group-hover:gap-2 transition-all">
-                      {isActive ? 'Launch' : 'View'} <ArrowRight className="w-3 h-3" />
+                    <span className={`inline-flex items-center gap-1 text-xs font-semibold group-hover:gap-2 transition-all bg-gradient-to-r ${theme?.gradient} bg-clip-text text-transparent`}>
+                      {isActive ? 'Launch' : 'View'} <ArrowRight className="w-3 h-3 text-gray-400 group-hover:text-gray-600 transition-colors" />
                     </span>
                   </div>
                 </div>

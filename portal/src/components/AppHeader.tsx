@@ -1,13 +1,15 @@
 import { ReactNode } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { ArrowLeft, Zap } from 'lucide-react';
+import { resolveAppTheme } from '@/lib/app-config';
 
 type AppHeaderProps = {
   title: string;
   subtitle?: string;
   actions?: ReactNode;
   icon?: ReactNode;
-  /** Tailwind gradient or bg class, e.g. "bg-[#e60000]" or "bg-gradient-to-r from-blue-500 to-indigo-600" */
+  /** Optional override — leave unset to auto-resolve from the current route */
   gradient?: string;
 };
 
@@ -16,10 +18,14 @@ export const AppHeader = ({
   subtitle,
   actions,
   icon,
-  gradient = 'bg-[#e60000]',
+  gradient,
 }: AppHeaderProps) => {
+  const pathname = usePathname();
+  // Resolve from shared app-config; gradient prop is an optional manual override
+  const resolvedGradient = gradient ?? resolveAppTheme(pathname).headerGradient;
+
   return (
-    <header className={`${gradient} text-white sticky top-0 z-20 shadow-sm`}>
+    <header className={`${resolvedGradient} text-white sticky top-0 z-20 shadow-sm`}>
       <div className="container mx-auto px-6 py-8">
         <Link href="/" className="inline-flex items-center gap-1.5 text-white/70 hover:text-white text-xs font-medium mb-3 transition">
           <ArrowLeft className="w-3.5 h-3.5" /> Back to Hub
