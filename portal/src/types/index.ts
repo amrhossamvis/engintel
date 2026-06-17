@@ -228,6 +228,11 @@ export interface StoryParsedModuleCode {
   codeContent: string;
   totalFiles: number;
   totalChars: number;
+  /** When the module exceeds the single-batch limit, the content is split into
+   *  multiple batches. Each entry is a self-contained code string ≤ 400 K chars.
+   *  If the module fits in one batch this array has exactly one element. */
+  batches: string[];
+  totalBatches: number;
 }
 
 export type StoryAnalysisStatus =

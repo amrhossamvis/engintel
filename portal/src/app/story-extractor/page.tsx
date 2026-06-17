@@ -217,30 +217,67 @@ export default function StoryExtractorPage() {
     setModuleFiles(parseData.data.files);
     setTotalChars(parseData.data.totalChars);
 
+    const batches: string[] = parseData.data.batches ?? [parseData.data.codeContent];
+    const totalBatches: number = batches.length;
+
     setStatus('analyzing');
-    setStatusMessage(`Sending ${parseData.data.totalFiles} files to Claude Sonnet…`);
 
-    const analyzeRes = await fetch('/api/story-extractor/analyze', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(githubPat ? { 'x-github-pat': githubPat } : {}),
-      },
-      body: JSON.stringify({ moduleName: selectedModule, codeContent: parseData.data.codeContent }),
-    });
-    const analyzeData = await analyzeRes.json();
+    // ── Batch loop ────────────────────────────────────────────────────────────
+    let accumulatedStories: StoryUserStory[] = [];
+    let accumulatedEpicName = '';
 
-    if (!analyzeData.success || !analyzeData.record) {
-      setError(analyzeData.error || 'Analysis failed');
-      setStatus('error');
-      return;
+    for (let i = 0; i < totalBatches; i++) {
+      setStatusMessage(
+        totalBatches > 1
+          ? `Analyzing batch ${i + 1} of ${totalBatches} with Claude Sonnet…`
+          : `Sending ${parseData.data.totalFiles} files to Claude Sonnet…`
+      );
+
+      const analyzeRes = await fetch('/api/story-extractor/analyze', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(githubPat ? { 'x-github-pat': githubPat } : {}),
+        },
+        body: JSON.stringify({
+          moduleName: selectedModule,
+          codeContent: batches[i],
+          batchIndex: i,
+          totalBatches,
+          existingStories: accumulatedStories,
+          existingEpicName: accumulatedEpicName,
+        }),
+      });
+      const analyzeData = await analyzeRes.json();
+
+      if (!analyzeData.success) {
+        setError(analyzeData.error || `Analysis failed on batch ${i + 1}`);
+        setStatus('error');
+        return;
+      }
+
+      accumulatedStories = analyzeData.mergedStories ?? accumulatedStories;
+      accumulatedEpicName = analyzeData.epicName || accumulatedEpicName;
+
+      // On the final batch the server persists and returns the full record
+      if (analyzeData.isFinalBatch && analyzeData.record) {
+        setRecord(analyzeData.record);
+        setIsCached(false);
+        setStatus('complete');
+        setStatusMessage(
+          totalBatches > 1
+            ? `Analysis complete — ${accumulatedStories.length} stories from ${totalBatches} batches`
+            : 'Analysis complete'
+        );
+        setAnalyzedModules((prev) => new Set(Array.from(prev).concat(selectedModule)));
+        return;
+      }
     }
+    // ── End batch loop ────────────────────────────────────────────────────────
 
-    setRecord(analyzeData.record);
-    setIsCached(false);
+    // Fallback (should not normally reach here)
     setStatus('complete');
     setStatusMessage('Analysis complete');
-    setAnalyzedModules((prev) => new Set(Array.from(prev).concat(selectedModule)));
   }, [selectedModule]);
 
   const handleStoryUpdate = useCallback(async (updated: StoryUserStory) => {

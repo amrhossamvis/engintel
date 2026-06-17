@@ -1,7 +1,7 @@
 'use client';
 
 import { AppHeader } from '@/components/AppHeader';
-import { Zap, Cpu, Database, BookMarked, Code2, Layers, GitBranch, CheckSquare } from 'lucide-react';
+import { Zap, Cpu, Database, BookMarked, Code2, Layers, GitBranch, CheckSquare, SplitSquareHorizontal } from 'lucide-react';
 
 export default function StoryExtractorAboutPage() {
   return (
@@ -27,7 +27,9 @@ export default function StoryExtractorAboutPage() {
             the <strong className="text-gray-900">GitHub Copilot API</strong> — no separate API keys required,
             just a valid <code className="text-[#e60000] text-xs bg-red-50 px-1.5 py-0.5 rounded border border-red-100">gh auth login</code> session.
             Source files are fetched directly from the <strong className="text-gray-900">Azure DevOps Git API</strong> using
-            your configured PAT token and iOS source path.
+            your configured PAT token and iOS source path. Large modules that exceed the 400K-character
+            context limit are automatically split into batches and analyzed in sequence — ensuring{' '}
+            <strong className="text-gray-900">no code is ever dropped</strong>, regardless of module size.
           </p>
         </section>
 
@@ -47,14 +49,14 @@ export default function StoryExtractorAboutPage() {
               {
                 step: '02',
                 icon: <Code2 size={16} className="text-amber-500" />,
-                title: 'Source Code Parsing',
-                desc: 'All .swift, .m, and .h files within the selected module are fetched from ADO via the Git API and concatenated into a single context payload. Content is capped at 400,000 characters to stay within the model\'s context window.',
+                title: 'Source Code Parsing & Batching',
+                desc: 'All .swift, .m, and .h files within the selected module are fetched from ADO via the Git API and concatenated into file blocks. If the total content exceeds 400,000 characters, it is automatically split into multiple batches — each ≤ 400K chars — so that no code is ever dropped, regardless of module size.',
               },
               {
                 step: '03',
                 icon: <Cpu size={16} className="text-[#e60000]" />,
                 title: 'AI Analysis via GitHub Copilot',
-                desc: 'The source code is sent to Claude Sonnet 4.5 through the GitHub Copilot chat completions endpoint. The model is instructed to act as an expert Agile Product Owner and extract user-facing behaviors — ignoring boilerplate, memory management, and syntax details.',
+                desc: 'Each batch is sent sequentially to Claude Sonnet 4.5 through the GitHub Copilot chat completions endpoint. For multi-batch modules, the system prompt includes a batch-context note so the model knows it is analyzing a slice of a larger module. Results from all batches are merged and deduplicated by story title before being saved.',
               },
               {
                 step: '04',
@@ -79,6 +81,76 @@ export default function StoryExtractorAboutPage() {
                     <h3 className="text-sm font-semibold text-gray-800">{item.title}</h3>
                   </div>
                   <p className="text-xs text-gray-500 leading-relaxed">{item.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Large Module Batching */}
+        <section className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm">
+          <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <SplitSquareHorizontal size={18} className="text-[#e60000]" /> Large Module Batching
+          </h2>
+          <p className="text-sm text-gray-600 leading-relaxed mb-6">
+            Some feature modules contain hundreds of source files that far exceed a single model context window.
+            The batching system ensures every line of code is analyzed — nothing is silently truncated.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+            {[
+              {
+                label: 'Batch Size',
+                value: '400K chars',
+                desc: 'Maximum characters per Copilot request',
+                color: 'text-amber-600',
+                bg: 'bg-amber-50 border-amber-200',
+              },
+              {
+                label: 'Splitting Strategy',
+                value: 'File-boundary',
+                desc: 'Batches split on whole file blocks, never mid-file',
+                color: 'text-blue-600',
+                bg: 'bg-blue-50 border-blue-200',
+              },
+              {
+                label: 'Deduplication',
+                value: 'By title',
+                desc: 'Stories with identical titles across batches are merged',
+                color: 'text-emerald-600',
+                bg: 'bg-emerald-50 border-emerald-200',
+              },
+            ].map((card) => (
+              <div key={card.label} className={`rounded-xl border p-4 ${card.bg}`}>
+                <div className={`text-base font-bold font-mono mb-1 ${card.color}`}>{card.value}</div>
+                <div className="text-[11px] font-semibold text-gray-700 mb-1">{card.label}</div>
+                <div className="text-[10px] text-gray-500 leading-relaxed">{card.desc}</div>
+              </div>
+            ))}
+          </div>
+          <div className="space-y-3">
+            {[
+              {
+                title: 'Automatic detection',
+                desc: 'If a module\'s total source content fits within 400K characters it is sent as a single request — identical to the previous behaviour. Batching only activates when needed.',
+              },
+              {
+                title: 'Sequential processing with carry-forward',
+                desc: 'Batches are processed one at a time. After each batch, the accumulated stories and epicName are passed to the next request so the model has full context of what has already been extracted.',
+              },
+              {
+                title: 'Batch-aware system prompt',
+                desc: 'When batching is active, the system prompt includes a note: "This is batch N of M. Analyze ONLY the code in this batch." This prevents the model from hallucinating references to code it hasn\'t seen.',
+              },
+              {
+                title: 'Single save on completion',
+                desc: 'The merged result is only persisted to the local cache after the final batch completes, ensuring the stored record is always the full, deduplicated set of stories.',
+              },
+            ].map((item) => (
+              <div key={item.title} className="flex gap-3 p-3 bg-gray-50 border border-gray-200 rounded-xl">
+                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#e60000] shrink-0" />
+                <div>
+                  <span className="text-xs font-semibold text-gray-800">{item.title} — </span>
+                  <span className="text-xs text-gray-500">{item.desc}</span>
                 </div>
               </div>
             ))}

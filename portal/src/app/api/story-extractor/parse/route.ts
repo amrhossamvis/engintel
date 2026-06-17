@@ -15,7 +15,12 @@ const SKIP_EXTENSIONS = new Set([
 ]);
 
 const CODE_EXTENSIONS = new Set(['.swift', '.m', '.h']);
-const MAX_CONTENT_CHARS = 400_000;
+
+/**
+ * Maximum characters per batch sent to Copilot.
+ * Large modules are split into multiple batches so no code is lost.
+ */
+const BATCH_SIZE_CHARS = 400_000;
 
 const ADO_ORG = 'vfuk-digital';
 const ADO_PROJECT = 'Digital';
@@ -24,6 +29,41 @@ interface FileEntry {
   relativePath: string;
   absolutePath?: string; // only for local
   adoPath?: string;      // full ADO path for remote fetch
+}
+
+/** Split an array of file blocks into batches, each ≤ BATCH_SIZE_CHARS. */
+function buildBatches(fileBlocks: string[]): string[] {
+  const batches: string[] = [];
+  let current = '';
+
+  for (const block of fileBlocks) {
+    // If a single file block is larger than the batch size, split it across batches
+    if (block.length > BATCH_SIZE_CHARS) {
+      // Flush current batch first
+      if (current.trim()) {
+        batches.push(current.trim());
+        current = '';
+      }
+      // Chunk the oversized block
+      let offset = 0;
+      while (offset < block.length) {
+        batches.push(block.slice(offset, offset + BATCH_SIZE_CHARS));
+        offset += BATCH_SIZE_CHARS;
+      }
+      continue;
+    }
+
+    if (current.length + block.length > BATCH_SIZE_CHARS) {
+      // Flush current batch and start a new one
+      if (current.trim()) batches.push(current.trim());
+      current = block;
+    } else {
+      current += block;
+    }
+  }
+
+  if (current.trim()) batches.push(current.trim());
+  return batches;
 }
 
 function collectCodeFiles(dir: string, baseDir: string): FileEntry[] {
@@ -55,7 +95,18 @@ async function listAndFetchFromADO(
   repoName: string,
   moduleScopePath: string,
   patToken: string
-): Promise<{ success: boolean; data?: { files: string[]; codeContent: string; totalFiles: number; totalChars: number }; error?: string }> {
+): Promise<{
+  success: boolean;
+  data?: {
+    files: string[];
+    codeContent: string;
+    totalFiles: number;
+    totalChars: number;
+    batches: string[];
+    totalBatches: number;
+  };
+  error?: string;
+}> {
   const authHeader = `Basic ${Buffer.from(':' + patToken).toString('base64')}`;
 
   // Step 1: list all files in the module
@@ -100,14 +151,11 @@ async function listAndFetchFromADO(
     return { success: false, error: 'No Swift or Objective-C source files found in module.' };
   }
 
-  // Step 2: fetch file contents
-  const chunks: string[] = [];
+  // Step 2: fetch all file contents (no truncation — we batch instead)
+  const fileBlocks: string[] = [];
   let totalChars = 0;
-  let truncated = false;
 
   for (const entry of fileEntries) {
-    if (totalChars >= MAX_CONTENT_CHARS) { truncated = true; break; }
-
     const fileUrl =
       `https://dev.azure.com/${ADO_ORG}/${ADO_PROJECT}/_apis/git/repositories/${encodeURIComponent(repoName)}/items` +
       `?path=${encodeURIComponent(entry.adoPath!)}&api-version=7.0`;
@@ -119,31 +167,25 @@ async function listAndFetchFromADO(
       if (!fileRes.ok) continue;
       const content = await fileRes.text();
       const fileBlock = `\n\n// ===== FILE: ${entry.relativePath} =====\n${content}`;
-      if (totalChars + fileBlock.length > MAX_CONTENT_CHARS) {
-        const remaining = MAX_CONTENT_CHARS - totalChars;
-        chunks.push(fileBlock.slice(0, remaining));
-        totalChars = MAX_CONTENT_CHARS;
-        truncated = true;
-        break;
-      }
-      chunks.push(fileBlock);
+      fileBlocks.push(fileBlock);
       totalChars += fileBlock.length;
     } catch {
       // skip unreadable files
     }
   }
 
-  const truncationNote = truncated
-    ? `\n\n// [NOTE: Content truncated at ${MAX_CONTENT_CHARS.toLocaleString()} characters to fit context window]`
-    : '';
+  const batches = buildBatches(fileBlocks);
+  const fullContent = fileBlocks.join('').trim();
 
   return {
     success: true,
     data: {
       files: fileEntries.map((f) => f.relativePath),
-      codeContent: chunks.join('').trim() + truncationNote,
+      codeContent: fullContent,
       totalFiles: fileEntries.length,
       totalChars,
+      batches,
+      totalBatches: batches.length,
     },
   };
 }
@@ -179,39 +221,32 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const chunks: string[] = [];
+      // Read all files — no truncation, we batch instead
+      const fileBlocks: string[] = [];
       let totalChars = 0;
-      let truncated = false;
 
       for (const entry of fileEntries) {
-        if (totalChars >= MAX_CONTENT_CHARS) { truncated = true; break; }
         try {
           const content = fs.readFileSync(entry.absolutePath!, 'utf-8');
           const fileBlock = `\n\n// ===== FILE: ${entry.relativePath} =====\n${content}`;
-          if (totalChars + fileBlock.length > MAX_CONTENT_CHARS) {
-            const remaining = MAX_CONTENT_CHARS - totalChars;
-            chunks.push(fileBlock.slice(0, remaining));
-            totalChars = MAX_CONTENT_CHARS;
-            truncated = true;
-            break;
-          }
-          chunks.push(fileBlock);
+          fileBlocks.push(fileBlock);
           totalChars += fileBlock.length;
         } catch { /* skip unreadable files */ }
       }
 
-      const truncationNote = truncated
-        ? `\n\n// [NOTE: Content truncated at ${MAX_CONTENT_CHARS.toLocaleString()} characters to fit context window]`
-        : '';
+      const batches = buildBatches(fileBlocks);
+      const fullContent = fileBlocks.join('').trim();
 
       return NextResponse.json({
         success: true,
         source: 'local',
         data: {
           files: fileEntries.map((f) => f.relativePath),
-          codeContent: chunks.join('').trim() + truncationNote,
+          codeContent: fullContent,
           totalFiles: fileEntries.length,
           totalChars,
+          batches,
+          totalBatches: batches.length,
         },
       });
     }
