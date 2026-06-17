@@ -4,15 +4,18 @@
  * Stores analysis results per query (keyed by queryId) in a JSON file on disk.
  * Each entry is keyed by bug ID so we can look up, update, or skip individual bugs.
  *
- * File location: <project-root>/.bug-analysis-cache/<queryId>.json
+ * File location: portal/data/bug-analysis-cache/<queryId>.json
+ *
+ * The portal/data/ directory is excluded from git (.gitignore) so cache files
+ * survive deployments without being committed to the repository.
  */
 
 import fs from 'fs';
 import path from 'path';
 import { BugAnalysisResult } from '@/types';
 
-// Store files next to the portal directory so they survive hot-reloads
-const CACHE_DIR = path.join(process.cwd(), '.bug-analysis-cache');
+// Store inside portal/data/ — same location as story-persistence, excluded from git
+const CACHE_DIR = path.join(process.cwd(), 'data', 'bug-analysis-cache');
 
 function ensureCacheDir() {
   if (!fs.existsSync(CACHE_DIR)) {
