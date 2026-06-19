@@ -653,20 +653,73 @@ export class ADOService {
     }
   }
 
-  async listAllTeams(organization: string, project: string): Promise<any[]> {
-    const url = `https://dev.azure.com/${organization}/_apis/projects/${project}/teams?api-version=7.0`;
+  async listAreaPaths(
+    organization: string,
+    project: string,
+    rootPaths?: string[]
+  ): Promise<string[]> {
+    const url = `https://dev.azure.com/${organization}/${project}/_apis/wit/classificationnodes/areas?$depth=10&api-version=7.0`;
 
     try {
       const response = await axios.get(url, {
         headers: { Authorization: this.authHeader },
       });
 
-      const teams = response.data.value || [];
-      return teams;
+      const paths: string[] = [];
+
+      const extractPaths = (node: any, parentPath: string = '') => {
+        const nodePath = parentPath ? `${parentPath}\\${node.name}` : node.name;
+        if (parentPath) {
+          paths.push(nodePath);
+        }
+        if (node.children && node.children.length > 0) {
+          node.children.forEach((child: any) => extractPaths(child, nodePath));
+        }
+      };
+
+      extractPaths(response.data);
+
+      const allPaths = paths.sort((a, b) => a.localeCompare(b));
+
+      // If root paths are specified, only return paths that are equal to or
+      // descend from one of the given root paths (case-insensitive)
+      if (rootPaths && rootPaths.length > 0) {
+        const roots = rootPaths.map(r => r.toLowerCase());
+        return allPaths.filter(p => {
+          const lower = p.toLowerCase();
+          return roots.some(root => lower === root || lower.startsWith(root + '\\'));
+        });
+      }
+
+      return allPaths;
     } catch (error: any) {
-      logWarn(`Error listing teams: ${error.message}`);
+      logWarn(`Error listing area paths: ${error.message}`);
       return [];
     }
+  }
+
+  async listAllTeams(organization: string, project: string): Promise<any[]> {
+    const allTeams: any[] = [];
+    const top = 100;
+    let skip = 0;
+
+    while (true) {
+      const url = `https://dev.azure.com/${organization}/_apis/projects/${project}/teams?$top=${top}&$skip=${skip}&api-version=7.0`;
+      try {
+        const response = await axios.get(url, {
+          headers: { Authorization: this.authHeader },
+        });
+        const page = response.data.value || [];
+        allTeams.push(...page);
+        if (page.length < top) break;
+        skip += top;
+      } catch (error: any) {
+        logWarn(`Error listing teams: ${error.message}`);
+        break;
+      }
+    }
+
+    return allTeams;
   }
 
   async getTeamIterations(

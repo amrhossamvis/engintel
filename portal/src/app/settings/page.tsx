@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { AppHeader } from '@/components/AppHeader';
 import {
-  Key, Save, CheckCircle, Plus, Trash2, Settings, Users, GitBranch,
+  Key, Save, CheckCircle, Plus, Settings, Users, GitBranch,
   Layers, Github, Search, ChevronDown, Loader2, RefreshCw, AlertCircle,
   Eye, EyeOff, ChevronRight, ExternalLink, X, Shield, Cpu,
 } from 'lucide-react';
@@ -59,7 +59,7 @@ export default function GlobalSettingsPage() {
   const [showPat, setShowPat]       = useState(false);
   const [showGhPat, setShowGhPat]   = useState(false);
 
-  // Team picker
+  // Team / area-path picker
   const [availableTeams, setAvailableTeams]     = useState<string[]>([]);
   const [teamsLoading, setTeamsLoading]         = useState(false);
   const [teamsError, setTeamsError]             = useState('');
@@ -364,8 +364,8 @@ export default function GlobalSettingsPage() {
               <>
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-base font-semibold text-gray-900 mb-1">Teams</h2>
-                    <p className="text-sm text-gray-500">ADO teams tracked across all initiatives. Org &amp; project are fixed to <code className="font-mono text-gray-700">vfuk-digital / Digital</code>.</p>
+                   <h2 className="text-base font-semibold text-gray-900 mb-1">Teams</h2>
+                   <p className="text-sm text-gray-500">ADO teams tracked across all initiatives. Org &amp; project are fixed to <code className="font-mono text-gray-700">vfuk-digital / Digital</code>.</p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <button
@@ -373,8 +373,8 @@ export default function GlobalSettingsPage() {
                       disabled={teamsLoading}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 transition disabled:opacity-40"
                     >
-                      {teamsLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-                      {availableTeams.length > 0 ? `${availableTeams.length} loaded` : 'Load list'}
+                     {teamsLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+                       {availableTeams.length > 0 ? `${availableTeams.length} loaded` : 'Load list'}
                     </button>
                     <button
                       onClick={addTeam}
@@ -400,7 +400,7 @@ export default function GlobalSettingsPage() {
                           <Users className="w-6 h-6 text-gray-400" />
                         </div>
                         <p className="text-sm font-medium text-gray-700 mb-1">No teams yet</p>
-                        <p className="text-xs text-gray-400 mb-4">Click &quot;Add Team&quot; to pick from your ADO project.</p>
+                         <p className="text-xs text-gray-400 mb-4">Click &quot;Add Team&quot; to pick from your ADO project.</p>
                         <button
                           onClick={addTeam}
                           className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition"
@@ -418,10 +418,10 @@ export default function GlobalSettingsPage() {
                             {index + 1}
                           </span>
 
-                          {/* breadcrumb prefix */}
-                          <span className="text-xs text-gray-400 font-mono whitespace-nowrap hidden sm:block">
-                            vfuk-digital / Digital /
-                          </span>
+                           {/* breadcrumb prefix */}
+                           <span className="text-xs text-gray-400 font-mono whitespace-nowrap hidden sm:block">
+                             vfuk-digital / Digital /
+                           </span>
 
                           {/* dropdown */}
                           <div className="relative flex-1">
@@ -447,9 +447,9 @@ export default function GlobalSettingsPage() {
                                 <div className="p-2 border-b border-gray-100">
                                   <div className="flex items-center gap-2 px-2 py-1.5 bg-gray-50 rounded-lg">
                                     <Search className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-                                    <input autoFocus type="text" value={teamSearch}
-                                      onChange={e => setTeamSearch(e.target.value)}
-                                      placeholder="Search teams…"
+                                     <input autoFocus type="text" value={teamSearch}
+                                       onChange={e => setTeamSearch(e.target.value)}
+                                       placeholder="Search teams…"
                                       className="flex-1 bg-transparent text-sm outline-none text-gray-700 placeholder-gray-400" />
                                   </div>
                                 </div>
@@ -458,10 +458,10 @@ export default function GlobalSettingsPage() {
                                     <div className="flex items-center justify-center gap-2 py-6 text-sm text-gray-500">
                                       <Loader2 className="w-4 h-4 animate-spin" /> Loading…
                                     </div>
-                                  ) : filteredTeams.length === 0 ? (
-                                    <p className="py-6 text-center text-sm text-gray-400">
-                                      {availableTeams.length === 0 ? 'Click "Load list" to fetch teams.' : 'No match.'}
-                                    </p>
+                                   ) : filteredTeams.length === 0 ? (
+                                     <p className="py-6 text-center text-sm text-gray-400">
+                                       {availableTeams.length === 0 ? 'Click "Load list" to fetch teams.' : 'No match.'}
+                                     </p>
                                   ) : filteredTeams.map(name => (
                                     <button key={name} type="button" onClick={() => selectTeam(index, name)}
                                       className={`w-full text-left px-4 py-2.5 text-sm hover:bg-blue-50 hover:text-blue-700 transition ${team.team === name ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'}`}>
