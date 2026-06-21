@@ -78,6 +78,38 @@ export const APP_THEMES: Record<string, AppTheme> = {
     headerGradient: 'bg-gradient-to-br from-purple-600 via-fuchsia-600 to-pink-700',
     iconBg:         'bg-purple-100 text-purple-600',
   },
+
+  // ── Mobile Guild Specific ──────────────────────────────────────────────────
+  '/mobile-crash': {
+    gradient:       'from-red-600 via-rose-600 to-pink-700',
+    headerGradient: 'bg-gradient-to-br from-red-600 via-rose-600 to-pink-700',
+    iconBg:         'bg-red-100 text-red-600',
+  },
+  '/mobile-release': {
+    gradient:       'from-violet-600 via-purple-600 to-indigo-700',
+    headerGradient: 'bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700',
+    iconBg:         'bg-violet-100 text-violet-700',
+  },
+  '/mobile-cicd': {
+    gradient:       'from-sky-600 via-cyan-500 to-blue-700',
+    headerGradient: 'bg-gradient-to-br from-sky-600 via-cyan-500 to-blue-700',
+    iconBg:         'bg-sky-100 text-sky-600',
+  },
+  '/mobile-review': {
+    gradient:       'from-teal-600 via-emerald-500 to-green-600',
+    headerGradient: 'bg-gradient-to-br from-teal-600 via-emerald-500 to-green-600',
+    iconBg:         'bg-teal-100 text-teal-600',
+  },
+  '/mobile-test-gap': {
+    gradient:       'from-amber-500 via-yellow-500 to-orange-600',
+    headerGradient: 'bg-gradient-to-br from-amber-500 via-yellow-500 to-orange-600',
+    iconBg:         'bg-amber-100 text-amber-600',
+  },
+  '/mobile-onboarding': {
+    gradient:       'from-fuchsia-600 via-purple-600 to-violet-700',
+    headerGradient: 'bg-gradient-to-br from-fuchsia-600 via-purple-600 to-violet-700',
+    iconBg:         'bg-fuchsia-100 text-fuchsia-600',
+  },
 };
 
 /** Fallback theme for unknown routes */
