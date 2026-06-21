@@ -1,17 +1,19 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppHeader } from '@/components/AppHeader';
 import {
   Brain, Loader2, RefreshCw, AlertTriangle, Settings,
   TrendingUp, TrendingDown, Minus, GitPullRequest, Bug,
   Zap, Target, Users, ChevronDown, ChevronUp, Info, CheckCircle2, GitBranch, BookOpen,
+  DollarSign, Flag, Download, BarChart2, Printer, Bell, CheckCircle,
 } from 'lucide-react';
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip,
   ResponsiveContainer, Legend, CartesianGrid,
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
+  ComposedChart, Area,
 } from 'recharts';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -40,6 +42,25 @@ type AIProductivityResponse = {
   teams: TeamProductivityData[]; orgSprints: SprintADOMetrics[];
   copilot: CopilotMetrics | null; orgIndex: AIProductivityIndex;
   resolvedRepos: string[];
+};
+
+type BaselineSnapshot = {
+  savedAt: string;
+  label: string;
+  score: number;
+  components: AIProductivityIndex['components'];
+  avgCompletion: number;
+  avgCycleTime: number;
+  avgBugEscape: number;
+  copilotAcceptanceRate: number | null;
+};
+
+type CopilotHistoryEntry = {
+  month: string; // e.g. "Jun 2026"
+  acceptanceRate: number;
+  avgCompletion?: number;
+  avgBugEscape?: number;
+  avgCycleTime?: number;
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -143,6 +164,360 @@ function SprintTable({ sprints }: { sprints: SprintADOMetrics[] }) {
   );
 }
 
+// ─── ROI Calculator ───────────────────────────────────────────────────────────
+
+function ROICalculator({ productivityGainPct }: { productivityGainPct: number }) {
+  const [engineers, setEngineers] = useState('50');
+  const [hourlyRate, setHourlyRate] = useState('75');
+  const [hoursPerYear, setHoursPerYear] = useState('1800');
+
+  const eng = Number(engineers) || 0;
+  const rate = Number(hourlyRate) || 0;
+  const hours = Number(hoursPerYear) || 0;
+  const gainPct = productivityGainPct / 100;
+
+  const annualSalaryPool = eng * rate * hours;
+  const annualROI = Math.round(annualSalaryPool * gainPct);
+  const hoursSaved = Math.round(eng * hours * gainPct);
+  const perEngineer = eng > 0 ? Math.round(annualROI / eng) : 0;
+
+  const fmt = (n: number) => n >= 1_000_000
+    ? `£${(n / 1_000_000).toFixed(1)}M`
+    : n >= 1_000 ? `£${(n / 1_000).toFixed(0)}K` : `£${n}`;
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+      <div className="p-5 border-b border-gray-100">
+        <div className="flex items-center gap-3">
+          <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+            <DollarSign className="w-4 h-4 text-white" />
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900">ROI Calculator</h3>
+            <p className="text-xs text-gray-500">Translate productivity gains into annual £ value</p>
+          </div>
+          <div className="ml-auto flex items-center gap-1.5 text-xs font-medium bg-emerald-50 border border-emerald-200 text-emerald-700 px-2.5 py-1 rounded-full">
+            <TrendingUp className="w-3 h-3" />
+            {productivityGainPct > 0 ? `+${productivityGainPct}% gain detected` : 'Set gain below'}
+          </div>
+        </div>
+      </div>
+      <div className="p-5">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
+          {[
+            { label: 'Engineers', value: engineers, set: setEngineers, prefix: '', suffix: '', ph: '50' },
+            { label: 'Blended Rate (£/hr)', value: hourlyRate, set: setHourlyRate, prefix: '£', suffix: '/hr', ph: '75' },
+            { label: 'Hours / Year', value: hoursPerYear, set: setHoursPerYear, prefix: '', suffix: 'hrs', ph: '1800' },
+            { label: 'Productivity Gain %', value: String(productivityGainPct), set: () => {}, prefix: '', suffix: '%', ph: '0', readOnly: true },
+          ].map(({ label, value, set, prefix, suffix, ph, readOnly }) => (
+            <div key={label}>
+              <label className="block text-xs font-medium text-gray-600 mb-1">{label}</label>
+              <div className="relative">
+                {prefix && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">{prefix}</span>}
+                <input
+                  type="number" min="0" value={value}
+                  onChange={e => !readOnly && set(e.target.value)}
+                  placeholder={ph}
+                  readOnly={readOnly}
+                  className={`w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent ${prefix ? 'pl-6' : ''} ${readOnly ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : 'border-gray-300'}`}
+                />
+                {suffix && !prefix && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">{suffix}</span>}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[
+            { label: 'Annual ROI', value: fmt(annualROI), sub: 'estimated value saved', color: 'emerald', bold: true },
+            { label: 'Hours Saved / Year', value: hoursSaved.toLocaleString(), sub: 'across all engineers', color: 'blue', bold: false },
+            { label: 'Value per Engineer', value: fmt(perEngineer), sub: 'annual productivity gain', color: 'purple', bold: false },
+            { label: 'Salary Pool', value: fmt(annualSalaryPool), sub: 'total annual cost base', color: 'gray', bold: false },
+          ].map(({ label, value, sub, color, bold }) => (
+            <div key={label} className={`bg-${color}-50 border border-${color}-200 rounded-xl p-4`}>
+              <p className="text-xs text-gray-500 mb-1">{label}</p>
+              <p className={`text-2xl font-bold text-${color}-700 ${bold ? '' : ''}`}>{value}</p>
+              <p className="text-xs text-gray-400 mt-0.5">{sub}</p>
+            </div>
+          ))}
+        </div>
+        <p className="text-xs text-gray-400 mt-3">
+          Formula: Engineers × Rate × Hours/Year × Productivity Gain %. Productivity gain is derived from your AI Productivity Index improvement over baseline (or index score ÷ 100 × 20% max gain assumption if no baseline set).
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ─── Baseline Panel ───────────────────────────────────────────────────────────
+
+function BaselinePanel({
+  data, orgStats, onBaselineSet,
+}: {
+  data: AIProductivityResponse;
+  orgStats: { avgCompletion: number; avgCycleTime: string; avgBugEscape: number } | null;
+  onBaselineSet: (b: BaselineSnapshot) => void;
+}) {
+  const [saved, setSaved] = useState<BaselineSnapshot | null>(null);
+  const [label, setLabel] = useState('');
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('ai_productivity_baseline');
+      if (raw) setSaved(JSON.parse(raw));
+    } catch { /* ignore */ }
+  }, []);
+
+  const saveBaseline = () => {
+    const snap: BaselineSnapshot = {
+      savedAt: new Date().toISOString(),
+      label: label || new Date().toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }),
+      score: data.orgIndex.score,
+      components: data.orgIndex.components,
+      avgCompletion: orgStats?.avgCompletion ?? 0,
+      avgCycleTime: Number(orgStats?.avgCycleTime ?? 0),
+      avgBugEscape: orgStats?.avgBugEscape ?? 0,
+      copilotAcceptanceRate: data.copilot?.acceptanceRate ?? null,
+    };
+    localStorage.setItem('ai_productivity_baseline', JSON.stringify(snap));
+    setSaved(snap);
+    onBaselineSet(snap);
+  };
+
+  const clearBaseline = () => {
+    localStorage.removeItem('ai_productivity_baseline');
+    setSaved(null);
+  };
+
+  const delta = saved ? data.orgIndex.score - saved.score : null;
+  const completionDelta = saved && orgStats ? orgStats.avgCompletion - saved.avgCompletion : null;
+  const bugDelta = saved && orgStats ? orgStats.avgBugEscape - saved.avgBugEscape : null;
+  const cycleDelta = saved && orgStats ? Number(orgStats.avgCycleTime) - saved.avgCycleTime : null;
+
+  function DeltaBadge({ value, inverse = false, suffix = '' }: { value: number; inverse?: boolean; suffix?: string }) {
+    const positive = inverse ? value < 0 : value > 0;
+    const neutral = Math.abs(value) < 0.5;
+    if (neutral) return <span className="text-xs text-gray-400">no change</span>;
+    return (
+      <span className={`text-xs font-semibold ${positive ? 'text-emerald-600' : 'text-red-600'}`}>
+        {value > 0 ? '+' : ''}{value.toFixed(1)}{suffix}
+      </span>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+      <div className="p-5 border-b border-gray-100">
+        <div className="flex items-center gap-3">
+          <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+            <Flag className="w-4 h-4 text-white" />
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900">Baseline Comparison</h3>
+            <p className="text-xs text-gray-500">Mark a snapshot to track before/after AI adoption impact</p>
+          </div>
+          {saved && (
+            <div className="ml-auto flex items-center gap-1.5 text-xs font-medium bg-blue-50 border border-blue-200 text-blue-700 px-2.5 py-1 rounded-full">
+              <Flag className="w-3 h-3" />
+              Baseline: {saved.label}
+            </div>
+          )}
+        </div>
+      </div>
+      <div className="p-5">
+        {!saved ? (
+          <div className="flex items-center gap-3">
+            <input
+              type="text" value={label} onChange={e => setLabel(e.target.value)}
+              placeholder={`Label (e.g. "Pre-Copilot Jun 2026")`}
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+            <button onClick={saveBaseline}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-medium hover:from-blue-700 hover:to-indigo-700 transition shadow-sm whitespace-nowrap">
+              <Flag className="w-4 h-4" /> Set as Baseline
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[
+                { label: 'Index Score', baseline: saved.score, current: data.orgIndex.score, delta, suffix: '', inverse: false },
+                { label: 'Avg Completion', baseline: saved.avgCompletion, current: orgStats?.avgCompletion ?? 0, delta: completionDelta, suffix: '%', inverse: false },
+                { label: 'Bug Escape Rate', baseline: saved.avgBugEscape, current: orgStats?.avgBugEscape ?? 0, delta: bugDelta, suffix: '%', inverse: true },
+                { label: 'PR Cycle Time', baseline: saved.avgCycleTime, current: Number(orgStats?.avgCycleTime ?? 0), delta: cycleDelta, suffix: 'd', inverse: true },
+              ].map(({ label, baseline, current, delta: d, suffix, inverse }) => (
+                <div key={label} className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+                  <p className="text-xs text-gray-500 mb-2">{label}</p>
+                  <div className="flex items-end gap-2">
+                    <div>
+                      <p className="text-xs text-gray-400">Baseline</p>
+                      <p className="text-lg font-bold text-gray-600">{baseline}{suffix}</p>
+                    </div>
+                    <div className="text-gray-300 mb-1">→</div>
+                    <div>
+                      <p className="text-xs text-gray-400">Now</p>
+                      <p className="text-lg font-bold text-gray-900">{current}{suffix}</p>
+                    </div>
+                  </div>
+                  {d !== null && (
+                    <div className="mt-2">
+                      <DeltaBadge value={d} inverse={inverse} suffix={suffix} />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center justify-between pt-2">
+              <p className="text-xs text-gray-400">
+                Baseline set: {new Date(saved.savedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                {saved.copilotAcceptanceRate !== null && ` · Copilot: ${saved.copilotAcceptanceRate}% acceptance`}
+              </p>
+              <button onClick={clearBaseline} className="text-xs text-red-500 hover:text-red-700 underline">Clear baseline</button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Correlation Chart ────────────────────────────────────────────────────────
+
+function CorrelationChart({ data, copilot }: { data: AIProductivityResponse; copilot: CopilotMetrics | null }) {
+  const [history, setHistory] = useState<CopilotHistoryEntry[]>([]);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('ai_productivity_copilot_history');
+      if (raw) setHistory(JSON.parse(raw));
+    } catch { /* ignore */ }
+  }, []);
+
+  // Auto-save current month's data when copilot + org data is available
+  useEffect(() => {
+    if (!copilot || !data.orgSprints.length) return;
+    const completed = data.orgSprints.slice(0, -1);
+    const recent = completed.length > 0 ? completed : data.orgSprints;
+    if (recent.length === 0) return;
+
+    const month = new Date().toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
+    const avgCompletion = Math.round(recent.reduce((s, sp) => s + sp.completionRate, 0) / recent.length);
+    const avgBugEscape = Math.round(recent.reduce((s, sp) => s + sp.bugEscapeRate, 0) / recent.length);
+    const avgCycleTime = Math.round((recent.reduce((s, sp) => s + sp.avgPRCycleTimeDays, 0) / recent.length) * 10) / 10;
+
+    const entry: CopilotHistoryEntry = {
+      month,
+      acceptanceRate: copilot.acceptanceRate,
+      avgCompletion,
+      avgBugEscape,
+      avgCycleTime,
+    };
+
+    setHistory(prev => {
+      const updated = [...prev.filter(h => h.month !== month), entry]
+        .sort((a, b) => new Date(`01 ${a.month}`).getTime() - new Date(`01 ${b.month}`).getTime())
+        .slice(-12); // keep last 12 months
+      localStorage.setItem('ai_productivity_copilot_history', JSON.stringify(updated));
+      return updated;
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [copilot?.acceptanceRate]);
+
+  if (history.length < 2) {
+    return (
+      <div className="bg-white rounded-2xl border border-gray-200 p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <BarChart2 className="w-4 h-4 text-purple-600" />
+          <h3 className="text-sm font-semibold text-gray-900">AI Adoption vs. Delivery Correlation</h3>
+        </div>
+        <div className="flex flex-col items-center justify-center py-10 text-center">
+          <Brain className="w-10 h-10 text-gray-200 mb-3" />
+          <p className="text-sm text-gray-500 font-medium">Not enough history yet</p>
+          <p className="text-xs text-gray-400 mt-1 max-w-xs">
+            This chart builds automatically each month when you refresh with Copilot data connected.
+            Come back next month to see the correlation trend.
+          </p>
+          {copilot && (
+            <p className="text-xs text-emerald-600 mt-2 font-medium">
+              ✓ This month's data point ({copilot.acceptanceRate}% acceptance) has been recorded.
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-200 p-6">
+      <div className="flex items-center gap-3 mb-1">
+        <BarChart2 className="w-4 h-4 text-purple-600" />
+        <h3 className="text-sm font-semibold text-gray-900">AI Adoption vs. Delivery Correlation</h3>
+        <span className="text-xs text-gray-400 ml-auto">{history.length} months of data</span>
+      </div>
+      <p className="text-xs text-gray-500 mb-4">Copilot acceptance rate vs. sprint completion rate over time</p>
+      <div className="bg-gray-50 rounded-xl p-4">
+        <ResponsiveContainer width="100%" height={240}>
+          <ComposedChart data={history}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+            <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+            <YAxis yAxisId="left" tick={{ fontSize: 11 }} domain={[0, 100]} label={{ value: '%', angle: -90, position: 'insideLeft', style: { fontSize: 10 } }} />
+            <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11 }} domain={[0, 100]} />
+            <Tooltip />
+            <Legend />
+            <Area yAxisId="left" type="monotone" dataKey="avgCompletion" name="Completion %" fill="#8b5cf620" stroke="#8b5cf6" strokeWidth={2} />
+            <Line yAxisId="right" type="monotone" dataKey="acceptanceRate" name="Copilot Acceptance %" stroke="#f59e0b" strokeWidth={2.5} dot={{ r: 4 }} strokeDasharray="5 5" />
+            <Line yAxisId="left" type="monotone" dataKey="avgBugEscape" name="Bug Escape %" stroke="#ef4444" strokeWidth={1.5} dot={{ r: 3 }} />
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
+      <p className="text-xs text-gray-400 mt-2">
+        Data auto-recorded monthly when Copilot metrics are connected. Stored locally in your browser.
+      </p>
+    </div>
+  );
+}
+
+// ─── Export / Print ───────────────────────────────────────────────────────────
+
+function ExportButton({ data, orgStats, baseline }: {
+  data: AIProductivityResponse;
+  orgStats: { avgCompletion: number; avgCycleTime: string; avgBugEscape: number; totalPRs: number; sprintCount: number } | null;
+  baseline: BaselineSnapshot | null;
+}) {
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const handleExportCSV = () => {
+    if (!data.orgSprints.length) return;
+    const headers = ['Sprint', 'Total Items', 'Completed', 'Completion %', 'Velocity (SP)', 'Bugs', 'Bug Escape %', 'PRs', 'Avg Cycle (days)'];
+    const rows = data.orgSprints.map(s => [
+      s.sprintName, s.totalWorkItems, s.completedWorkItems, s.completionRate,
+      s.velocity, s.bugCount, s.bugEscapeRate, s.prCount, s.avgPRCycleTimeDays,
+    ]);
+    const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ai-productivity-index-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div className="flex items-center gap-2">
+      <button onClick={handleExportCSV}
+        className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/20 px-4 py-2 text-sm font-medium text-white hover:bg-white/20 transition">
+        <Download className="w-4 h-4" /> Export CSV
+      </button>
+      <button onClick={handlePrint}
+        className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/20 px-4 py-2 text-sm font-medium text-white hover:bg-white/20 transition">
+        <Printer className="w-4 h-4" /> Print Report
+      </button>
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function AIProductivityPage() {
@@ -154,6 +529,10 @@ export default function AIProductivityPage() {
   const [showCopilotInput, setShowCopilotInput] = useState(false);
   const [showOrgTable, setShowOrgTable] = useState(false);
   const [expandedTeam, setExpandedTeam] = useState<string | null>(null);
+  const [baseline, setBaseline] = useState<BaselineSnapshot | null>(null);
+  const [digestSending, setDigestSending] = useState(false);
+  const [digestStatus, setDigestStatus] = useState<'idle' | 'sent' | 'error'>('idle');
+  const [digestError, setDigestError] = useState('');
 
   // Repo pool (from Settings) + selection
   const [repoPool, setRepoPool] = useState<string[]>([]);
@@ -183,15 +562,18 @@ export default function AIProductivityPage() {
     try {
       const pool: string[] = JSON.parse(localStorage.getItem('ado_repos') || '[]');
       setRepoPool(pool);
-      // Load previously selected repos (default: all)
       const savedSelected = localStorage.getItem('ai_productivity_selected_repos');
       if (savedSelected) {
         const parsed: string[] = JSON.parse(savedSelected);
-        // Only keep repos that still exist in the pool
         setSelectedRepos(parsed.filter(r => pool.includes(r)));
       } else {
-        setSelectedRepos(pool); // default: all selected
+        setSelectedRepos(pool);
       }
+    } catch { /* ignore */ }
+    // Load baseline
+    try {
+      const raw = localStorage.getItem('ai_productivity_baseline');
+      if (raw) setBaseline(JSON.parse(raw));
     } catch { /* ignore */ }
   }, []);
 
@@ -232,17 +614,55 @@ export default function AIProductivityPage() {
     try {
       const res = await fetch('/api/ai-productivity', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          patToken, teams, sprintCount,
-          selectedRepos,  // pass selected repos from pool
-          copilotInput,
-        }),
+        body: JSON.stringify({ patToken, teams, sprintCount, selectedRepos, copilotInput }),
       });
       if (!res.ok) { const e = await res.json(); throw new Error(e.error || 'Failed'); }
       setData(await res.json());
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally { setLoading(false); }
+  };
+
+  const sendDigest = async () => {
+    const webhookUrl = localStorage.getItem('teams_webhook_url') || '';
+    if (!webhookUrl) {
+      router.push('/settings#notifications');
+      return;
+    }
+    if (!data) return;
+    setDigestSending(true);
+    setDigestStatus('idle');
+    setDigestError('');
+    try {
+      const res = await fetch('/api/ai-productivity/digest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          webhookUrl,
+          score: data.orgIndex.score,
+          trend: data.orgIndex.trend,
+          components: data.orgIndex.components,
+          orgStats,
+          copilot: data.copilot,
+          baseline: baseline ? { label: baseline.label, score: baseline.score, savedAt: baseline.savedAt } : null,
+          insights: data.orgIndex.insights,
+          teamCount: data.teams.length,
+          productivityGainPct,
+        }),
+      });
+      if (!res.ok) {
+        const e = await res.json();
+        throw new Error(e.error || 'Failed to send digest');
+      }
+      setDigestStatus('sent');
+      setTimeout(() => setDigestStatus('idle'), 5000);
+    } catch (err: unknown) {
+      setDigestStatus('error');
+      setDigestError(err instanceof Error ? err.message : 'Unknown error');
+      setTimeout(() => { setDigestStatus('idle'); setDigestError(''); }, 8000);
+    } finally {
+      setDigestSending(false);
+    }
   };
 
   // Auto-fetch only when we have PAT + teams configured
@@ -285,14 +705,40 @@ export default function AIProductivityPage() {
     };
   })();
 
+  // Compute productivity gain % for ROI calculator
+  // If baseline exists: use delta. Otherwise: use index score as proxy (score/100 * 20% max assumption)
+  const productivityGainPct = (() => {
+    if (baseline && data) {
+      const delta = data.orgIndex.score - baseline.score;
+      // Map index delta to productivity gain: 10 point improvement ≈ 5% productivity gain
+      return Math.max(0, Math.round(delta * 0.5));
+    }
+    if (data) {
+      // Fallback: score above 50 baseline → gain
+      return Math.max(0, Math.round((data.orgIndex.score - 50) * 0.3));
+    }
+    return 0;
+  })();
+
   return (
     <div className="min-h-screen bg-[#f5f5f5]">
+      {/* Print styles */}
+      <style>{`
+        @media print {
+          .no-print { display: none !important; }
+          .print-only { display: block !important; }
+          body { background: white; }
+          .min-h-screen { min-height: unset; }
+        }
+        .print-only { display: none; }
+      `}</style>
+
       <AppHeader
         title="AI Productivity Index"
         subtitle="Measure and prove AI ROI by correlating Copilot usage with engineering outcomes"
         icon={<Brain className="w-5 h-5 text-white" />}
         actions={
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap no-print">
             <select value={sprintCount} onChange={e => setSprintCount(Number(e.target.value))}
               className="rounded-full bg-white/10 border border-white/20 text-white text-sm px-3 py-2 focus:outline-none">
               {[3,6,9,12].map(n => <option key={n} value={n} className="text-black">Last {n} sprints</option>)}
@@ -301,6 +747,31 @@ export default function AIProductivityPage() {
               className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/20 px-4 py-2 text-sm font-medium text-white hover:bg-white/20 transition disabled:opacity-50">
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />} Refresh
             </button>
+            {data && (
+              <>
+                <ExportButton data={data} orgStats={orgStats} baseline={baseline} />
+                <button
+                  onClick={sendDigest}
+                  disabled={digestSending || !data}
+                  title={!localStorage.getItem('teams_webhook_url') ? 'Configure Teams webhook in Settings → Notifications' : 'Send scorecard to Teams channel'}
+                  className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition disabled:opacity-50 ${
+                    digestStatus === 'sent'
+                      ? 'bg-emerald-500/20 border-emerald-400/40 text-emerald-200'
+                      : digestStatus === 'error'
+                      ? 'bg-red-500/20 border-red-400/40 text-red-200'
+                      : 'bg-white/10 border-white/20 text-white hover:bg-white/20'
+                  }`}
+                >
+                  {digestSending
+                    ? <Loader2 className="w-4 h-4 animate-spin" />
+                    : digestStatus === 'sent'
+                    ? <CheckCircle className="w-4 h-4" />
+                    : <Bell className="w-4 h-4" />
+                  }
+                  {digestStatus === 'sent' ? 'Sent!' : digestStatus === 'error' ? 'Failed' : 'Send Digest'}
+                </button>
+              </>
+            )}
             <button onClick={() => router.push('/ai-productivity/about')}
               className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/20 px-4 py-2 text-sm font-medium text-white hover:bg-white/20 transition">
               <BookOpen className="w-4 h-4" /><span className="hidden sm:inline">Methodology</span>
@@ -317,7 +788,7 @@ export default function AIProductivityPage() {
 
         {/* ── Repo selector ─────────────────────────────────────────────────── */}
         {repoPool.length > 0 && (
-          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+          <div className="bg-white rounded-2xl border border-gray-200 p-5 no-print">
             <div className="flex items-center gap-2 mb-3">
               <GitBranch className="w-4 h-4 text-gray-600" />
               <span className="text-sm font-semibold text-gray-900">Repositories for PR Metrics</span>
@@ -353,16 +824,16 @@ export default function AIProductivityPage() {
         )}
 
         {repoPool.length === 0 && (
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center gap-3">
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center gap-3 no-print">
             <Info className="w-4 h-4 text-amber-600 shrink-0" />
             <p className="text-sm text-amber-800">
-              No repositories configured. <button onClick={() => router.push('/settings')} className="font-medium underline">Go to Settings</button> to add your repo pool (e.g. MVA-iOS, MVA-Android, mvax-api). PR metrics will be unavailable until then.
+              No repositories configured. <button onClick={() => router.push('/settings')} className="font-medium underline">Go to Settings</button> to add your repo pool. PR metrics will be unavailable until then.
             </p>
           </div>
         )}
 
         {/* ── Copilot Input ─────────────────────────────────────────────────── */}
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden no-print">
           <button onClick={() => setShowCopilotInput(!showCopilotInput)}
             className="w-full flex items-center justify-between p-5 hover:bg-gray-50 transition">
             <div className="flex items-center gap-3">
@@ -389,7 +860,7 @@ export default function AIProductivityPage() {
                 <Info className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
                 <p className="text-xs text-blue-700">
                   Open the GitHub Copilot telemetry report in your Teams tab and enter the values below.
-                  Saved in your browser. <strong>Classic GitHub PAT</strong> with <code>manage_billing:copilot</code> will automate this — see <code>GITHUB_PAT_FIX.md</code>.
+                  Saved in your browser. <strong>Classic GitHub PAT</strong> with <code>manage_billing:copilot</code> will automate this.
                 </p>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-4">
@@ -416,6 +887,19 @@ export default function AIProductivityPage() {
             </div>
           )}
         </div>
+
+        {/* ── Digest error ──────────────────────────────────────────────────── */}
+        {digestStatus === 'error' && digestError && (
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-center gap-3 no-print">
+            <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
+            <p className="text-sm text-red-800">
+              <span className="font-medium">Teams digest failed:</span> {digestError}
+            </p>
+            <button onClick={() => router.push('/settings')} className="ml-auto text-xs font-medium text-red-700 underline whitespace-nowrap">
+              Check Settings →
+            </button>
+          </div>
+        )}
 
         {/* ── Error ─────────────────────────────────────────────────────────── */}
         {error && (
@@ -458,6 +942,11 @@ export default function AIProductivityPage() {
                   {data.teams.filter(t => t.error).length} team(s) failed
                 </span>
               )}
+              {baseline && (
+                <span className="text-xs text-blue-600 bg-blue-50 border border-blue-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                  <Flag className="w-3 h-3" /> Baseline: {baseline.label} ({baseline.score})
+                </span>
+              )}
             </div>
 
             {/* Row 1: Score + Breakdown + Insights */}
@@ -472,6 +961,19 @@ export default function AIProductivityPage() {
                   <TrendIcon trend={data.orgIndex.trend} />
                   <span className="text-sm font-medium text-gray-600 capitalize">{data.orgIndex.trend}</span>
                 </div>
+                {/* Baseline delta */}
+                {baseline && (
+                  <div className={`mt-2 flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border ${
+                    data.orgIndex.score > baseline.score
+                      ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                      : data.orgIndex.score < baseline.score
+                      ? 'bg-red-50 border-red-200 text-red-700'
+                      : 'bg-gray-50 border-gray-200 text-gray-500'
+                  }`}>
+                    {data.orgIndex.score > baseline.score ? <TrendingUp className="w-3 h-3" /> : data.orgIndex.score < baseline.score ? <TrendingDown className="w-3 h-3" /> : <Minus className="w-3 h-3" />}
+                    {data.orgIndex.score > baseline.score ? '+' : ''}{data.orgIndex.score - baseline.score} vs baseline
+                  </div>
+                )}
                 {data.copilot
                   ? <div className="mt-3 flex items-center gap-1.5 text-xs text-purple-600 bg-purple-50 border border-purple-200 px-3 py-1.5 rounded-full"><CheckCircle2 className="w-3 h-3" />Copilot data included</div>
                   : <div className="mt-3 flex items-center gap-1.5 text-xs text-amber-600 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-full"><Info className="w-3 h-3" />ADO metrics only</div>
@@ -548,11 +1050,21 @@ export default function AIProductivityPage() {
                   <div className="flex items-center gap-2 mb-2"><Target className="w-4 h-4 text-purple-500" /><span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Avg Completion</span></div>
                   <p className="text-3xl font-bold text-gray-900">{orgStats.avgCompletion}%</p>
                   <p className="text-xs text-gray-400 mt-1">per sprint · {data.teams.length} teams</p>
+                  {baseline && (
+                    <p className={`text-xs font-semibold mt-1 ${orgStats.avgCompletion > baseline.avgCompletion ? 'text-emerald-600' : orgStats.avgCompletion < baseline.avgCompletion ? 'text-red-600' : 'text-gray-400'}`}>
+                      {orgStats.avgCompletion > baseline.avgCompletion ? '+' : ''}{orgStats.avgCompletion - baseline.avgCompletion}% vs baseline
+                    </p>
+                  )}
                 </div>
                 <div className="bg-white rounded-2xl border border-gray-200 p-5">
                   <div className="flex items-center gap-2 mb-2"><GitPullRequest className="w-4 h-4 text-emerald-500" /><span className="text-xs font-medium text-gray-500 uppercase tracking-wider">PR Cycle Time</span></div>
                   <p className="text-3xl font-bold text-gray-900">{orgStats.avgCycleTime}d</p>
                   <p className="text-xs text-gray-400 mt-1">avg creation → merge</p>
+                  {baseline && (
+                    <p className={`text-xs font-semibold mt-1 ${Number(orgStats.avgCycleTime) < baseline.avgCycleTime ? 'text-emerald-600' : Number(orgStats.avgCycleTime) > baseline.avgCycleTime ? 'text-red-600' : 'text-gray-400'}`}>
+                      {(Number(orgStats.avgCycleTime) - baseline.avgCycleTime).toFixed(1)}d vs baseline
+                    </p>
+                  )}
                 </div>
                 <div className="bg-white rounded-2xl border border-gray-200 p-5">
                   <div className="flex items-center gap-2 mb-2"><Zap className="w-4 h-4 text-blue-500" /><span className="text-xs font-medium text-gray-500 uppercase tracking-wider">PRs Merged</span></div>
@@ -563,6 +1075,11 @@ export default function AIProductivityPage() {
                   <div className="flex items-center gap-2 mb-2"><Bug className="w-4 h-4 text-red-500" /><span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Bug Escape Rate</span></div>
                   <p className="text-3xl font-bold text-gray-900">{orgStats.avgBugEscape}%</p>
                   <p className="text-xs text-gray-400 mt-1">bugs / total items</p>
+                  {baseline && (
+                    <p className={`text-xs font-semibold mt-1 ${orgStats.avgBugEscape < baseline.avgBugEscape ? 'text-emerald-600' : orgStats.avgBugEscape > baseline.avgBugEscape ? 'text-red-600' : 'text-gray-400'}`}>
+                      {orgStats.avgBugEscape > baseline.avgBugEscape ? '+' : ''}{orgStats.avgBugEscape - baseline.avgBugEscape}% vs baseline
+                    </p>
+                  )}
                 </div>
               </div>
             )}
@@ -606,14 +1123,29 @@ export default function AIProductivityPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="bg-white rounded-2xl border border-gray-200 p-6">
                 <h3 className="text-sm font-semibold text-gray-900 mb-1">Productivity Radar</h3>
-                <p className="text-xs text-gray-500 mb-4">All five dimensions of the AI Productivity Index</p>
+                <p className="text-xs text-gray-500 mb-4">All five dimensions of the AI Productivity Index{baseline ? ` — vs "${baseline.label}" baseline` : ''}</p>
                 <ResponsiveContainer width="100%" height={280}>
-                  <RadarChart data={radarData}>
+                  <RadarChart data={radarData.map(d => ({
+                    ...d,
+                    baseline: baseline
+                      ? [
+                          baseline.components.deliveryScore,
+                          baseline.components.qualityScore,
+                          baseline.components.velocityScore,
+                          baseline.components.prEfficiencyScore,
+                          baseline.components.copilotAdoptionScore,
+                        ][['Delivery','Quality','Velocity','PR Flow','AI Adoption'].indexOf(d.metric)]
+                      : undefined,
+                  }))}>
                     <PolarGrid stroke="#e5e7eb" />
                     <PolarAngleAxis dataKey="metric" tick={{ fontSize: 12, fill: '#6b7280' }} />
                     <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fontSize: 10 }} />
-                    <Radar name="Score" dataKey="score" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.25} strokeWidth={2} />
+                    <Radar name="Current" dataKey="score" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.25} strokeWidth={2} />
+                    {baseline && (
+                      <Radar name={`Baseline (${baseline.label})`} dataKey="baseline" stroke="#94a3b8" fill="#94a3b8" fillOpacity={0.1} strokeWidth={1.5} strokeDasharray="4 4" />
+                    )}
                     <Tooltip />
+                    {baseline && <Legend />}
                   </RadarChart>
                 </ResponsiveContainer>
               </div>
@@ -632,6 +1164,11 @@ export default function AIProductivityPage() {
                       {data.copilot && ` · Copilot acceptance: ${data.copilot.acceptanceRate}%`}
                       {` · ${data.teams.length} team${data.teams.length !== 1 ? 's' : ''}`}
                     </p>
+                    {baseline && (
+                      <p className={`text-xs font-semibold mt-1 ${data.orgIndex.score > baseline.score ? 'text-emerald-700' : 'text-red-700'}`}>
+                        {data.orgIndex.score > baseline.score ? '▲' : '▼'} {Math.abs(data.orgIndex.score - baseline.score)} points vs "{baseline.label}" baseline
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     {data.orgIndex.insights.slice(0, 3).map((insight, i) => (
@@ -651,6 +1188,19 @@ export default function AIProductivityPage() {
                 </div>
               </div>
             </div>
+
+            {/* ── NEW: Baseline Comparison ───────────────────────────────────── */}
+            <BaselinePanel
+              data={data}
+              orgStats={orgStats}
+              onBaselineSet={setBaseline}
+            />
+
+            {/* ── NEW: ROI Calculator ────────────────────────────────────────── */}
+            <ROICalculator productivityGainPct={productivityGainPct} />
+
+            {/* ── NEW: Correlation Chart ─────────────────────────────────────── */}
+            <CorrelationChart data={data} copilot={data.copilot} />
 
             {/* Row 6: Per-team breakdown */}
             <div className="space-y-3">

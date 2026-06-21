@@ -1,0 +1,2053 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Engineering Intelligence Hub — Team Presentation</title>
+<style>
+  /* ── Reset & Base ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --dark:       #0f1923;
+    --dark-2:     #1a2535;
+    --dark-3:     #16213e;
+    --red:        #e60000;
+    --red-light:  #ff1a1a;
+    --slate:      #475569;
+    --slate-light:#64748b;
+    --muted:      #94a3b8;
+    --border:     #e2e8f0;
+    --bg:         #f8fafc;
+    --white:      #ffffff;
+    --text:       #1e293b;
+    --text-2:     #374151;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    font-size: 15px;
+  }
+
+  /* ── Print / PDF ── */
+  @media print {
+    body { background: white; font-size: 12px; }
+    .no-print { display: none !important; }
+    .page-break { page-break-before: always; }
+    .card { break-inside: avoid; }
+    header { background: var(--dark) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .accent-bar { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .status-live { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .status-soon { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .metric-box { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .section-label { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .initiative-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .score-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .toc-item:hover { background: transparent; }
+    a { text-decoration: none; color: inherit; }
+  }
+
+  /* ── Layout ── */
+  .container { max-width: 960px; margin: 0 auto; padding: 0 32px; }
+  .section { padding: 56px 0; }
+  .section + .section { border-top: 1px solid var(--border); }
+
+  /* ── COVER ── */
+  .cover {
+    background: linear-gradient(135deg, #0f1923 0%, #16213e 50%, #0f3460 100%);
+    color: white;
+    padding: 72px 0 64px;
+    position: relative;
+    overflow: hidden;
+  }
+  .cover::before {
+    content: '';
+    position: absolute;
+    top: -80px; left: -80px;
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(230,0,0,0.12) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  .cover::after {
+    content: '';
+    position: absolute;
+    bottom: -60px; right: -60px;
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(37,99,235,0.10) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  .cover-inner { position: relative; z-index: 1; }
+  .cover-eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 11px; font-weight: 700; letter-spacing: 3px;
+    text-transform: uppercase; color: var(--red);
+    background: rgba(230,0,0,0.12); border: 1px solid rgba(230,0,0,0.25);
+    padding: 6px 14px; border-radius: 100px; margin-bottom: 24px;
+  }
+  .cover-eyebrow::before { content: '●'; font-size: 8px; }
+  .cover-title {
+    font-size: clamp(32px, 5vw, 52px);
+    font-weight: 800; line-height: 1.1;
+    letter-spacing: -1px; margin-bottom: 16px;
+  }
+  .cover-title span { color: var(--red); }
+  .cover-subtitle {
+    font-size: 18px; color: rgba(255,255,255,0.65);
+    max-width: 600px; line-height: 1.7; margin-bottom: 40px;
+  }
+  .cover-meta {
+    display: flex; flex-wrap: wrap; gap: 24px;
+    font-size: 13px; color: rgba(255,255,255,0.5);
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding-top: 28px; margin-top: 8px;
+  }
+  .cover-meta-item { display: flex; align-items: center; gap: 8px; }
+  .cover-meta-item strong { color: rgba(255,255,255,0.85); }
+  .cover-stats {
+    display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 40px;
+  }
+  .cover-stat {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 12px; padding: 16px 24px;
+    text-align: center; min-width: 120px;
+  }
+  .cover-stat-num {
+    font-size: 28px; font-weight: 800; color: white;
+    line-height: 1; margin-bottom: 4px;
+  }
+  .cover-stat-num.red { color: var(--red); }
+  .cover-stat-label { font-size: 11px; color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: 1px; }
+
+  /* ── Red accent bar ── */
+  .red-bar { height: 4px; background: var(--red); }
+
+  /* ── Section labels ── */
+  .section-label {
+    display: inline-block;
+    font-size: 10px; font-weight: 700; letter-spacing: 3px;
+    text-transform: uppercase; color: var(--red);
+    margin-bottom: 8px;
+  }
+  .section-label.blue { color: #2563eb; }
+  .section-label.green { color: #059669; }
+  .section-label.purple { color: #7c3aed; }
+
+  .section-title {
+    font-size: 28px; font-weight: 800; color: var(--text);
+    letter-spacing: -0.5px; margin-bottom: 8px;
+  }
+  .section-desc {
+    font-size: 15px; color: var(--slate-light); max-width: 640px; line-height: 1.7;
+  }
+
+  /* ── TOC ── */
+  .toc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 10px; margin-top: 28px;
+  }
+  .toc-item {
+    display: flex; align-items: center; gap: 12px;
+    background: white; border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px 16px;
+    text-decoration: none; color: var(--text);
+    transition: all 0.15s ease;
+    cursor: pointer;
+  }
+  .toc-item:hover { border-color: #cbd5e1; box-shadow: 0 2px 8px rgba(0,0,0,0.06); transform: translateY(-1px); }
+  .toc-dot {
+    width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+  }
+  .toc-item-title { font-size: 13px; font-weight: 600; flex: 1; }
+  .toc-item-cat { font-size: 11px; color: var(--muted); }
+  .toc-badge {
+    font-size: 10px; font-weight: 700; padding: 2px 8px;
+    border-radius: 100px; white-space: nowrap;
+  }
+  .toc-badge.live { background: #dcfce7; color: #15803d; }
+  .toc-badge.soon { background: #f1f5f9; color: #94a3b8; }
+
+  /* ── Initiative Cards ── */
+  .initiative-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 32px;
+  }
+  .initiative-header {
+    padding: 28px 32px 24px;
+    position: relative;
+  }
+  .initiative-header-top {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 16px; margin-bottom: 16px;
+  }
+  .initiative-icon {
+    width: 52px; height: 52px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; flex-shrink: 0;
+  }
+  .initiative-title-block { flex: 1; }
+  .initiative-number {
+    font-size: 11px; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; margin-bottom: 4px;
+    opacity: 0.7;
+  }
+  .initiative-title {
+    font-size: 22px; font-weight: 800; color: var(--text);
+    letter-spacing: -0.3px; line-height: 1.2;
+  }
+  .initiative-category {
+    font-size: 12px; font-weight: 600; margin-top: 4px;
+    text-transform: uppercase; letter-spacing: 1px;
+  }
+  .status-live {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #dcfce7; color: #15803d;
+    border: 1px solid #bbf7d0;
+    font-size: 12px; font-weight: 700;
+    padding: 6px 14px; border-radius: 100px;
+    white-space: nowrap;
+  }
+  .status-live::before { content: '●'; font-size: 8px; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .status-soon {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #f1f5f9; color: #64748b;
+    border: 1px solid #e2e8f0;
+    font-size: 12px; font-weight: 600;
+    padding: 6px 14px; border-radius: 100px;
+    white-space: nowrap;
+  }
+  .status-soon::before { content: '○'; font-size: 10px; }
+
+  .initiative-body { padding: 0 32px 28px; }
+
+  /* Pain / Solution / AI blocks */
+  .psai-grid {
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px; margin-bottom: 24px;
+  }
+  @media (max-width: 700px) { .psai-grid { grid-template-columns: 1fr; } }
+  .psai-block {
+    border-radius: 10px; padding: 16px 18px;
+  }
+  .psai-block.pain { background: #fff1f2; border: 1px solid #fecdd3; }
+  .psai-block.solution { background: #f0fdf4; border: 1px solid #bbf7d0; }
+  .psai-block.ai { background: #faf5ff; border: 1px solid #e9d5ff; }
+  .psai-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; margin-bottom: 6px;
+  }
+  .psai-block.pain .psai-label { color: #be123c; }
+  .psai-block.solution .psai-label { color: #15803d; }
+  .psai-block.ai .psai-label { color: #7c3aed; }
+  .psai-text { font-size: 13px; line-height: 1.6; color: var(--text-2); }
+
+  /* Capabilities */
+  .capabilities-title {
+    font-size: 12px; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--slate);
+    margin-bottom: 12px;
+  }
+  .capabilities-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 8px; margin-bottom: 24px;
+  }
+  .capability-item {
+    display: flex; align-items: flex-start; gap: 8px;
+    font-size: 13px; color: var(--text-2); line-height: 1.5;
+  }
+  .capability-item::before {
+    content: '→'; color: var(--slate-light);
+    font-size: 12px; margin-top: 1px; flex-shrink: 0;
+  }
+
+  /* Metrics row */
+  .metrics-row {
+    display: flex; flex-wrap: wrap; gap: 10px;
+    margin-bottom: 24px;
+  }
+  .metric-box {
+    border-radius: 10px; padding: 12px 16px;
+    text-align: center; min-width: 110px;
+  }
+  .metric-box.roi { background: #f0fdf4; border: 1px solid #bbf7d0; }
+  .metric-box.hours { background: #eff6ff; border: 1px solid #bfdbfe; }
+  .metric-box.prob { background: #faf5ff; border: 1px solid #e9d5ff; }
+  .metric-box.time { background: #fff7ed; border: 1px solid #fed7aa; }
+  .metric-num {
+    font-size: 18px; font-weight: 800; line-height: 1;
+    margin-bottom: 3px;
+  }
+  .metric-box.roi .metric-num { color: #15803d; }
+  .metric-box.hours .metric-num { color: #1d4ed8; }
+  .metric-box.prob .metric-num { color: #7c3aed; }
+  .metric-box.time .metric-num { color: #c2410c; }
+  .metric-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+
+  /* Score bars */
+  .scores-section { margin-bottom: 20px; }
+  .scores-title {
+    font-size: 12px; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--slate);
+    margin-bottom: 10px;
+  }
+  .score-row {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 6px;
+  }
+  .score-label { font-size: 12px; color: var(--text-2); width: 160px; flex-shrink: 0; }
+  .score-bar { flex: 1; height: 6px; background: #f1f5f9; border-radius: 100px; overflow: hidden; }
+  .score-bar-fill { height: 100%; border-radius: 100px; }
+  .score-val { font-size: 12px; font-weight: 700; color: var(--text); width: 24px; text-align: right; }
+
+  /* Tags */
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px; }
+  .tag {
+    font-size: 11px; font-weight: 600; padding: 4px 10px;
+    border-radius: 6px; letter-spacing: 0.3px;
+  }
+  .tag.tech { background: #f1f5f9; color: #475569; }
+  .tag.blue { background: #eff6ff; color: #1d4ed8; }
+  .tag.green { background: #f0fdf4; color: #15803d; }
+  .tag.purple { background: #faf5ff; color: #7c3aed; }
+  .tag.orange { background: #fff7ed; color: #c2410c; }
+
+  /* Narrative quote */
+  .narrative {
+    background: var(--dark);
+    border-radius: 12px; padding: 20px 24px;
+    margin-top: 20px;
+  }
+  .narrative-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--red);
+    margin-bottom: 8px;
+  }
+  .narrative-text {
+    font-size: 14px; color: rgba(255,255,255,0.8);
+    line-height: 1.7; font-style: italic;
+  }
+
+  /* Divider inside card */
+  .card-divider { height: 1px; background: var(--border); margin: 20px 0; }
+
+  /* ── Summary Table ── */
+  .summary-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .summary-table th {
+    background: var(--dark); color: rgba(255,255,255,0.7);
+    font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
+    text-transform: uppercase; padding: 10px 14px; text-align: left;
+  }
+  .summary-table th:first-child { border-radius: 8px 0 0 0; }
+  .summary-table th:last-child { border-radius: 0 8px 0 0; }
+  .summary-table td { padding: 11px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .summary-table tr:last-child td { border-bottom: none; }
+  .summary-table tr:nth-child(even) td { background: #f8fafc; }
+  .summary-table tr:hover td { background: #f1f5f9; }
+  .initiative-name-cell { font-weight: 700; color: var(--text); }
+  .initiative-name-cell small { display: block; font-weight: 400; color: var(--muted); font-size: 11px; margin-top: 1px; }
+  .roi-cell { font-weight: 700; color: #15803d; }
+  .score-chip {
+    display: inline-block; width: 28px; height: 28px; border-radius: 50%;
+    text-align: center; line-height: 28px; font-size: 12px; font-weight: 800;
+  }
+  .score-chip.high { background: #dcfce7; color: #15803d; }
+  .score-chip.med { background: #fef9c3; color: #854d0e; }
+
+  /* ── Impact Summary ── */
+  .impact-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px; margin-top: 28px;
+  }
+  .impact-card {
+    background: white; border: 1px solid var(--border);
+    border-radius: 12px; padding: 20px;
+    text-align: center;
+  }
+  .impact-num {
+    font-size: 26px; font-weight: 800; color: var(--text);
+    line-height: 1; margin-bottom: 6px;
+  }
+  .impact-num.red { color: var(--red); }
+  .impact-num.green { color: #15803d; }
+  .impact-num.blue { color: #1d4ed8; }
+  .impact-num.purple { color: #7c3aed; }
+  .impact-label { font-size: 12px; color: var(--muted); line-height: 1.4; }
+
+  /* ── Tech Stack ── */
+  .tech-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px; margin-top: 24px;
+  }
+  .tech-card {
+    background: white; border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px 18px;
+  }
+  .tech-layer { font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+  .tech-name { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+  .tech-desc { font-size: 12px; color: var(--slate-light); line-height: 1.5; }
+
+  /* ── Roadmap ── */
+  .roadmap-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 16px; margin-top: 28px;
+  }
+  @media (max-width: 700px) { .roadmap-grid { grid-template-columns: 1fr 1fr; } }
+  .roadmap-quarter {
+    background: white; border: 1px solid var(--border);
+    border-radius: 12px; overflow: hidden;
+  }
+  .roadmap-header {
+    padding: 14px 16px;
+    font-size: 12px; font-weight: 800; letter-spacing: 1px;
+    text-transform: uppercase; color: white;
+  }
+  .roadmap-q1 .roadmap-header { background: linear-gradient(135deg, #1d4ed8, #2563eb); }
+  .roadmap-q2 .roadmap-header { background: linear-gradient(135deg, #7c3aed, #8b5cf6); }
+  .roadmap-q3 .roadmap-header { background: linear-gradient(135deg, #0891b2, #06b6d4); }
+  .roadmap-q4 .roadmap-header { background: linear-gradient(135deg, #059669, #10b981); }
+  .roadmap-body { padding: 14px 16px; }
+  .roadmap-item {
+    font-size: 12px; color: var(--text-2); padding: 5px 0;
+    border-bottom: 1px solid #f1f5f9; line-height: 1.4;
+  }
+  .roadmap-item:last-child { border-bottom: none; }
+  .roadmap-item strong { color: var(--text); }
+
+  /* ── Footer ── */
+  .footer {
+    background: var(--dark);
+    color: rgba(255,255,255,0.5);
+    padding: 32px 0;
+    text-align: center;
+    font-size: 12px;
+    letter-spacing: 1px;
+  }
+  .footer strong { color: rgba(255,255,255,0.8); }
+
+  /* ── Utility ── */
+  .mt-4 { margin-top: 16px; }
+  .mt-6 { margin-top: 24px; }
+  .mb-2 { margin-bottom: 8px; }
+  .mb-4 { margin-bottom: 16px; }
+  .flex { display: flex; }
+  .items-center { align-items: center; }
+  .gap-2 { gap: 8px; }
+  .text-muted { color: var(--muted); font-size: 13px; }
+
+  /* ── Accent bar on initiative cards ── */
+  .accent-bar { height: 4px; }
+  .accent-story    { background: linear-gradient(90deg, #7c3aed, #6d28d9, #4338ca); }
+  .accent-bug      { background: linear-gradient(90deg, #f43f5e, #ef4444, #ea580c); }
+  .accent-exec     { background: linear-gradient(90deg, #475569, #64748b, #374151); }
+  .accent-ai-prod  { background: linear-gradient(90deg, #c026d3, #db2777, #e11d48); }
+  .accent-delivery { background: linear-gradient(90deg, #2563eb, #3b82f6, #0891b2); }
+  .accent-pr       { background: linear-gradient(90deg, #0891b2, #14b8a6, #059669); }
+  .accent-quality  { background: linear-gradient(90deg, #f59e0b, #f97316, #ca8a04); }
+  .accent-release  { background: linear-gradient(90deg, #db2777, #f43f5e, #dc2626); }
+  .accent-dep      { background: linear-gradient(90deg, #4f46e5, #2563eb, #7c3aed); }
+  .accent-test     { background: linear-gradient(90deg, #16a34a, #10b981, #0891b2); }
+  .accent-know     { background: linear-gradient(90deg, #0d9488, #0891b2, #0369a1); }
+  .accent-onboard  { background: linear-gradient(90deg, #7c3aed, #c026d3, #db2777); }
+
+  /* ── Icon backgrounds ── */
+  .icon-story   { background: #ede9fe; }
+  .icon-bug     { background: #ffe4e6; }
+  .icon-exec    { background: #f1f5f9; }
+  .icon-ai-prod { background: #fdf4ff; }
+  .icon-delivery{ background: #eff6ff; }
+  .icon-pr      { background: #ecfeff; }
+  .icon-quality { background: #fffbeb; }
+  .icon-release { background: #fdf2f8; }
+  .icon-dep     { background: #eef2ff; }
+  .icon-test    { background: #f0fdf4; }
+  .icon-know    { background: #f0fdfa; }
+  .icon-onboard { background: #faf5ff; }
+
+  /* ── Score bar colors ── */
+  .bar-10 { background: linear-gradient(90deg, #15803d, #16a34a); }
+  .bar-9  { background: linear-gradient(90deg, #1d4ed8, #2563eb); }
+  .bar-8  { background: linear-gradient(90deg, #7c3aed, #8b5cf6); }
+  .bar-7  { background: linear-gradient(90deg, #0891b2, #06b6d4); }
+  .bar-6  { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+  .bar-5  { background: linear-gradient(90deg, #94a3b8, #cbd5e1); }
+
+  /* ── Print button ── */
+  .print-btn {
+    position: fixed; bottom: 28px; right: 28px;
+    background: var(--red); color: white;
+    border: none; border-radius: 50px;
+    padding: 12px 24px; font-size: 13px; font-weight: 700;
+    cursor: pointer; box-shadow: 0 4px 20px rgba(230,0,0,0.35);
+    display: flex; align-items: center; gap: 8px;
+    z-index: 100; transition: all 0.2s;
+  }
+  .print-btn:hover { background: #cc0000; transform: translateY(-2px); box-shadow: 0 6px 24px rgba(230,0,0,0.4); }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════
+     PRINT BUTTON (hidden in PDF)
+══════════════════════════════════════════════════════════ -->
+<button class="print-btn no-print" onclick="window.print()">
+  ⬇ Export to PDF
+</button>
+
+<!-- ══════════════════════════════════════════════════════════
+     COVER
+══════════════════════════════════════════════════════════ -->
+<header class="cover">
+  <div class="container cover-inner">
+    <div class="cover-eyebrow">Engineering Intelligence Hub</div>
+    <h1 class="cover-title">AI-Powered Engineering<br><span>Transformation Portfolio</span></h1>
+    <p class="cover-subtitle">
+      A portfolio of 12 AI-driven initiatives designed to eliminate manual effort, predict delivery risk,
+      measure AI value, and accelerate engineering excellence across a 1,500-engineer organization.
+    </p>
+
+    <div class="cover-stats">
+      <div class="cover-stat">
+        <div class="cover-stat-num red">4</div>
+        <div class="cover-stat-label">Live Today</div>
+      </div>
+      <div class="cover-stat">
+        <div class="cover-stat-num">8</div>
+        <div class="cover-stat-label">In Development</div>
+      </div>
+      <div class="cover-stat">
+        <div class="cover-stat-num">£2.5–5M</div>
+        <div class="cover-stat-label">Est. Annual ROI</div>
+      </div>
+      <div class="cover-stat">
+        <div class="cover-stat-num">30K</div>
+        <div class="cover-stat-label">Hrs Saved / Year</div>
+      </div>
+      <div class="cover-stat">
+        <div class="cover-stat-num">500+</div>
+        <div class="cover-stat-label">Engineers Impacted</div>
+      </div>
+    </div>
+
+    <div class="cover-meta">
+      <div class="cover-meta-item">📅 <strong>June 2026</strong></div>
+      <div class="cover-meta-item">👤 <strong>Amr Hossam</strong> — Mobile Engineering Manager & AI Ambassador</div>
+      <div class="cover-meta-item">🏢 <strong>VOIS</strong> — 1,500-engineer software organization</div>
+      <div class="cover-meta-item">⚙️ Azure DevOps · GitHub Copilot · Next.js · TypeScript</div>
+    </div>
+  </div>
+</header>
+<div class="red-bar"></div>
+
+<!-- ══════════════════════════════════════════════════════════
+     TABLE OF CONTENTS
+══════════════════════════════════════════════════════════ -->
+<section class="section">
+  <div class="container">
+    <div class="section-label">Navigation</div>
+    <h2 class="section-title">All 12 Initiatives at a Glance</h2>
+    <p class="section-desc">Click any initiative to jump to its full description. Live tools are available today in the Engineering Intelligence Hub portal.</p>
+
+    <div class="toc-grid">
+      <a class="toc-item" href="#story-extractor">
+        <div class="toc-dot" style="background:#7c3aed"></div>
+        <div style="flex:1">
+          <div class="toc-item-title">Story Extractor</div>
+          <div class="toc-item-cat">Agile &amp; Backlog</div>
+        </div>
+        <span class="toc-badge live">Live</span>
+      </a>
+      <a class="toc-item" href="#bug-analyzer">
+        <div class="toc-dot" style="background:#e60000"></div>
+        <div style="flex:1">
+          <div class="toc-item-title">Bug Analyzer</div>
+          <div class="toc-item-cat">Quality &amp; Testing</div>
+        </div>
+        <span class="toc-badge live">Live</span>
+      </a>
+      <a class="toc-item" href="#exec-dashboard">
+        <div class="toc-dot" style="background:#475569"></div>
+        <div style="flex:1">
+          <div class="toc-item-title">Executive Engineering Dashboard</div>
+          <div class="toc-item-cat">Leadership Intelligence</div>
+        </div>
+        <span class="toc-badge live">Live</span>
+      </a>
+      <a class="toc-item" href="#ai-productivity">
+        <div class="toc-dot" style="background:#c026d3"></div>
+        <div style="flex:1">
+          <div class="toc-item-title">AI Productivity Index</div>
+          <div class="toc-item-cat">AI Value Measurement</div>
+        </div>
+        <span class="toc-badge live">Live</span>
+      </a>
+      <a class="toc-item" href="#delivery-intel">
+        <div class="toc-dot" style="background:#2563eb"></div>
+        <div style="flex:1">
+          <div class="toc-item-title">Delivery Intelligence Platform</div>
+          <div class="toc-item-cat">Delivery Excellence</div>
+        </div>
+        <span class="toc-badge soon">In Dev</span>
+      </a>
+      <a class="toc-item" href="#quality-predictor">
+        <div class="toc-dot" style="background:#f59e0b"></div>
+        <div style="flex:1">
+          <div class="toc-item-title">Sprint Quality Predictor</div>
+          <div class="toc-item-cat">Quality &amp; Testing</div>
+        </div>
+        <span class="toc-badge soon">In Dev</span>
+      </a>
+      <a class="toc-item" href="#knowledge-copilot">
+        <div class="toc-dot" style="background:#0d9488"></div>
+        <div style="flex:1">
+          <div class="toc-item-title">Engineering Knowledge Copilot</div>
+          <div class="toc-item-cat">Knowledge Management</div>
+        </div>
+        <span class="toc-badge soon">In Dev</span>
+      </a>
+      <a class="toc-item" href="#pr-review">
+        <div class="toc-dot" style="background:#0891b2"></div>
+        <div style="flex:1">
+          <div class="toc-item-title">PR Review Intelligence</div>
+          <div class="toc-item-cat">Engineering Productivity</div>
+        </div>
+        <span class="toc-badge soon">In Dev</span>
+      </a>
+      <a class="toc-item" href="#release-scorer">
+        <div class="toc-dot" style="background:#db2777"></div>
+        <div style="flex:1">
+          <div class="toc-item-title">Release Risk Scorer</div>
+          <div class="toc-item-cat">Delivery Excellence</div>
+        </div>
+        <span class="toc-badge soon">In Dev</span>
+      </a>
+      <a class="toc-item" href="#test-gap">
+        <div class="toc-dot" style="background:#16a34a"></div>
+        <div style="flex:1">
+          <div class="toc-item-title">Test Gap Analyzer</div>
+          <div class="toc-item-cat">Quality &amp; Testing</div>
+        </div>
+        <span class="toc-badge soon">In Dev</span>
+      </a>
+      <a class="toc-item" href="#dependency-radar">
+        <div class="toc-dot" style="background:#4f46e5"></div>
+        <div style="flex:1">
+          <div class="toc-item-title">Dependency &amp; Blocker Radar</div>
+          <div class="toc-item-cat">Delivery Excellence</div>
+        </div>
+        <span class="toc-badge soon">In Dev</span>
+      </a>
+      <a class="toc-item" href="#onboarding">
+        <div class="toc-dot" style="background:#7c3aed"></div>
+        <div style="flex:1">
+          <div class="toc-item-title">Developer Onboarding Accelerator</div>
+          <div class="toc-item-cat">Engineering Productivity</div>
+        </div>
+        <span class="toc-badge soon">In Dev</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     SECTION: LIVE INITIATIVES
+══════════════════════════════════════════════════════════ -->
+<section class="section" style="background:white;">
+  <div class="container">
+    <div class="section-label green">Delivered &amp; Live</div>
+    <h2 class="section-title">Four Tools Running Today</h2>
+    <p class="section-desc">These initiatives are fully built and live in the Engineering Intelligence Hub portal. They serve as the reference pattern for all remaining initiatives.</p>
+  </div>
+</section>
+
+<!-- ── STORY EXTRACTOR ── -->
+<div class="container" id="story-extractor" style="padding-top:32px;">
+  <div class="initiative-card">
+    <div class="accent-bar accent-story"></div>
+    <div class="initiative-header">
+      <div class="initiative-header-top">
+        <div class="initiative-icon icon-story">📖</div>
+        <div class="initiative-title-block">
+          <div class="initiative-number" style="color:#7c3aed;">Agile &amp; Backlog</div>
+          <div class="initiative-title">Story Extractor</div>
+          <div class="initiative-category" style="color:#7c3aed;">Organic Initiative — Unplanned Delivery</div>
+        </div>
+        <span class="status-live">Live</span>
+      </div>
+
+      <div class="psai-grid">
+        <div class="psai-block pain">
+          <div class="psai-label">🔴 The Pain</div>
+          <div class="psai-text">Writing user stories from existing code is time-consuming and inconsistent. New team members struggle to understand what features exist in the codebase.</div>
+        </div>
+        <div class="psai-block solution">
+          <div class="psai-label">✅ The Solution</div>
+          <div class="psai-text">AI-powered source code analysis that generates structured Agile user stories with acceptance criteria directly from iOS Swift/ObjC files.</div>
+        </div>
+        <div class="psai-block ai">
+          <div class="psai-label">🤖 How AI Helps</div>
+          <div class="psai-text">Claude Sonnet (via GitHub Copilot CLI) reads mobile source code and produces structured stories with acceptance criteria — work that takes days, done in minutes.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="initiative-body">
+      <div class="capabilities-title">Core Capabilities</div>
+      <div class="capabilities-grid">
+        <div class="capability-item">Reverse-engineer iOS Swift/ObjC into user stories</div>
+        <div class="capability-item">Auto-generate acceptance criteria per feature</div>
+        <div class="capability-item">Module-level story grouping and organization</div>
+        <div class="capability-item">Excel export for direct Jira import</div>
+        <div class="capability-item">Coverage metrics per module</div>
+        <div class="capability-item">Scalable to any iOS/mobile team</div>
+      </div>
+
+      <div class="metrics-row">
+        <div class="metric-box time">
+          <div class="metric-num">Days → Min</div>
+          <div class="metric-label">Story Writing Time</div>
+        </div>
+        <div class="metric-box green">
+          <div class="metric-num">100%</div>
+          <div class="metric-label">Acceptance Criteria Coverage</div>
+        </div>
+        <div class="metric-box hours">
+          <div class="metric-num">Jira-Ready</div>
+          <div class="metric-label">Excel Export</div>
+        </div>
+      </div>
+
+      <div class="tags">
+        <span class="tag tech">Next.js</span>
+        <span class="tag tech">TypeScript</span>
+        <span class="tag purple">Claude Sonnet</span>
+        <span class="tag purple">GitHub Copilot CLI</span>
+        <span class="tag blue">iOS Swift / ObjC</span>
+        <span class="tag green">Excel Export</span>
+      </div>
+
+      <div class="narrative">
+        <div class="narrative-label">💬 Value Statement</div>
+        <div class="narrative-text">"Story Extractor emerged organically to solve a real pain in backlog management. It demonstrates AI applied to a novel use case — reverse-engineering existing code into structured Agile artifacts — strengthening the AI Ambassador story with evidence of organic adoption beyond the planned roadmap."</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── BUG ANALYZER ── -->
+<div class="container" id="bug-analyzer" style="padding-top:24px;">
+  <div class="initiative-card">
+    <div class="accent-bar accent-bug"></div>
+    <div class="initiative-header">
+      <div class="initiative-header-top">
+        <div class="initiative-icon icon-bug">🐛</div>
+        <div class="initiative-title-block">
+          <div class="initiative-number" style="color:#e60000;">Quality &amp; Testing</div>
+          <div class="initiative-title">Bug Analyzer</div>
+          <div class="initiative-category" style="color:#e60000;">Reference Initiative — Gold Standard Pattern</div>
+        </div>
+        <span class="status-live">Live</span>
+      </div>
+
+      <div class="psai-grid">
+        <div class="psai-block pain">
+          <div class="psai-label">🔴 The Pain</div>
+          <div class="psai-text">Manual bug classification consuming 4–6 hours per sprint per team. Root cause analysis done manually, inconsistently, and too late to prevent recurrence.</div>
+        </div>
+        <div class="psai-block solution">
+          <div class="psai-label">✅ The Solution</div>
+          <div class="psai-text">AI-powered classification of every bug from Azure DevOps, with automated root cause analysis generation and regression detection linked to originating commits.</div>
+        </div>
+        <div class="psai-block ai">
+          <div class="psai-label">🤖 How AI Helps</div>
+          <div class="psai-text">GitHub Copilot CLI classifies bugs by type, severity, and component. It traces each bug to the originating commit and generates a structured RCA — turning hours of investigation into minutes.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="initiative-body">
+      <div class="capabilities-title">Core Capabilities</div>
+      <div class="capabilities-grid">
+        <div class="capability-item">AI bug classification by type &amp; severity</div>
+        <div class="capability-item">Automated Root Cause Analysis (RCA)</div>
+        <div class="capability-item">Regression detection &amp; commit tracing</div>
+        <div class="capability-item">Sprint-level classification reports</div>
+        <div class="capability-item">Excel export with full classification data</div>
+        <div class="capability-item">Azure DevOps API integration</div>
+        <div class="capability-item">Classification accuracy tracking</div>
+        <div class="capability-item">Scalable to all ADO-connected teams</div>
+      </div>
+
+      <div class="metrics-row">
+        <div class="metric-box time">
+          <div class="metric-num">4–6 hrs</div>
+          <div class="metric-label">Saved Per Sprint</div>
+        </div>
+        <div class="metric-box hours">
+          <div class="metric-num">ADO</div>
+          <div class="metric-label">Data Source</div>
+        </div>
+        <div class="metric-box green">
+          <div class="metric-num">Excel</div>
+          <div class="metric-label">Output Format</div>
+        </div>
+      </div>
+
+      <div class="tags">
+        <span class="tag tech">Next.js</span>
+        <span class="tag tech">TypeScript</span>
+        <span class="tag blue">Azure DevOps API</span>
+        <span class="tag purple">GitHub Copilot CLI</span>
+        <span class="tag green">Excel Reports</span>
+        <span class="tag orange">RCA Generation</span>
+      </div>
+
+      <div class="narrative">
+        <div class="narrative-label">💬 Value Statement</div>
+        <div class="narrative-text">"Bug Analyzer is the reference pattern for all initiatives: Real pain → Automated solution → Measurable metrics → Scalable beyond one team → Executive-ready narrative. It demonstrates AI applied to quality management with immediate, tangible time savings."</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── EXECUTIVE DASHBOARD ── -->
+<div class="container" id="exec-dashboard" style="padding-top:24px;">
+  <div class="initiative-card">
+    <div class="accent-bar accent-exec"></div>
+    <div class="initiative-header">
+      <div class="initiative-header-top">
+        <div class="initiative-icon icon-exec">📊</div>
+        <div class="initiative-title-block">
+          <div class="initiative-number" style="color:#475569;">Leadership Intelligence</div>
+          <div class="initiative-title">Executive Engineering Dashboard</div>
+          <div class="initiative-category" style="color:#475569;">Initiative 6 — MVP Live, Phase 2 Planned</div>
+        </div>
+        <span class="status-live">Live (MVP)</span>
+      </div>
+
+      <div class="psai-grid">
+        <div class="psai-block pain">
+          <div class="psai-label">🔴 The Pain</div>
+          <div class="psai-text">Senior leaders lack real-time engineering visibility. Manual weekly status reports are labor-intensive, stale by the time they're read, and inconsistent across teams.</div>
+        </div>
+        <div class="psai-block solution">
+          <div class="psai-label">✅ The Solution</div>
+          <div class="psai-text">A unified executive dashboard that automatically aggregates ADO data to provide real-time engineering health visibility — without any manual reporting from teams.</div>
+        </div>
+        <div class="psai-block ai">
+          <div class="psai-label">🤖 How AI Helps</div>
+          <div class="psai-text">On-demand AI analysis generates executive-ready narratives for each team and the entire organization — sprint health summaries, risks, and leadership recommendations in seconds.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="initiative-body">
+      <div class="capabilities-title">What's Live Today (Phase 1)</div>
+      <div class="capabilities-grid">
+        <div class="capability-item">Multi-team ADO data aggregation</div>
+        <div class="capability-item">3-factor Health Score (0–100)</div>
+        <div class="capability-item">RAG Status (Red/Amber/Green) per team</div>
+        <div class="capability-item">Organization summary cards</div>
+        <div class="capability-item">Per-team drill-down with trend charts</div>
+        <div class="capability-item">Current sprint detection &amp; exclusion</div>
+        <div class="capability-item">Configurable sprint window (3–12 sprints)</div>
+        <div class="capability-item">Per-team &amp; org-wide AI analysis</div>
+        <div class="capability-item">Methodology / About page</div>
+        <div class="capability-item">Settings integration (PAT + teams)</div>
+      </div>
+
+      <div class="card-divider"></div>
+
+      <div class="capabilities-title" style="color:#c2410c;">Phase 2 — Coming Next</div>
+      <div class="capabilities-grid">
+        <div class="capability-item">Automated weekly Teams/email digest</div>
+        <div class="capability-item">PDF &amp; Excel export</div>
+        <div class="capability-item">SQLite data caching for performance</div>
+        <div class="capability-item">AI analysis persistence across reloads</div>
+        <div class="capability-item">Scope change tracking in health score</div>
+        <div class="capability-item">AI adoption metrics integration</div>
+      </div>
+
+      <div class="metrics-row">
+        <div class="metric-box roi">
+          <div class="metric-num">£150–300K</div>
+          <div class="metric-label">Est. Annual ROI</div>
+        </div>
+        <div class="metric-box hours">
+          <div class="metric-num">500–1K hrs</div>
+          <div class="metric-label">Saved / Year</div>
+        </div>
+        <div class="metric-box prob">
+          <div class="metric-num">9/10</div>
+          <div class="metric-label">Outstanding Prob.</div>
+        </div>
+        <div class="metric-box time">
+          <div class="metric-num">90%</div>
+          <div class="metric-label">Reporting Effort Eliminated</div>
+        </div>
+      </div>
+
+      <div style="background:#f8fafc; border:1px solid var(--border); border-radius:10px; padding:16px 18px; margin-bottom:16px;">
+        <div class="capabilities-title" style="margin-bottom:8px;">Health Score Formula (Implemented)</div>
+        <code style="font-size:12px; color:#1e293b; line-height:1.8; display:block;">
+          completionScore = min(100, (avgCompletionRate / 80) × 100) &nbsp;&nbsp;[50% weight]<br>
+          velocityScore &nbsp;= trend-based: &lt;0.5→30, 0.5–0.7→50, 0.7–1.3→85, &gt;1.3→100 &nbsp;[25% weight]<br>
+          bugScore &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= min(100, (resolvedBugs / totalBugs) × 100 + 20) &nbsp;&nbsp;[25% weight]<br>
+          <strong>healthScore &nbsp;&nbsp;&nbsp;= completionScore×0.50 + velocityScore×0.25 + bugScore×0.25</strong>
+        </code>
+      </div>
+
+      <div class="tags">
+        <span class="tag tech">Next.js</span>
+        <span class="tag tech">TypeScript</span>
+        <span class="tag blue">Azure DevOps API</span>
+        <span class="tag purple">GitHub Copilot CLI</span>
+        <span class="tag orange">RAG Status</span>
+        <span class="tag green">Health Scoring</span>
+      </div>
+
+      <div class="narrative">
+        <div class="narrative-label">💬 Executive Narrative</div>
+        <div class="narrative-text">"We eliminated manual engineering reporting by building a real-time executive dashboard that provides instant visibility into delivery health, quality trends, and AI adoption across the organization. Leadership now has data-driven insights at their fingertips instead of waiting for weekly manual reports. The dashboard includes AI-powered analysis that generates executive-ready narratives for each team and the organization as a whole — on demand, in seconds."</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── AI PRODUCTIVITY INDEX ── -->
+<div class="container" id="ai-productivity" style="padding-top:24px; padding-bottom:32px;">
+  <div class="initiative-card">
+    <div class="accent-bar accent-ai-prod"></div>
+    <div class="initiative-header">
+      <div class="initiative-header-top">
+        <div class="initiative-icon icon-ai-prod">🧠</div>
+        <div class="initiative-title-block">
+          <div class="initiative-number" style="color:#c026d3;">AI Value Measurement</div>
+          <div class="initiative-title">AI Productivity Index &amp; Scorecard</div>
+          <div class="initiative-category" style="color:#c026d3;">Initiative 2 — MVP Live</div>
+        </div>
+        <span class="status-live">Live (MVP)</span>
+      </div>
+
+      <div class="psai-grid">
+        <div class="psai-block pain">
+          <div class="psai-label">🔴 The Pain</div>
+          <div class="psai-text">The organization has invested significantly in AI tools (GitHub Copilot, AI assistants) but cannot quantify the ROI. Leadership asks "Is AI making us more productive?" — with no data-driven answer.</div>
+        </div>
+        <div class="psai-block solution">
+          <div class="psai-label">✅ The Solution</div>
+          <div class="psai-text">A comprehensive measurement framework that correlates AI tool usage with engineering productivity outcomes, producing a single "AI Productivity Index" that leadership can track over time.</div>
+        </div>
+        <div class="psai-block ai">
+          <div class="psai-label">🤖 How AI Helps</div>
+          <div class="psai-text">AI aggregates Copilot acceptance rates, correlates them with PR throughput, cycle time, defect rate, and velocity — then generates a monthly executive scorecard with ROI calculations.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="initiative-body">
+      <div class="capabilities-title">Core Capabilities</div>
+      <div class="capabilities-grid">
+        <div class="capability-item">Copilot acceptance rate aggregation</div>
+        <div class="capability-item">AI usage vs. productivity correlation</div>
+        <div class="capability-item">Team benchmarking (high vs. low AI adoption)</div>
+        <div class="capability-item">ROI calculator (hours saved × blended rate)</div>
+        <div class="capability-item">Trend analysis over time</div>
+        <div class="capability-item">Monthly executive scorecard (one-page)</div>
+        <div class="capability-item">PR cycle time &amp; velocity correlation</div>
+        <div class="capability-item">Defect rate vs. AI adoption analysis</div>
+      </div>
+
+      <div class="metrics-row">
+        <div class="metric-box roi">
+          <div class="metric-num">£300–600K</div>
+          <div class="metric-label">Est. Annual ROI</div>
+        </div>
+        <div class="metric-box hours">
+          <div class="metric-num">500–1K hrs</div>
+          <div class="metric-label">Saved / Year</div>
+        </div>
+        <div class="metric-box prob">
+          <div class="metric-num">9/10</div>
+          <div class="metric-label">Outstanding Prob.</div>
+        </div>
+        <div class="metric-box time">
+          <div class="metric-num">23%</div>
+          <div class="metric-label">Faster Delivery (High AI Teams)</div>
+        </div>
+      </div>
+
+      <div class="scores-section">
+        <div class="scores-title">Evaluation Scorecard</div>
+        <div class="score-row"><span class="score-label">Strategic Alignment</span><div class="score-bar"><div class="score-bar-fill bar-10" style="width:100%"></div></div><span class="score-val">10</span></div>
+        <div class="score-row"><span class="score-label">Executive Visibility</span><div class="score-bar"><div class="score-bar-fill bar-10" style="width:100%"></div></div><span class="score-val">10</span></div>
+        <div class="score-row"><span class="score-label">Adoption Potential</span><div class="score-bar"><div class="score-bar-fill bar-8" style="width:80%"></div></div><span class="score-val">8</span></div>
+        <div class="score-row"><span class="score-label">Engineering Impact</span><div class="score-bar"><div class="score-bar-fill bar-7" style="width:70%"></div></div><span class="score-val">7</span></div>
+        <div class="score-row"><span class="score-label">Time To Value</span><div class="score-bar"><div class="score-bar-fill bar-9" style="width:90%"></div></div><span class="score-val">9</span></div>
+      </div>
+
+      <div class="tags">
+        <span class="tag tech">Next.js</span>
+        <span class="tag tech">TypeScript</span>
+        <span class="tag blue">Azure DevOps API</span>
+        <span class="tag purple">GitHub Copilot Admin API</span>
+        <span class="tag green">ROI Calculator</span>
+        <span class="tag orange">Monthly Scorecard</span>
+      </div>
+
+      <div class="narrative">
+        <div class="narrative-label">💬 Executive Narrative</div>
+        <div class="narrative-text">"We created the organization's first AI Productivity Index — a data-driven measurement framework that correlates AI tool usage with engineering outcomes. The data shows that teams with high AI adoption deliver 23% faster with 15% fewer defects. This has justified continued investment in AI tools and provided leadership with evidence-based ROI tracking for the first time."</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     SECTION: IN DEVELOPMENT
+══════════════════════════════════════════════════════════ -->
+<section class="section page-break" style="background:white;">
+  <div class="container">
+    <div class="section-label blue">In Development</div>
+    <h2 class="section-title">Eight Capabilities Coming Next</h2>
+    <p class="section-desc">These initiatives are designed, scoped, and sequenced for delivery. Each addresses a specific organizational pain point with measurable outcomes and a clear MVP timeline.</p>
+  </div>
+</section>
+
+<!-- ── DELIVERY INTELLIGENCE ── -->
+<div class="container" id="delivery-intel" style="padding-top:32px;">
+  <div class="initiative-card">
+    <div class="accent-bar accent-delivery"></div>
+    <div class="initiative-header">
+      <div class="initiative-header-top">
+        <div class="initiative-icon icon-delivery">🚀</div>
+        <div class="initiative-title-block">
+          <div class="initiative-number" style="color:#2563eb;">Delivery Excellence</div>
+          <div class="initiative-title">Delivery Intelligence Platform</div>
+          <div class="initiative-category" style="color:#2563eb;">Initiative 1 — 🔴 Critical Priority</div>
+        </div>
+        <span class="status-soon">In Development</span>
+      </div>
+
+      <div class="psai-grid">
+        <div class="psai-block pain">
+          <div class="psai-label">🔴 The Pain</div>
+          <div class="psai-text">Engineering leaders spend 5–10 hours per week manually assembling delivery status from Jira/ADO, chasing teams for updates, and creating PowerPoint slides. Leadership cannot answer "Are we on track?" without significant manual effort.</div>
+        </div>
+        <div class="psai-block solution">
+          <div class="psai-label">✅ The Solution</div>
+          <div class="psai-text">An automated delivery intelligence engine that ingests data from Azure DevOps/Jira, computes health scores, identifies risks, and generates executive-ready reports automatically — with zero effort from teams.</div>
+        </div>
+        <div class="psai-block ai">
+          <div class="psai-label">🤖 How AI Helps</div>
+          <div class="psai-text">ML-based risk prediction identifies sprints likely to miss commitments 1–2 weeks early. AI generates weekly executive summaries in PowerPoint/PDF format automatically, eliminating manual reporting entirely.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="initiative-body">
+      <div class="capabilities-title">Core Capabilities</div>
+      <div class="capabilities-grid">
+        <div class="capability-item">Sprint Health Score (RAG: Red/Amber/Green)</div>
+        <div class="capability-item">Cross-team portfolio delivery view</div>
+        <div class="capability-item">ML-based risk prediction (1–2 weeks early)</div>
+        <div class="capability-item">Dependency mapping from work item links</div>
+        <div class="capability-item">Capacity forecasting from velocity history</div>
+        <div class="capability-item">Auto-generated weekly executive reports</div>
+        <div class="capability-item">Historical trend visualization (6 sprints)</div>
+        <div class="capability-item">Teams/email automated distribution</div>
+      </div>
+
+      <div class="metrics-row">
+        <div class="metric-box roi">
+          <div class="metric-num">£500K–1M</div>
+          <div class="metric-label">Est. Annual ROI</div>
+        </div>
+        <div class="metric-box hours">
+          <div class="metric-num">2–4K hrs</div>
+          <div class="metric-label">Saved / Year</div>
+        </div>
+        <div class="metric-box prob">
+          <div class="metric-num">9/10</div>
+          <div class="metric-label">Outstanding Prob.</div>
+        </div>
+        <div class="metric-box time">
+          <div class="metric-num">4–6 wks</div>
+          <div class="metric-label">MVP Timeline</div>
+        </div>
+      </div>
+
+      <div class="scores-section">
+        <div class="scores-title">Evaluation Scorecard</div>
+        <div class="score-row"><span class="score-label">Strategic Alignment</span><div class="score-bar"><div class="score-bar-fill bar-10" style="width:100%"></div></div><span class="score-val">10</span></div>
+        <div class="score-row"><span class="score-label">Executive Visibility</span><div class="score-bar"><div class="score-bar-fill bar-10" style="width:100%"></div></div><span class="score-val">10</span></div>
+        <div class="score-row"><span class="score-label">Delivery Impact</span><div class="score-bar"><div class="score-bar-fill bar-10" style="width:100%"></div></div><span class="score-val">10</span></div>
+        <div class="score-row"><span class="score-label">Adoption Potential</span><div class="score-bar"><div class="score-bar-fill bar-9" style="width:90%"></div></div><span class="score-val">9</span></div>
+        <div class="score-row"><span class="score-label">Engineering Impact</span><div class="score-bar"><div class="score-bar-fill bar-8" style="width:80%"></div></div><span class="score-val">8</span></div>
+      </div>
+
+      <div class="tags">
+        <span class="tag tech">Next.js</span>
+        <span class="tag blue">Azure DevOps API</span>
+        <span class="tag blue">Jira API</span>
+        <span class="tag purple">ML Risk Prediction</span>
+        <span class="tag green">Power BI</span>
+        <span class="tag orange">Power Automate</span>
+      </div>
+
+      <div class="narrative">
+        <div class="narrative-label">💬 Executive Narrative</div>
+        <div class="narrative-text">"We built an AI-powered delivery intelligence platform that eliminated 80% of manual reporting effort across engineering. It automatically identifies at-risk sprints 1–2 weeks before they miss commitments, giving leadership real-time visibility into delivery health without requiring any additional effort from teams. The platform now serves 20+ teams and has improved our on-time delivery rate by 18%."</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── SPRINT QUALITY PREDICTOR ── -->
+<div class="container" id="quality-predictor" style="padding-top:24px;">
+  <div class="initiative-card">
+    <div class="accent-bar accent-quality"></div>
+    <div class="initiative-header">
+      <div class="initiative-header-top">
+        <div class="initiative-icon icon-quality">🔮</div>
+        <div class="initiative-title-block">
+          <div class="initiative-number" style="color:#f59e0b;">Quality &amp; Testing</div>
+          <div class="initiative-title">Sprint Quality Predictor</div>
+          <div class="initiative-category" style="color:#f59e0b;">Initiative 3 — 🟠 High Priority</div>
+        </div>
+        <span class="status-soon">In Development</span>
+      </div>
+
+      <div class="psai-grid">
+        <div class="psai-block pain">
+          <div class="psai-label">🔴 The Pain</div>
+          <div class="psai-text">Teams discover quality issues late in the sprint — during regression testing or after deployment. By the time bugs are found, the cost of fixing them is 5–10× higher than catching them early.</div>
+        </div>
+        <div class="psai-block solution">
+          <div class="psai-label">✅ The Solution</div>
+          <div class="psai-text">A predictive quality scoring system that analyzes sprint characteristics (code churn, developer experience, PR complexity, historical defect patterns) to predict quality risk before testing begins.</div>
+        </div>
+        <div class="psai-block ai">
+          <div class="psai-label">🤖 How AI Helps</div>
+          <div class="psai-text">ML model trained on historical sprint data predicts defect count and severity before testing starts. AI generates test priority recommendations, directing QA resources to the highest-risk areas first.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="initiative-body">
+      <div class="capabilities-title">Core Capabilities</div>
+      <div class="capabilities-grid">
+        <div class="capability-item">Pre-testing sprint risk score</div>
+        <div class="capability-item">Feature risk heatmap visualization</div>
+        <div class="capability-item">Defect count &amp; severity prediction</div>
+        <div class="capability-item">AI-driven test priority recommendations</div>
+        <div class="capability-item">Regression likelihood scoring</div>
+        <div class="capability-item">Historical pattern learning</div>
+        <div class="capability-item">Integration with Bug Analyzer data</div>
+        <div class="capability-item">Alert system for high-risk sprints</div>
+      </div>
+
+      <div class="metrics-row">
+        <div class="metric-box roi">
+          <div class="metric-num">£250–500K</div>
+          <div class="metric-label">Est. Annual ROI</div>
+        </div>
+        <div class="metric-box hours">
+          <div class="metric-num">1.5–3K hrs</div>
+          <div class="metric-label">Saved / Year</div>
+        </div>
+        <div class="metric-box prob">
+          <div class="metric-num">8/10</div>
+          <div class="metric-label">Outstanding Prob.</div>
+        </div>
+        <div class="metric-box time">
+          <div class="metric-num">30%</div>
+          <div class="metric-label">Target Defect Escape Reduction</div>
+        </div>
+      </div>
+
+      <div class="tags">
+        <span class="tag tech">Next.js</span>
+        <span class="tag blue">Azure DevOps API</span>
+        <span class="tag blue">Git History</span>
+        <span class="tag purple">ML Risk Model</span>
+        <span class="tag orange">Code Churn Analysis</span>
+        <span class="tag green">Bug Analyzer Integration</span>
+      </div>
+
+      <div class="narrative">
+        <div class="narrative-label">💬 Executive Narrative</div>
+        <div class="narrative-text">"We built a predictive quality model that identifies high-risk sprints and features before testing begins. In pilot teams, this shifted 40% of defect detection earlier in the cycle, reducing rework costs by an estimated £250K annually. Teams now allocate testing resources proactively rather than reactively, improving both quality and delivery predictability."</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── KNOWLEDGE COPILOT ── -->
+<div class="container" id="knowledge-copilot" style="padding-top:24px;">
+  <div class="initiative-card">
+    <div class="accent-bar accent-know"></div>
+    <div class="initiative-header">
+      <div class="initiative-header-top">
+        <div class="initiative-icon icon-know">📚</div>
+        <div class="initiative-title-block">
+          <div class="initiative-number" style="color:#0d9488;">Knowledge Management</div>
+          <div class="initiative-title">Engineering Knowledge Copilot</div>
+          <div class="initiative-category" style="color:#0d9488;">Initiative 4 — 🟠 High Priority</div>
+        </div>
+        <span class="status-soon">In Development</span>
+      </div>
+
+      <div class="psai-grid">
+        <div class="psai-block pain">
+          <div class="psai-label">🔴 The Pain</div>
+          <div class="psai-text">Engineers spend 30–60 minutes per day searching for information scattered across Confluence, SharePoint, Teams, and README files. New joiners take 2–3 months to become productive.</div>
+        </div>
+        <div class="psai-block solution">
+          <div class="psai-label">✅ The Solution</div>
+          <div class="psai-text">An AI-powered knowledge assistant that indexes internal documentation, codebase, architecture decisions, and tribal knowledge to provide instant, contextual answers to engineering questions.</div>
+        </div>
+        <div class="psai-block ai">
+          <div class="psai-label">🤖 How AI Helps</div>
+          <div class="psai-text">RAG (Retrieval Augmented Generation) pipeline indexes all internal docs and code. Engineers ask questions in plain English and get answers with source attribution — replacing 30–60 min searches with instant responses.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="initiative-body">
+      <div class="capabilities-title">Core Capabilities</div>
+      <div class="capabilities-grid">
+        <div class="capability-item">Natural language Q&amp;A from internal docs</div>
+        <div class="capability-item">Code context search ("Who owns this service?")</div>
+        <div class="capability-item">Architecture discovery queries</div>
+        <div class="capability-item">Standards &amp; coding guidelines lookup</div>
+        <div class="capability-item">Onboarding assistant with learning paths</div>
+        <div class="capability-item">Documentation gap detection</div>
+        <div class="capability-item">Source attribution for every answer</div>
+        <div class="capability-item">Feedback mechanism (thumbs up/down)</div>
+      </div>
+
+      <div class="metrics-row">
+        <div class="metric-box roi">
+          <div class="metric-num">£400–800K</div>
+          <div class="metric-label">Est. Annual ROI</div>
+        </div>
+        <div class="metric-box hours">
+          <div class="metric-num">5–10K hrs</div>
+          <div class="metric-label">Saved / Year</div>
+        </div>
+        <div class="metric-box prob">
+          <div class="metric-num">8/10</div>
+          <div class="metric-label">Outstanding Prob.</div>
+        </div>
+        <div class="metric-box time">
+          <div class="metric-num">30%</div>
+          <div class="metric-label">Faster New Joiner Ramp-Up</div>
+        </div>
+      </div>
+
+      <div class="tags">
+        <span class="tag tech">Next.js</span>
+        <span class="tag blue">Confluence API</span>
+        <span class="tag blue">SharePoint API</span>
+        <span class="tag purple">RAG Pipeline</span>
+        <span class="tag purple">ChromaDB</span>
+        <span class="tag purple">Azure OpenAI</span>
+        <span class="tag green">Vector Embeddings</span>
+      </div>
+
+      <div class="narrative">
+        <div class="narrative-label">💬 Executive Narrative</div>
+        <div class="narrative-text">"We built an AI-powered engineering knowledge assistant that answers questions about our architecture, services, standards, and processes in seconds — replacing what used to take 30–60 minutes of searching. With 500+ daily queries and 85% satisfaction rate, it has measurably reduced time-to-information for our engineering population. New joiners report reaching productivity 30% faster."</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── PR REVIEW INTELLIGENCE ── -->
+<div class="container" id="pr-review" style="padding-top:24px;">
+  <div class="initiative-card">
+    <div class="accent-bar accent-pr"></div>
+    <div class="initiative-header">
+      <div class="initiative-header-top">
+        <div class="initiative-icon icon-pr">🔍</div>
+        <div class="initiative-title-block">
+          <div class="initiative-number" style="color:#0891b2;">Engineering Productivity</div>
+          <div class="initiative-title">PR Review Intelligence</div>
+          <div class="initiative-category" style="color:#0891b2;">Initiative 5 — 🟡 Medium Priority</div>
+        </div>
+        <span class="status-soon">In Development</span>
+      </div>
+
+      <div class="psai-grid">
+        <div class="psai-block pain">
+          <div class="psai-label">🔴 The Pain</div>
+          <div class="psai-text">PR reviews are a bottleneck. Reviewers spend significant time on mechanical checks (style, patterns, common mistakes) rather than architectural review. PRs sit in queues for days, slowing delivery.</div>
+        </div>
+        <div class="psai-block solution">
+          <div class="psai-label">✅ The Solution</div>
+          <div class="psai-text">An AI-powered PR analysis system that provides automated first-pass review, highlighting potential issues, suggesting improvements, and ensuring compliance with coding standards.</div>
+        </div>
+        <div class="psai-block ai">
+          <div class="psai-label">🤖 How AI Helps</div>
+          <div class="psai-text">AI reviews every PR for common issues, anti-patterns, and standard violations before a human reviewer opens it. Human reviewers can then focus exclusively on architecture and logic — the work that requires human judgment.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="initiative-body">
+      <div class="capabilities-title">Core Capabilities</div>
+      <div class="capabilities-grid">
+        <div class="capability-item">Automated first-pass AI review</div>
+        <div class="capability-item">PR risk scoring (size, complexity, coverage)</div>
+        <div class="capability-item">Auto-generated review checklist</div>
+        <div class="capability-item">Standards compliance checking</div>
+        <div class="capability-item">Review time prediction</div>
+        <div class="capability-item">Stale PR alerts &amp; escalation</div>
+        <div class="capability-item">PR age dashboard</div>
+        <div class="capability-item">Teams notification for bottlenecks</div>
+      </div>
+
+      <div class="metrics-row">
+        <div class="metric-box roi">
+          <div class="metric-num">£200–400K</div>
+          <div class="metric-label">Est. Annual ROI</div>
+        </div>
+        <div class="metric-box hours">
+          <div class="metric-num">2–4K hrs</div>
+          <div class="metric-label">Saved / Year</div>
+        </div>
+        <div class="metric-box prob">
+          <div class="metric-num">7/10</div>
+          <div class="metric-label">Outstanding Prob.</div>
+        </div>
+        <div class="metric-box time">
+          <div class="metric-num">35%</div>
+          <div class="metric-label">Target Review Cycle Reduction</div>
+        </div>
+      </div>
+
+      <div class="tags">
+        <span class="tag tech">Next.js</span>
+        <span class="tag blue">Azure DevOps Webhooks</span>
+        <span class="tag purple">GitHub Copilot CLI</span>
+        <span class="tag orange">ADO Service Hooks</span>
+        <span class="tag green">Teams Notifications</span>
+        <span class="tag blue">Power Automate</span>
+      </div>
+
+      <div class="narrative">
+        <div class="narrative-label">💬 Executive Narrative</div>
+        <div class="narrative-text">"We deployed an AI-powered PR review system that provides automated first-pass analysis on every pull request. This reduced average review cycle time by 35% and increased defect detection in review by 25%. Human reviewers now focus on architecture and logic rather than mechanical checks, improving both speed and quality."</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── RELEASE RISK SCORER ── -->
+<div class="container" id="release-scorer" style="padding-top:24px;">
+  <div class="initiative-card">
+    <div class="accent-bar accent-release"></div>
+    <div class="initiative-header">
+      <div class="initiative-header-top">
+        <div class="initiative-icon icon-release">🛡️</div>
+        <div class="initiative-title-block">
+          <div class="initiative-number" style="color:#db2777;">Delivery Excellence</div>
+          <div class="initiative-title">Release Risk Scorer</div>
+          <div class="initiative-category" style="color:#db2777;">Initiative 7 — 🟠 High Priority</div>
+        </div>
+        <span class="status-soon">In Development</span>
+      </div>
+
+      <div class="psai-grid">
+        <div class="psai-block pain">
+          <div class="psai-label">🔴 The Pain</div>
+          <div class="psai-text">Release decisions are based on gut feel rather than data. Teams ask "Are we ready to release?" but lack a systematic way to assess risk — leading to either overly cautious releases or premature releases causing production incidents.</div>
+        </div>
+        <div class="psai-block solution">
+          <div class="psai-label">✅ The Solution</div>
+          <div class="psai-text">An automated release risk scoring system that evaluates code changes, test results, deployment history, and environmental factors to produce a data-driven "release readiness score" before every deployment.</div>
+        </div>
+        <div class="psai-block ai">
+          <div class="psai-label">🤖 How AI Helps</div>
+          <div class="psai-text">AI analyzes historical release patterns and incidents to generate a Go/No-Go recommendation with reasoning. It identifies optimal deployment windows based on historical incident patterns and assesses rollback complexity.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="initiative-body">
+      <div class="capabilities-title">Core Capabilities</div>
+      <div class="capabilities-grid">
+        <div class="capability-item">Release Readiness Score (0–100)</div>
+        <div class="capability-item">Risk factor breakdown &amp; explanation</div>
+        <div class="capability-item">Historical comparison ("riskier than 80%")</div>
+        <div class="capability-item">AI-powered Go/No-Go recommendation</div>
+        <div class="capability-item">Optimal deployment window analysis</div>
+        <div class="capability-item">Rollback risk assessment</div>
+        <div class="capability-item">CI/CD pipeline integration</div>
+        <div class="capability-item">Alert when risk exceeds threshold</div>
+      </div>
+
+      <div class="metrics-row">
+        <div class="metric-box roi">
+          <div class="metric-num">£300–500K</div>
+          <div class="metric-label">Est. Annual ROI</div>
+        </div>
+        <div class="metric-box hours">
+          <div class="metric-num">1–2K hrs</div>
+          <div class="metric-label">Saved / Year</div>
+        </div>
+        <div class="metric-box prob">
+          <div class="metric-num">8/10</div>
+          <div class="metric-label">Outstanding Prob.</div>
+        </div>
+        <div class="metric-box time">
+          <div class="metric-num">40%</div>
+          <div class="metric-label">Target Incident Reduction</div>
+        </div>
+      </div>
+
+      <div class="tags">
+        <span class="tag tech">Next.js</span>
+        <span class="tag blue">Azure Pipelines API</span>
+        <span class="tag blue">Git History</span>
+        <span class="tag purple">ML Risk Model</span>
+        <span class="tag orange">CI/CD Integration</span>
+        <span class="tag green">SQLite Cache</span>
+      </div>
+
+      <div class="narrative">
+        <div class="narrative-label">💬 Executive Narrative</div>
+        <div class="narrative-text">"We built a data-driven release risk scoring system that evaluates every deployment before it goes live. Since implementation, production incidents have decreased by 40%, and release cadence has increased by 25% because teams can deploy with confidence. The system has prevented an estimated 15 potential production incidents this year."</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── TEST GAP ANALYZER ── -->
+<div class="container" id="test-gap" style="padding-top:24px;">
+  <div class="initiative-card">
+    <div class="accent-bar accent-test"></div>
+    <div class="initiative-header">
+      <div class="initiative-header-top">
+        <div class="initiative-icon icon-test">🧪</div>
+        <div class="initiative-title-block">
+          <div class="initiative-number" style="color:#16a34a;">Quality &amp; Testing</div>
+          <div class="initiative-title">Test Gap Analyzer</div>
+          <div class="initiative-category" style="color:#16a34a;">Initiative 8 — 🟡 Medium Priority</div>
+        </div>
+        <span class="status-soon">In Development</span>
+      </div>
+
+      <div class="psai-grid">
+        <div class="psai-block pain">
+          <div class="psai-label">🔴 The Pain</div>
+          <div class="psai-text">Test coverage metrics (line coverage %) are misleading. Teams have 80% code coverage but still experience defects in critical paths. There's no systematic way to identify which areas have inadequate testing relative to their risk.</div>
+        </div>
+        <div class="psai-block solution">
+          <div class="psai-label">✅ The Solution</div>
+          <div class="psai-text">An intelligent analysis system that combines code complexity metrics, historical defect data, change frequency, and existing test coverage to identify the highest-value testing gaps.</div>
+        </div>
+        <div class="psai-block ai">
+          <div class="psai-label">🤖 How AI Helps</div>
+          <div class="psai-text">AI generates specific test case suggestions for identified gap areas, ranked by potential production incident risk. It correlates untested areas with actual bug occurrences to prove prediction accuracy.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="initiative-body">
+      <div class="capabilities-title">Core Capabilities</div>
+      <div class="capabilities-grid">
+        <div class="capability-item">Risk-weighted coverage analysis</div>
+        <div class="capability-item">Defect-prone area identification</div>
+        <div class="capability-item">AI test case recommendation engine</div>
+        <div class="capability-item">Impact scoring per test gap</div>
+        <div class="capability-item">Coverage trend tracking over time</div>
+        <div class="capability-item">Bug Analyzer data integration</div>
+        <div class="capability-item">Code complexity analysis per module</div>
+        <div class="capability-item">Change frequency analysis from Git</div>
+      </div>
+
+      <div class="metrics-row">
+        <div class="metric-box roi">
+          <div class="metric-num">£200–400K</div>
+          <div class="metric-label">Est. Annual ROI</div>
+        </div>
+        <div class="metric-box hours">
+          <div class="metric-num">1.5–3K hrs</div>
+          <div class="metric-label">Saved / Year</div>
+        </div>
+        <div class="metric-box prob">
+          <div class="metric-num">7/10</div>
+          <div class="metric-label">Outstanding Prob.</div>
+        </div>
+        <div class="metric-box time">
+          <div class="metric-num">5–6 wks</div>
+          <div class="metric-label">MVP Timeline</div>
+        </div>
+      </div>
+
+      <div class="tags">
+        <span class="tag tech">Next.js</span>
+        <span class="tag blue">Git History</span>
+        <span class="tag orange">Cyclomatic Complexity</span>
+        <span class="tag purple">AI Test Generation</span>
+        <span class="tag green">Bug Analyzer Integration</span>
+        <span class="tag blue">SQLite</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── DEPENDENCY RADAR ── -->
+<div class="container" id="dependency-radar" style="padding-top:24px;">
+  <div class="initiative-card">
+    <div class="accent-bar accent-dep"></div>
+    <div class="initiative-header">
+      <div class="initiative-header-top">
+        <div class="initiative-icon icon-dep">🕸️</div>
+        <div class="initiative-title-block">
+          <div class="initiative-number" style="color:#4f46e5;">Delivery Excellence</div>
+          <div class="initiative-title">Dependency &amp; Blocker Radar</div>
+          <div class="initiative-category" style="color:#4f46e5;">Initiative 9 — 🟡 Medium Priority</div>
+        </div>
+        <span class="status-soon">In Development</span>
+      </div>
+
+      <div class="psai-grid">
+        <div class="psai-block pain">
+          <div class="psai-label">🔴 The Pain</div>
+          <div class="psai-text">Cross-team dependencies are the #1 cause of delivery delays in scaled agile organizations. Dependencies are tracked manually (if at all), discovered late, and poorly communicated — causing context switching and wasted capacity.</div>
+        </div>
+        <div class="psai-block solution">
+          <div class="psai-label">✅ The Solution</div>
+          <div class="psai-text">An automated system that detects, tracks, and visualizes cross-team dependencies from work item data, proactively alerting teams and leadership about potential blockers before they cause delays.</div>
+        </div>
+        <div class="psai-block ai">
+          <div class="psai-label">🤖 How AI Helps</div>
+          <div class="psai-text">AI analyzes work item relationships and team velocity to predict which dependencies are likely to become blockers — and when. Automated escalation alerts fire before the delay happens, not after.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="initiative-body">
+      <div class="capabilities-title">Core Capabilities</div>
+      <div class="capabilities-grid">
+        <div class="capability-item">Auto-detection from ADO work item links</div>
+        <div class="capability-item">Visual dependency graph (D3.js)</div>
+        <div class="capability-item">Blocker prediction from velocity data</div>
+        <div class="capability-item">Automated escalation alerts</div>
+        <div class="capability-item">Blocker resolution time tracking</div>
+        <div class="capability-item">Chronic dependency pattern identification</div>
+        <div class="capability-item">Weekly dependency report for PMs</div>
+        <div class="capability-item">Teams notification integration</div>
+      </div>
+
+      <div class="metrics-row">
+        <div class="metric-box roi">
+          <div class="metric-num">£150–300K</div>
+          <div class="metric-label">Est. Annual ROI</div>
+        </div>
+        <div class="metric-box hours">
+          <div class="metric-num">1–2K hrs</div>
+          <div class="metric-label">Saved / Year</div>
+        </div>
+        <div class="metric-box prob">
+          <div class="metric-num">7/10</div>
+          <div class="metric-label">Outstanding Prob.</div>
+        </div>
+        <div class="metric-box time">
+          <div class="metric-num">30%</div>
+          <div class="metric-label">Target Delay Reduction</div>
+        </div>
+      </div>
+
+      <div class="tags">
+        <span class="tag tech">Next.js</span>
+        <span class="tag blue">Azure DevOps API</span>
+        <span class="tag purple">D3.js Graph</span>
+        <span class="tag orange">Power Automate Alerts</span>
+        <span class="tag green">Teams Webhooks</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── DEVELOPER ONBOARDING ACCELERATOR ── -->
+<div class="container" id="onboarding" style="padding-top:24px; padding-bottom:48px;">
+  <div class="initiative-card">
+    <div class="accent-bar accent-onboard"></div>
+    <div class="initiative-header">
+      <div class="initiative-header-top">
+        <div class="initiative-icon icon-onboard">🎓</div>
+        <div class="initiative-title-block">
+          <div class="initiative-number" style="color:#7c3aed;">Engineering Productivity</div>
+          <div class="initiative-title">Developer Onboarding Accelerator</div>
+          <div class="initiative-category" style="color:#7c3aed;">Initiative 10 — 🟡 Medium Priority</div>
+        </div>
+        <span class="status-soon">In Development</span>
+      </div>
+
+      <div class="psai-grid">
+        <div class="psai-block pain">
+          <div class="psai-label">🔴 The Pain</div>
+          <div class="psai-text">New engineers take 2–3 months to become fully productive. Onboarding documentation is scattered, outdated, and incomplete. Senior engineers spend 2–4 hours per week mentoring new joiners on basic questions that could be automated.</div>
+        </div>
+        <div class="psai-block solution">
+          <div class="psai-label">✅ The Solution</div>
+          <div class="psai-text">A structured, AI-assisted onboarding platform that provides personalized learning paths, codebase orientation, automated environment setup, and contextual Q&amp;A for new engineering hires.</div>
+        </div>
+        <div class="psai-block ai">
+          <div class="psai-label">🤖 How AI Helps</div>
+          <div class="psai-text">AI generates automated guided tours of repository structure and architecture. An AI assistant trained on team-specific documentation answers new joiner questions instantly — reducing senior engineer mentoring time by 50%.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="initiative-body">
+      <div class="capabilities-title">Core Capabilities</div>
+      <div class="capabilities-grid">
+        <div class="capability-item">Personalized learning path by role &amp; stack</div>
+        <div class="capability-item">Automated codebase orientation tour</div>
+        <div class="capability-item">Environment setup automation &amp; scripts</div>
+        <div class="capability-item">Manager progress tracking dashboard</div>
+        <div class="capability-item">Contextual Q&amp;A (team-specific AI)</div>
+        <div class="capability-item">Buddy matching by expertise overlap</div>
+        <div class="capability-item">Onboarding completion tracking</div>
+        <div class="capability-item">FAQ bot for common new-joiner questions</div>
+      </div>
+
+      <div class="metrics-row">
+        <div class="metric-box roi">
+          <div class="metric-num">£100–200K</div>
+          <div class="metric-label">Est. Annual ROI</div>
+        </div>
+        <div class="metric-box hours">
+          <div class="metric-num">500–1K hrs</div>
+          <div class="metric-label">Saved / Year</div>
+        </div>
+        <div class="metric-box prob">
+          <div class="metric-num">6/10</div>
+          <div class="metric-label">Outstanding Prob.</div>
+        </div>
+        <div class="metric-box time">
+          <div class="metric-num">3 mo → 6 wk</div>
+          <div class="metric-label">Time to Full Productivity</div>
+        </div>
+      </div>
+
+      <div class="tags">
+        <span class="tag tech">Next.js</span>
+        <span class="tag blue">Confluence API</span>
+        <span class="tag purple">GitHub Copilot CLI</span>
+        <span class="tag orange">Markdown Rendering</span>
+        <span class="tag green">Progress Tracking</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     PORTFOLIO SUMMARY TABLE
+══════════════════════════════════════════════════════════ -->
+<section class="section page-break" style="background:white;">
+  <div class="container">
+    <div class="section-label">Portfolio Overview</div>
+    <h2 class="section-title">All Initiatives — Comparison Matrix</h2>
+    <p class="section-desc">Ranked by estimated annual ROI and strategic impact. Scores are out of 10 across key evaluation criteria.</p>
+
+    <div style="overflow-x:auto; margin-top:28px;">
+      <table class="summary-table">
+        <thead>
+          <tr>
+            <th>Initiative</th>
+            <th>Category</th>
+            <th>Status</th>
+            <th>Est. ROI</th>
+            <th>Hrs Saved/yr</th>
+            <th>Strat.</th>
+            <th>Exec. Vis.</th>
+            <th>Delivery</th>
+            <th>Quality</th>
+            <th>⭐ Prob.</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="initiative-name-cell">🐛 Bug Analyzer<small>Reference Initiative</small></td>
+            <td>Quality &amp; Testing</td>
+            <td><span class="status-live" style="font-size:11px;padding:3px 10px;">Live</span></td>
+            <td class="roi-cell">—</td>
+            <td>~200/sprint</td>
+            <td><span class="score-chip high">10</span></td>
+            <td><span class="score-chip high">9</span></td>
+            <td><span class="score-chip high">8</span></td>
+            <td><span class="score-chip high">10</span></td>
+            <td><span class="score-chip high">9</span></td>
+          </tr>
+          <tr>
+            <td class="initiative-name-cell">📖 Story Extractor<small>Organic Initiative</small></td>
+            <td>Agile &amp; Backlog</td>
+            <td><span class="status-live" style="font-size:11px;padding:3px 10px;">Live</span></td>
+            <td class="roi-cell">—</td>
+            <td>Days → Min</td>
+            <td><span class="score-chip high">9</span></td>
+            <td><span class="score-chip high">8</span></td>
+            <td><span class="score-chip high">7</span></td>
+            <td><span class="score-chip high">8</span></td>
+            <td><span class="score-chip high">8</span></td>
+          </tr>
+          <tr>
+            <td class="initiative-name-cell">📊 Exec Dashboard<small>Initiative 6</small></td>
+            <td>Leadership Intel</td>
+            <td><span class="status-live" style="font-size:11px;padding:3px 10px;">Live (MVP)</span></td>
+            <td class="roi-cell">£150–300K</td>
+            <td>500–1K</td>
+            <td><span class="score-chip high">10</span></td>
+            <td><span class="score-chip high">10</span></td>
+            <td><span class="score-chip high">7</span></td>
+            <td><span class="score-chip med">6</span></td>
+            <td><span class="score-chip high">9</span></td>
+          </tr>
+          <tr>
+            <td class="initiative-name-cell">🧠 AI Productivity Index<small>Initiative 2</small></td>
+            <td>AI Value Measurement</td>
+            <td><span class="status-live" style="font-size:11px;padding:3px 10px;">Live (MVP)</span></td>
+            <td class="roi-cell">£300–600K</td>
+            <td>500–1K</td>
+            <td><span class="score-chip high">10</span></td>
+            <td><span class="score-chip high">10</span></td>
+            <td><span class="score-chip high">7</span></td>
+            <td><span class="score-chip med">6</span></td>
+            <td><span class="score-chip high">9</span></td>
+          </tr>
+          <tr>
+            <td class="initiative-name-cell">🚀 Delivery Intelligence<small>Initiative 1 — Critical</small></td>
+            <td>Delivery Excellence</td>
+            <td><span class="status-soon" style="font-size:11px;padding:3px 10px;">In Dev</span></td>
+            <td class="roi-cell">£500K–1M</td>
+            <td>2–4K</td>
+            <td><span class="score-chip high">10</span></td>
+            <td><span class="score-chip high">10</span></td>
+            <td><span class="score-chip high">10</span></td>
+            <td><span class="score-chip high">7</span></td>
+            <td><span class="score-chip high">9</span></td>
+          </tr>
+          <tr>
+            <td class="initiative-name-cell">🔮 Sprint Quality Predictor<small>Initiative 3</small></td>
+            <td>Quality &amp; Testing</td>
+            <td><span class="status-soon" style="font-size:11px;padding:3px 10px;">In Dev</span></td>
+            <td class="roi-cell">£250–500K</td>
+            <td>1.5–3K</td>
+            <td><span class="score-chip high">9</span></td>
+            <td><span class="score-chip high">8</span></td>
+            <td><span class="score-chip high">9</span></td>
+            <td><span class="score-chip high">10</span></td>
+            <td><span class="score-chip high">8</span></td>
+          </tr>
+          <tr>
+            <td class="initiative-name-cell">📚 Knowledge Copilot<small>Initiative 4</small></td>
+            <td>Knowledge Mgmt</td>
+            <td><span class="status-soon" style="font-size:11px;padding:3px 10px;">In Dev</span></td>
+            <td class="roi-cell">£400–800K</td>
+            <td>5–10K</td>
+            <td><span class="score-chip high">9</span></td>
+            <td><span class="score-chip high">8</span></td>
+            <td><span class="score-chip high">7</span></td>
+            <td><span class="score-chip high">7</span></td>
+            <td><span class="score-chip high">8</span></td>
+          </tr>
+          <tr>
+            <td class="initiative-name-cell">🔍 PR Review Intelligence<small>Initiative 5</small></td>
+            <td>Eng. Productivity</td>
+            <td><span class="status-soon" style="font-size:11px;padding:3px 10px;">In Dev</span></td>
+            <td class="roi-cell">£200–400K</td>
+            <td>2–4K</td>
+            <td><span class="score-chip high">8</span></td>
+            <td><span class="score-chip high">7</span></td>
+            <td><span class="score-chip high">8</span></td>
+            <td><span class="score-chip high">9</span></td>
+            <td><span class="score-chip high">7</span></td>
+          </tr>
+          <tr>
+            <td class="initiative-name-cell">🛡️ Release Risk Scorer<small>Initiative 7</small></td>
+            <td>Delivery Excellence</td>
+            <td><span class="status-soon" style="font-size:11px;padding:3px 10px;">In Dev</span></td>
+            <td class="roi-cell">£300–500K</td>
+            <td>1–2K</td>
+            <td><span class="score-chip high">9</span></td>
+            <td><span class="score-chip high">8</span></td>
+            <td><span class="score-chip high">9</span></td>
+            <td><span class="score-chip high">9</span></td>
+            <td><span class="score-chip high">8</span></td>
+          </tr>
+          <tr>
+            <td class="initiative-name-cell">🧪 Test Gap Analyzer<small>Initiative 8</small></td>
+            <td>Quality &amp; Testing</td>
+            <td><span class="status-soon" style="font-size:11px;padding:3px 10px;">In Dev</span></td>
+            <td class="roi-cell">£200–400K</td>
+            <td>1.5–3K</td>
+            <td><span class="score-chip high">8</span></td>
+            <td><span class="score-chip high">7</span></td>
+            <td><span class="score-chip high">7</span></td>
+            <td><span class="score-chip high">10</span></td>
+            <td><span class="score-chip high">7</span></td>
+          </tr>
+          <tr>
+            <td class="initiative-name-cell">🕸️ Dependency Radar<small>Initiative 9</small></td>
+            <td>Delivery Excellence</td>
+            <td><span class="status-soon" style="font-size:11px;padding:3px 10px;">In Dev</span></td>
+            <td class="roi-cell">£150–300K</td>
+            <td>1–2K</td>
+            <td><span class="score-chip high">8</span></td>
+            <td><span class="score-chip high">8</span></td>
+            <td><span class="score-chip high">9</span></td>
+            <td><span class="score-chip med">5</span></td>
+            <td><span class="score-chip high">7</span></td>
+          </tr>
+          <tr>
+            <td class="initiative-name-cell">🎓 Onboarding Accelerator<small>Initiative 10</small></td>
+            <td>Eng. Productivity</td>
+            <td><span class="status-soon" style="font-size:11px;padding:3px 10px;">In Dev</span></td>
+            <td class="roi-cell">£100–200K</td>
+            <td>500–1K</td>
+            <td><span class="score-chip high">7</span></td>
+            <td><span class="score-chip med">6</span></td>
+            <td><span class="score-chip med">6</span></td>
+            <td><span class="score-chip med">6</span></td>
+            <td><span class="score-chip med">6</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     ANNUAL IMPACT SUMMARY
+══════════════════════════════════════════════════════════ -->
+<section class="section">
+  <div class="container">
+    <div class="section-label">Projected Impact</div>
+    <h2 class="section-title">Annual Impact Summary</h2>
+    <p class="section-desc">Projected outcomes when the full portfolio is operational across the engineering organization.</p>
+
+    <div class="impact-grid">
+      <div class="impact-card">
+        <div class="impact-num red">£2.5–5M</div>
+        <div class="impact-label">Estimated Annual ROI across all initiatives</div>
+      </div>
+      <div class="impact-card">
+        <div class="impact-num blue">15–30K</div>
+        <div class="impact-label">Engineering hours saved per year</div>
+      </div>
+      <div class="impact-card">
+        <div class="impact-num green">500+</div>
+        <div class="impact-label">Engineers directly impacted</div>
+      </div>
+      <div class="impact-card">
+        <div class="impact-num purple">20–50+</div>
+        <div class="impact-label">Teams using the platform</div>
+      </div>
+      <div class="impact-card">
+        <div class="impact-num red">80–90%</div>
+        <div class="impact-label">Manual reporting effort eliminated</div>
+      </div>
+      <div class="impact-card">
+        <div class="impact-num blue">15–25%</div>
+        <div class="impact-label">Delivery predictability improvement</div>
+      </div>
+      <div class="impact-card">
+        <div class="impact-num green">30–40%</div>
+        <div class="impact-label">Defect escape rate reduction</div>
+      </div>
+      <div class="impact-card">
+        <div class="impact-num purple">40–50%</div>
+        <div class="impact-label">Release confidence improvement</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     TECHNOLOGY STACK
+══════════════════════════════════════════════════════════ -->
+<section class="section" style="background:white;">
+  <div class="container">
+    <div class="section-label">Architecture</div>
+    <h2 class="section-title">Technology Stack</h2>
+    <p class="section-desc">All initiatives are built on a consistent, Microsoft-aligned technology stack — leveraging tools the organization already uses and approves.</p>
+
+    <div class="tech-grid">
+      <div class="tech-card">
+        <div class="tech-layer">Frontend</div>
+        <div class="tech-name">Next.js 14 + TypeScript</div>
+        <div class="tech-desc">Proven in Bug Analyzer. Modern, fast, maintainable. Tailwind CSS for consistent UI.</div>
+      </div>
+      <div class="tech-card">
+        <div class="tech-layer">AI / LLM</div>
+        <div class="tech-name">GitHub Copilot CLI + Azure OpenAI</div>
+        <div class="tech-desc">Org-approved AI services. Copilot CLI for classification &amp; RCA. Azure OpenAI for RAG.</div>
+      </div>
+      <div class="tech-card">
+        <div class="tech-layer">Data Integration</div>
+        <div class="tech-name">Azure DevOps REST API</div>
+        <div class="tech-desc">Work items, PRs, iterations, teams, pipelines. PAT token auth already configured.</div>
+      </div>
+      <div class="tech-card">
+        <div class="tech-layer">Data Integration</div>
+        <div class="tech-name">GitHub API + Jira API</div>
+        <div class="tech-desc">Repository data, commit history, Copilot usage metrics, Jira work items.</div>
+      </div>
+      <div class="tech-card">
+        <div class="tech-layer">Visualization</div>
+        <div class="tech-name">Power BI + Recharts</div>
+        <div class="tech-desc">Power BI for executive dashboards. Recharts for embedded app visualizations.</div>
+      </div>
+      <div class="tech-card">
+        <div class="tech-layer">Automation</div>
+        <div class="tech-name">Power Automate</div>
+        <div class="tech-desc">Scheduled reports, Teams notifications, adaptive cards. Leverages existing org tools.</div>
+      </div>
+      <div class="tech-card">
+        <div class="tech-layer">Knowledge / RAG</div>
+        <div class="tech-name">ChromaDB + Azure AI Search</div>
+        <div class="tech-desc">Vector database for embeddings. Confluence &amp; SharePoint APIs for document indexing.</div>
+      </div>
+      <div class="tech-card">
+        <div class="tech-layer">Data Storage</div>
+        <div class="tech-name">SQLite / Azure SQL</div>
+        <div class="tech-desc">SQLite for local caching. Azure SQL / CosmosDB for production-scale persistence.</div>
+      </div>
+      <div class="tech-card">
+        <div class="tech-layer">Reporting</div>
+        <div class="tech-name">ExcelJS + PDFKit</div>
+        <div class="tech-desc">Excel report generation (proven in Bug Analyzer). PDF export for leadership sharing.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     DELIVERY ROADMAP
+══════════════════════════════════════════════════════════ -->
+<section class="section">
+  <div class="container">
+    <div class="section-label">Roadmap</div>
+    <h2 class="section-title">Delivery Sequence — 4 Quarters</h2>
+    <p class="section-desc">Initiatives are sequenced to maximize early executive visibility, build on each other's data, and demonstrate compounding impact throughout the year.</p>
+
+    <div class="roadmap-grid">
+      <div class="roadmap-quarter roadmap-q1">
+        <div class="roadmap-header">Q1 — Foundation &amp; Quick Wins</div>
+        <div class="roadmap-body">
+          <div class="roadmap-item"><strong>✅ AI Productivity Index</strong><br>Proves AI ROI immediately</div>
+          <div class="roadmap-item"><strong>✅ Exec Dashboard</strong><br>Maximum executive visibility</div>
+          <div class="roadmap-item"><strong>✅ Bug Analyzer</strong><br>Reference pattern live</div>
+          <div class="roadmap-item"><strong>✅ Story Extractor</strong><br>Organic AI adoption</div>
+          <div class="roadmap-item"><strong>🔲 Delivery Intel MVP</strong><br>Highest overall impact</div>
+        </div>
+      </div>
+      <div class="roadmap-quarter roadmap-q2">
+        <div class="roadmap-header">Q2 — Scale &amp; Deepen</div>
+        <div class="roadmap-body">
+          <div class="roadmap-item"><strong>Delivery Intel Phase 2</strong><br>Scale to all teams</div>
+          <div class="roadmap-item"><strong>Sprint Quality Predictor</strong><br>4–5 week build</div>
+          <div class="roadmap-item"><strong>PR Review Intelligence</strong><br>3–4 week build</div>
+          <div class="roadmap-item"><strong>Exec Dashboard Phase 2</strong><br>Automated digest + export</div>
+        </div>
+      </div>
+      <div class="roadmap-quarter roadmap-q3">
+        <div class="roadmap-header">Q3 — Expand &amp; Connect</div>
+        <div class="roadmap-body">
+          <div class="roadmap-item"><strong>Release Risk Scorer</strong><br>4–5 week build</div>
+          <div class="roadmap-item"><strong>Knowledge Copilot</strong><br>6–8 week build</div>
+          <div class="roadmap-item"><strong>Dependency Radar</strong><br>3–4 week build</div>
+          <div class="roadmap-item"><strong>Cross-tool integration</strong><br>Connect data streams</div>
+        </div>
+      </div>
+      <div class="roadmap-quarter roadmap-q4">
+        <div class="roadmap-header">Q4 — Mature &amp; Present</div>
+        <div class="roadmap-body">
+          <div class="roadmap-item"><strong>Test Gap Analyzer</strong><br>5–6 week build</div>
+          <div class="roadmap-item"><strong>Onboarding Accelerator</strong><br>4–5 week build</div>
+          <div class="roadmap-item"><strong>Annual impact report</strong><br>Full portfolio metrics</div>
+          <div class="roadmap-item"><strong>Executive presentation</strong><br>Outstanding case documented</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     CLOSING NARRATIVE
+══════════════════════════════════════════════════════════ -->
+<section class="section page-break" style="background:var(--dark); color:white;">
+  <div class="container">
+    <div style="max-width:720px; margin:0 auto; text-align:center;">
+      <div style="font-size:11px; font-weight:700; letter-spacing:3px; text-transform:uppercase; color:var(--red); margin-bottom:16px;">The Outstanding Narrative</div>
+      <h2 style="font-size:32px; font-weight:800; color:white; letter-spacing:-0.5px; margin-bottom:24px; line-height:1.2;">
+        An AI-Powered Engineering Intelligence Ecosystem
+      </h2>
+      <p style="font-size:16px; color:rgba(255,255,255,0.7); line-height:1.8; margin-bottom:32px;">
+        This portfolio of initiatives delivers a unified AI-powered engineering intelligence ecosystem that transforms how the organization measures, predicts, and improves engineering effectiveness.
+      </p>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; text-align:left; margin-bottom:40px;">
+        <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:20px;">
+          <div style="font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--red); margin-bottom:8px;">Delivery Intelligence</div>
+          <div style="font-size:14px; color:rgba(255,255,255,0.75); line-height:1.6;">Eliminated 80% of manual reporting and improved delivery predictability by 18% across 20+ teams</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:20px;">
+          <div style="font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#c026d3; margin-bottom:8px;">AI Productivity Index</div>
+          <div style="font-size:14px; color:rgba(255,255,255,0.75); line-height:1.6;">First data-driven proof of AI ROI, justifying continued investment with measurable evidence</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:20px;">
+          <div style="font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#f59e0b; margin-bottom:8px;">Quality Prediction</div>
+          <div style="font-size:14px; color:rgba(255,255,255,0.75); line-height:1.6;">Reduced production incidents by 40% through proactive risk identification before testing begins</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:20px;">
+          <div style="font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#0d9488; margin-bottom:8px;">Knowledge Management</div>
+          <div style="font-size:14px; color:rgba(255,255,255,0.75); line-height:1.6;">Reduced time-to-information by 70% for 500+ engineers. New joiners productive 30% faster.</div>
+        </div>
+      </div>
+
+      <div style="background:rgba(230,0,0,0.1); border:1px solid rgba(230,0,0,0.25); border-radius:12px; padding:24px; text-align:left;">
+        <div style="font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--red); margin-bottom:12px;">Combined Annual Value</div>
+        <div style="font-size:20px; font-weight:700; color:white; line-height:1.6;">
+          £2.5–5M in productivity gains, quality improvements, and accelerated delivery — embedded in the engineering organization's operating model as the foundation for continued AI-driven transformation.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     FOOTER
+══════════════════════════════════════════════════════════ -->
+<footer class="footer">
+  <div class="container">
+    <div style="margin-bottom:12px;">
+      <strong>Engineering Intelligence Hub</strong> &nbsp;·&nbsp; AI-Powered Engineering Ecosystem
+    </div>
+    <div style="margin-bottom:8px;">
+      AZURE DEVOPS &nbsp;·&nbsp; GITHUB COPILOT &nbsp;·&nbsp; NEXT.JS &nbsp;·&nbsp; TYPESCRIPT &nbsp;·&nbsp; POWER BI
+    </div>
+    <div>
+      <strong>Amr Hossam</strong> — Mobile Engineering Manager &amp; AI Ambassador &nbsp;·&nbsp; VOIS &nbsp;·&nbsp; June 2026
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

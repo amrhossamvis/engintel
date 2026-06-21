@@ -18,7 +18,13 @@ This document captures a structured portfolio of AI-powered initiatives designed
 
 ---
 
-## Reference Initiative: Bug Analyzer (Delivered)
+## Delivered Initiatives
+
+The following initiatives have been fully built and are live in the Engineering Intelligence Hub portal. They serve as the reference pattern for all remaining initiatives in this portfolio.
+
+---
+
+### Reference Initiative: Bug Analyzer ✅ Delivered
 
 The Bug Analyzer serves as the template for all initiatives in this portfolio. It demonstrates the gold standard pattern:
 
@@ -36,20 +42,54 @@ The Bug Analyzer serves as the template for all initiatives in this portfolio. I
 
 ---
 
+### Story Extractor ✅ Delivered
+
+An AI-powered tool that reverse-engineers iOS source code into structured Agile user stories with acceptance criteria. Not originally in the portfolio plan — emerged as an organic initiative addressing a real pain point in backlog management and sprint planning.
+
+| Attribute | Value |
+|-----------|-------|
+| **Pain Point** | Writing user stories from existing code is time-consuming and inconsistent; new team members struggle to understand what features exist |
+| **Solution** | AI-powered source code analysis that generates structured user stories with acceptance criteria from iOS Swift/ObjC files |
+| **Technology** | Next.js, TypeScript, Claude Sonnet via GitHub Copilot CLI, Excel export |
+| **Strategic Area** | Agile & Backlog / Engineering Productivity |
+| **Adoption** | Immediate team; scalable to any iOS/mobile team |
+| **Visibility** | Demonstrates AI applied to backlog management — a novel use case |
+| **Measurable Output** | User stories per module, acceptance criteria coverage, Excel export for Jira import |
+
+**Note**: This initiative should be added to the portfolio narrative as evidence of organic AI adoption beyond the planned roadmap — it strengthens the "AI Ambassador" story.
+
+---
+
+### Executive Engineering Dashboard ✅ Delivered (MVP — Phase 2 Pending)
+
+See Initiative 6 below for full specification. The MVP has been built and is live. Phase 2 items (automated distribution, export, caching) are documented in the initiative section.
+
+---
+
+### AI Productivity Index ✅ Delivered (MVP)
+
+See Initiative 2 below for full specification. The MVP has been built and is live, including Copilot metrics integration and ADO productivity correlation.
+
+---
+
+---
+
 ## Portfolio Overview & Priority Ranking
 
-| # | Initiative | Strategic Area | Priority | Est. Annual ROI | Time to MVP |
-|---|-----------|---------------|----------|-----------------|-------------|
-| 1 | Delivery Intelligence Platform | Delivery Excellence | 🔴 Critical | £500K-1M | 4-6 weeks |
-| 2 | AI Productivity Index & Scorecard | AI Value Measurement | 🔴 Critical | £300K-600K | 3-4 weeks |
-| 3 | Sprint Quality Predictor | Quality & Testing | 🟠 High | £250K-500K | 4-5 weeks |
-| 4 | Engineering Knowledge Copilot | Knowledge Management | 🟠 High | £400K-800K | 6-8 weeks |
-| 5 | PR Review Intelligence | Engineering Productivity | 🟡 Medium | £200K-400K | 3-4 weeks |
-| 6 | Executive Engineering Dashboard | Leadership Intelligence | 🔴 Critical | £150K-300K | 3-4 weeks |
-| 7 | Release Risk Scorer | Delivery Excellence | 🟠 High | £300K-500K | 4-5 weeks |
-| 8 | Test Gap Analyzer | Quality & Testing | 🟡 Medium | £200K-400K | 5-6 weeks |
-| 9 | Dependency & Blocker Radar | Delivery Excellence | 🟡 Medium | £150K-300K | 3-4 weeks |
-| 10 | Developer Onboarding Accelerator | Engineering Productivity | 🟡 Medium | £100K-200K | 4-5 weeks |
+| # | Initiative | Strategic Area | Priority | Est. Annual ROI | Status |
+|---|-----------|---------------|----------|-----------------|--------|
+| — | Bug Analyzer | Quality & Testing | ✅ Delivered | — | Live |
+| — | Story Extractor | Agile & Backlog | ✅ Delivered | — | Live |
+| 2 | AI Productivity Index & Scorecard | AI Value Measurement | ✅ Delivered | £300K-600K | Live (MVP) |
+| 6 | Executive Engineering Dashboard | Leadership Intelligence | ✅ Delivered | £150K-300K | Live (MVP — Phase 2 pending) |
+| 1 | Delivery Intelligence Platform | Delivery Excellence | 🔴 Critical | £500K-1M | Not started |
+| 3 | Sprint Quality Predictor | Quality & Testing | 🟠 High | £250K-500K | Not started |
+| 4 | Engineering Knowledge Copilot | Knowledge Management | 🟠 High | £400K-800K | Not started |
+| 5 | PR Review Intelligence | Engineering Productivity | 🟡 Medium | £200K-400K | Not started |
+| 7 | Release Risk Scorer | Delivery Excellence | 🟠 High | £300K-500K | Not started |
+| 8 | Test Gap Analyzer | Quality & Testing | 🟡 Medium | £200K-400K | Not started |
+| 9 | Dependency & Blocker Radar | Delivery Excellence | 🟡 Medium | £150K-300K | Not started |
+| 10 | Developer Onboarding Accelerator | Engineering Productivity | 🟡 Medium | £100K-200K | Not started |
 
 ---
 
@@ -449,6 +489,8 @@ An AI-powered PR analysis system that provides automated first-pass review, high
 
 ## Initiative 6: Executive Engineering Dashboard
 
+> **Status: ✅ MVP Delivered — Phase 2 in planning**
+
 ### Problem Statement
 Senior leaders (VP, Director level) lack real-time visibility into engineering health. They rely on manual weekly status reports that are labor-intensive to produce, often stale by the time they're read, and inconsistent in format across teams. Leaders need a single pane of glass showing engineering health, delivery progress, quality trends, and AI adoption metrics.
 
@@ -459,10 +501,10 @@ A unified executive dashboard that automatically aggregates data from ADO, GitHu
 - **Organization Health Score**: Single composite metric for engineering health
 - **Delivery Progress**: Real-time portfolio delivery status across all teams
 - **Quality Trends**: Bug escape rates, regression trends, test coverage trajectories
-- **AI Adoption Metrics**: Copilot usage, AI tool adoption, productivity correlation
+- **AI Adoption Metrics**: Copilot usage, AI tool adoption, productivity correlation *(Phase 2 — fed by Initiative 2)*
 - **Team Comparison**: Benchmarking across teams (anonymized or opt-in)
 - **Drill-Down Capability**: Executive summary → team detail → sprint detail
-- **Automated Distribution**: Scheduled reports to leadership inboxes
+- **Automated Distribution**: Scheduled reports to leadership inboxes *(Phase 2)*
 
 ### Evaluation Scorecard
 
@@ -480,18 +522,48 @@ A unified executive dashboard that automatically aggregates data from ADO, GitHu
 | **Estimated Annual ROI** | **£150K-300K** (plus intangible value of better decisions) |
 | **Probability of Outstanding** | **9** |
 
-### MVP Scope (3-4 weeks)
-- [ ] Data aggregation from ADO (velocity, completion rate, bug counts)
-- [ ] Organization-level health score calculation
-- [ ] Simple Power BI or Next.js dashboard with executive summary view
-- [ ] Automated weekly email digest to leadership distribution list
-- [ ] Historical trend visualization (last 6 months)
+### ✅ Phase 1 — Delivered (MVP)
+
+The following capabilities are live in the Engineering Intelligence Hub:
+
+- [x] **Multi-team ADO data aggregation** — fetches sprint iterations, work items, and area paths per team in parallel; supports unlimited configured teams
+- [x] **3-factor Health Score (0–100)** — weighted composite: Completion Rate (50%) + Velocity Stability (25%) + Bug Resolution Rate (25%), computed from last 3 completed sprints
+- [x] **RAG Status** — Red/Amber/Green per team and org-wide, with clear thresholds (Green ≥65, Amber 40–64, Red <40)
+- [x] **Organization Summary Cards** — total teams, healthy/at-risk/critical counts, avg health score at a glance
+- [x] **Per-team drill-down** — expandable cards with delivery trend line chart, bug trend bar chart, and full sprint history table
+- [x] **Current sprint detection** — identifies in-progress sprint by date; excludes it from health scoring to avoid skew
+- [x] **Configurable sprint window** — 3, 6, 9, or 12 sprints selectable at runtime
+- [x] **Per-team AI Analysis** — on-demand Copilot CLI narrative: sprint health summary, key observations, risks, and recommendations
+- [x] **Org-wide AI Analysis** — cross-team executive summary with benchmarking, systemic risks, and leadership recommendations
+- [x] **Methodology / About page** — documents health score formula, RAG thresholds, data sources, limitations, and best practices
+- [x] **Settings integration** — PAT token and team configuration via shared settings page
+
+**Health Score Formula (implemented):**
+```
+completionScore  = min(100, (avgCompletionRate / 80) × 100)   [50% weight]
+velocityScore    = trend-based: <0.5→30, 0.5–0.7→50, 0.7–1.3→85, >1.3→100  [25% weight]
+bugScore         = min(100, (resolvedBugs / totalBugs) × 100 + 20)  [25% weight]
+healthScore      = completionScore×0.50 + velocityScore×0.25 + bugScore×0.25
+```
+
+### 🔲 Phase 2 — Planned (Not Yet Built)
+
+The following items are identified gaps between the MVP and the full initiative spec. These are the next development priorities for this initiative:
+
+| Gap | Priority | Description |
+|-----|----------|-------------|
+| **Automated weekly digest** | 🔴 High | Scheduled email or Teams message to leadership distribution list — currently the dashboard is on-demand only. Requires Power Automate flow or `node-cron` + Teams webhook. |
+| **Export (PDF / Excel)** | 🟠 Medium | Export current dashboard state as PDF or Excel for sharing in leadership meetings without requiring app access. |
+| **Data caching (SQLite)** | 🟠 Medium | Cache ADO responses locally to avoid re-fetching all data on every page load. Critical for performance at scale (10+ teams). |
+| **AI analysis persistence** | 🟡 Low | Save generated AI insights to local storage or SQLite so they survive page refresh. Currently lost on every reload. |
+| **Scope change tracking** | 🟡 Low | Add scope change (items added mid-sprint vs. committed) as a 4th health score signal. Requires comparing work item counts at sprint start vs. end. |
+| **AI adoption metrics integration** | ⏳ Future | Surface Copilot usage data from Initiative 2 (AI Productivity Index) directly in the exec dashboard. Depends on Initiative 2 being fully operational. |
 
 ### Scaling Path
-1. **Phase 1**: Basic delivery + quality metrics for one business unit
-2. **Phase 2**: Full organization coverage; AI adoption metrics integrated
-3. **Phase 3**: Predictive insights; "what to watch" AI-powered alerts
-4. **Phase 4**: Strategic recommendations engine; investment ROI tracking
+1. **Phase 1** ✅ *Delivered*: Multi-team health scores, RAG status, delivery/quality trends, AI analysis, methodology page
+2. **Phase 2** 🔲 *Next*: Automated distribution (email/Teams digest), export (PDF/Excel), data caching, AI analysis persistence
+3. **Phase 3**: Predictive insights; "what to watch" AI-powered alerts; scope change tracking in health score
+4. **Phase 4**: AI adoption metrics integrated (from Initiative 2); strategic recommendations engine; investment ROI tracking
 
 ### Success Metrics
 - Executive engagement (dashboard views per week)
@@ -501,7 +573,7 @@ A unified executive dashboard that automatically aggregates data from ADO, GitHu
 - Leadership satisfaction score
 
 ### Executive Narrative
-> "We eliminated manual engineering reporting by building a real-time executive dashboard that provides instant visibility into delivery health, quality trends, and AI adoption across the organization. Leadership now has data-driven insights at their fingertips instead of waiting for weekly manual reports. This has improved decision-making speed and freed engineering managers to focus on delivery rather than reporting."
+> "We eliminated manual engineering reporting by building a real-time executive dashboard that provides instant visibility into delivery health, quality trends, and AI adoption across the organization. Leadership now has data-driven insights at their fingertips instead of waiting for weekly manual reports. The dashboard includes AI-powered analysis that generates executive-ready narratives for each team and the organization as a whole — on demand, in seconds."
 
 ---
 
@@ -1245,6 +1317,8 @@ engineering-intelligence/
 
 ---
 
-**Document Version**: 1.1  
-**Last Updated**: June 10, 2026  
-**Updates**: Added Appendix D (Feasibility Assessment) and Appendix E (Required Tools & Infrastructure)
+**Document Version**: 1.2  
+**Last Updated**: June 19, 2026  
+**Updates**:
+- v1.1: Added Appendix D (Feasibility Assessment) and Appendix E (Required Tools & Infrastructure)
+- v1.2: Updated to reflect actual delivered state of codebase — added "Delivered Initiatives" section; added Story Extractor (unplanned delivered initiative); marked Bug Analyzer, AI Productivity Index, and Executive Engineering Dashboard as delivered in portfolio overview table; updated Initiative 6 with full Phase 1 delivered scope (health score formula, all implemented capabilities) and Phase 2 gap backlog (automated digest, export, caching, AI persistence, scope change tracking)

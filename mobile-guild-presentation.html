@@ -1,0 +1,1643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI for Mobile Guild — 2026 Plan</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --dark:       #0f1923;
+    --dark-2:     #1a2535;
+    --red:        #e60000;
+    --slate:      #475569;
+    --slate-light:#64748b;
+    --muted:      #94a3b8;
+    --border:     #e2e8f0;
+    --bg:         #f8fafc;
+    --white:      #ffffff;
+    --text:       #1e293b;
+    --text-2:     #374151;
+    --mobile:     #7c3aed;
+    --mobile-2:   #6d28d9;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    font-size: 15px;
+  }
+
+  @media print {
+    body { background: white; font-size: 11px; }
+    .no-print { display: none !important; }
+    .page-break { page-break-before: always; }
+    .card { break-inside: avoid; }
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    a { text-decoration: none; color: inherit; }
+  }
+
+  /* ── Layout ── */
+  .container { max-width: 960px; margin: 0 auto; padding: 0 32px; }
+  .section { padding: 52px 0; }
+  .section + .section { border-top: 1px solid var(--border); }
+
+  /* ── COVER ── */
+  .cover {
+    background: linear-gradient(135deg, #0f1923 0%, #1e1040 45%, #2d1b69 100%);
+    color: white;
+    padding: 68px 0 60px;
+    position: relative;
+    overflow: hidden;
+  }
+  .cover::before {
+    content: '';
+    position: absolute;
+    top: -100px; left: -100px;
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(124,58,237,0.18) 0%, transparent 65%);
+    border-radius: 50%;
+  }
+  .cover::after {
+    content: '';
+    position: absolute;
+    bottom: -80px; right: -80px;
+    width: 450px; height: 450px;
+    background: radial-gradient(circle, rgba(230,0,0,0.10) 0%, transparent 65%);
+    border-radius: 50%;
+  }
+  .cover-inner { position: relative; z-index: 1; }
+
+  .cover-eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 11px; font-weight: 700; letter-spacing: 3px;
+    text-transform: uppercase; color: #a78bfa;
+    background: rgba(124,58,237,0.15); border: 1px solid rgba(124,58,237,0.3);
+    padding: 6px 14px; border-radius: 100px; margin-bottom: 24px;
+  }
+  .cover-eyebrow::before { content: '◆'; font-size: 7px; }
+
+  .cover-title {
+    font-size: clamp(30px, 4.5vw, 48px);
+    font-weight: 800; line-height: 1.1;
+    letter-spacing: -1px; margin-bottom: 8px;
+  }
+  .cover-title .accent { color: #a78bfa; }
+  .cover-title .red { color: var(--red); }
+
+  .cover-subtitle {
+    font-size: 17px; color: rgba(255,255,255,0.6);
+    max-width: 580px; line-height: 1.7; margin-bottom: 36px;
+    margin-top: 12px;
+  }
+
+  .cover-stats {
+    display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 36px;
+  }
+  .cover-stat {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 12px; padding: 14px 20px;
+    text-align: center; min-width: 110px;
+  }
+  .cover-stat-num {
+    font-size: 24px; font-weight: 800; color: white;
+    line-height: 1; margin-bottom: 4px;
+  }
+  .cover-stat-num.purple { color: #a78bfa; }
+  .cover-stat-num.red    { color: #f87171; }
+  .cover-stat-num.green  { color: #6ee7b7; }
+  .cover-stat-label { font-size: 10px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1px; }
+
+  .cover-meta {
+    display: flex; flex-wrap: wrap; gap: 20px;
+    font-size: 12px; color: rgba(255,255,255,0.45);
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding-top: 24px;
+  }
+  .cover-meta strong { color: rgba(255,255,255,0.8); }
+
+  /* ── Accent bars ── */
+  .purple-bar { height: 4px; background: linear-gradient(90deg, #7c3aed, #6d28d9, #4f46e5); }
+
+  /* ── Section labels ── */
+  .section-label {
+    display: inline-block;
+    font-size: 10px; font-weight: 700; letter-spacing: 3px;
+    text-transform: uppercase; margin-bottom: 8px;
+  }
+  .label-purple { color: #7c3aed; }
+  .label-red    { color: var(--red); }
+  .label-green  { color: #059669; }
+  .label-blue   { color: #2563eb; }
+  .label-orange { color: #c2410c; }
+
+  .section-title {
+    font-size: 26px; font-weight: 800; color: var(--text);
+    letter-spacing: -0.5px; margin-bottom: 8px;
+  }
+  .section-desc {
+    font-size: 14px; color: var(--slate-light); max-width: 620px; line-height: 1.7;
+  }
+
+  /* ── Context block ── */
+  .context-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 16px; margin-top: 28px;
+  }
+  @media (max-width: 640px) { .context-grid { grid-template-columns: 1fr; } }
+  .context-card {
+    background: white; border: 1px solid var(--border);
+    border-radius: 12px; padding: 20px 22px;
+    border-left: 4px solid;
+  }
+  .context-card.purple { border-left-color: #7c3aed; }
+  .context-card.red    { border-left-color: var(--red); }
+  .context-card.blue   { border-left-color: #2563eb; }
+  .context-card.green  { border-left-color: #059669; }
+  .context-card-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; margin-bottom: 8px;
+  }
+  .context-card.purple .context-card-label { color: #7c3aed; }
+  .context-card.red    .context-card-label { color: var(--red); }
+  .context-card.blue   .context-card-label { color: #2563eb; }
+  .context-card.green  .context-card-label { color: #059669; }
+  .context-card-text { font-size: 13px; color: var(--text-2); line-height: 1.65; }
+
+  /* ── Delivered banner ── */
+  .delivered-banner {
+    background: linear-gradient(135deg, #0f1923, #1e1040);
+    border-radius: 16px; padding: 28px 32px;
+    margin-top: 28px; color: white;
+    border: 1px solid rgba(124,58,237,0.25);
+  }
+  .delivered-banner-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 3px;
+    text-transform: uppercase; color: #a78bfa; margin-bottom: 12px;
+  }
+  .delivered-banner-title {
+    font-size: 20px; font-weight: 800; margin-bottom: 20px; line-height: 1.3;
+  }
+  .delivered-tools {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+  }
+  .delivered-tool {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px; padding: 14px 16px;
+  }
+  .delivered-tool-name {
+    font-size: 14px; font-weight: 700; color: white; margin-bottom: 4px;
+  }
+  .delivered-tool-desc {
+    font-size: 12px; color: rgba(255,255,255,0.55); line-height: 1.5;
+  }
+  .live-dot {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 10px; font-weight: 700; color: #6ee7b7;
+    margin-bottom: 6px;
+  }
+  .live-dot::before { content: '●'; font-size: 7px; }
+
+  /* ── Initiative Cards ── */
+  .initiative-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 28px;
+  }
+  .accent-bar { height: 4px; }
+
+  .init-header { padding: 26px 30px 20px; }
+  .init-header-top {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 14px; margin-bottom: 18px;
+  }
+  .init-icon {
+    width: 50px; height: 50px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; flex-shrink: 0;
+  }
+  .init-title-block { flex: 1; }
+  .init-category {
+    font-size: 10px; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; margin-bottom: 4px; opacity: 0.75;
+  }
+  .init-title {
+    font-size: 20px; font-weight: 800; color: var(--text);
+    letter-spacing: -0.3px; line-height: 1.2;
+  }
+  .init-subtitle {
+    font-size: 12px; font-weight: 600; margin-top: 3px;
+    text-transform: uppercase; letter-spacing: 0.8px;
+    color: var(--muted);
+  }
+
+  .status-live {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: #dcfce7; color: #15803d;
+    border: 1px solid #bbf7d0;
+    font-size: 11px; font-weight: 700;
+    padding: 5px 12px; border-radius: 100px; white-space: nowrap;
+  }
+  .status-live::before { content: '●'; font-size: 7px; animation: blink 2s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .status-q2 {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: #eff6ff; color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+    font-size: 11px; font-weight: 700;
+    padding: 5px 12px; border-radius: 100px; white-space: nowrap;
+  }
+  .status-q2::before { content: '◆'; font-size: 7px; }
+
+  .status-q3 {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: #fff7ed; color: #c2410c;
+    border: 1px solid #fed7aa;
+    font-size: 11px; font-weight: 700;
+    padding: 5px 12px; border-radius: 100px; white-space: nowrap;
+  }
+  .status-q3::before { content: '◆'; font-size: 7px; }
+
+  .status-q4 {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: #f0fdf4; color: #15803d;
+    border: 1px solid #bbf7d0;
+    font-size: 11px; font-weight: 700;
+    padding: 5px 12px; border-radius: 100px; white-space: nowrap;
+  }
+  .status-q4::before { content: '◆'; font-size: 7px; }
+
+  /* Pain / Solution / AI */
+  .psai-grid {
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px; margin-bottom: 0;
+  }
+  @media (max-width: 680px) { .psai-grid { grid-template-columns: 1fr; } }
+  .psai-block { border-radius: 10px; padding: 14px 16px; }
+  .psai-block.pain     { background: #fff1f2; border: 1px solid #fecdd3; }
+  .psai-block.solution { background: #f0fdf4; border: 1px solid #bbf7d0; }
+  .psai-block.ai       { background: #f5f3ff; border: 1px solid #ddd6fe; }
+  .psai-label {
+    font-size: 9px; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; margin-bottom: 5px;
+  }
+  .psai-block.pain     .psai-label { color: #be123c; }
+  .psai-block.solution .psai-label { color: #15803d; }
+  .psai-block.ai       .psai-label { color: #7c3aed; }
+  .psai-text { font-size: 12.5px; line-height: 1.6; color: var(--text-2); }
+
+  /* Mobile-specific callout */
+  .mobile-callout {
+    background: #faf5ff; border: 1px solid #ddd6fe;
+    border-radius: 10px; padding: 14px 16px;
+    margin-top: 14px;
+  }
+  .mobile-callout-label {
+    font-size: 9px; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; color: #7c3aed; margin-bottom: 6px;
+  }
+  .mobile-callout-text { font-size: 12.5px; color: var(--text-2); line-height: 1.6; }
+
+  /* Impact callout */
+  .impact-callout {
+    background: #f0fdf4; border: 1px solid #bbf7d0;
+    border-radius: 10px; padding: 14px 16px;
+    margin-top: 14px;
+  }
+  .impact-callout-label {
+    font-size: 9px; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; color: #15803d; margin-bottom: 6px;
+  }
+  .impact-callout-text { font-size: 12.5px; color: var(--text-2); line-height: 1.6; }
+
+  /* Body */
+  .init-body { padding: 0 30px 26px; }
+
+  .cap-title {
+    font-size: 10px; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--slate);
+    margin-bottom: 10px; margin-top: 18px;
+  }
+  .cap-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 6px; margin-bottom: 0;
+  }
+  .cap-item {
+    display: flex; align-items: flex-start; gap: 7px;
+    font-size: 12.5px; color: var(--text-2); line-height: 1.5;
+  }
+  .cap-item::before {
+    content: '→'; color: var(--slate-light);
+    font-size: 11px; margin-top: 1px; flex-shrink: 0;
+  }
+
+  /* Metrics */
+  .metrics-row {
+    display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px;
+  }
+  .metric-box {
+    border-radius: 10px; padding: 11px 14px;
+    text-align: center; min-width: 100px;
+  }
+  .metric-box.roi    { background: #f0fdf4; border: 1px solid #bbf7d0; }
+  .metric-box.hours  { background: #eff6ff; border: 1px solid #bfdbfe; }
+  .metric-box.purple { background: #f5f3ff; border: 1px solid #ddd6fe; }
+  .metric-box.orange { background: #fff7ed; border: 1px solid #fed7aa; }
+  .metric-box.red    { background: #fff1f2; border: 1px solid #fecdd3; }
+  .metric-num {
+    font-size: 16px; font-weight: 800; line-height: 1; margin-bottom: 3px;
+  }
+  .metric-box.roi    .metric-num { color: #15803d; }
+  .metric-box.hours  .metric-num { color: #1d4ed8; }
+  .metric-box.purple .metric-num { color: #7c3aed; }
+  .metric-box.orange .metric-num { color: #c2410c; }
+  .metric-box.red    .metric-num { color: #be123c; }
+  .metric-label { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+
+  /* Tags */
+  .tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 14px; }
+  .tag {
+    font-size: 10px; font-weight: 600; padding: 3px 9px;
+    border-radius: 5px; letter-spacing: 0.3px;
+  }
+  .tag.tech   { background: #f1f5f9; color: #475569; }
+  .tag.blue   { background: #eff6ff; color: #1d4ed8; }
+  .tag.green  { background: #f0fdf4; color: #15803d; }
+  .tag.purple { background: #f5f3ff; color: #7c3aed; }
+  .tag.orange { background: #fff7ed; color: #c2410c; }
+  .tag.mobile { background: #fdf4ff; color: #a21caf; }
+  .tag.red    { background: #fff1f2; color: #be123c; }
+
+  /* Narrative */
+  .narrative {
+    background: var(--dark);
+    border-radius: 10px; padding: 18px 22px;
+    margin-top: 18px;
+  }
+  .narrative-label {
+    font-size: 9px; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; color: #a78bfa; margin-bottom: 7px;
+  }
+  .narrative-text {
+    font-size: 13px; color: rgba(255,255,255,0.78);
+    line-height: 1.7; font-style: italic;
+  }
+
+  .card-divider { height: 1px; background: var(--border); margin: 16px 0; }
+
+  /* ── Roadmap ── */
+  .roadmap-timeline {
+    margin-top: 28px;
+    position: relative;
+  }
+  .roadmap-timeline::before {
+    content: '';
+    position: absolute;
+    left: 20px; top: 0; bottom: 0;
+    width: 2px; background: linear-gradient(180deg, #7c3aed, #1d4ed8, #c2410c, #059669);
+  }
+  .roadmap-item {
+    display: flex; gap: 20px; margin-bottom: 24px;
+    padding-left: 52px; position: relative;
+  }
+  .roadmap-dot {
+    position: absolute; left: 12px; top: 14px;
+    width: 18px; height: 18px; border-radius: 50%;
+    border: 3px solid white; flex-shrink: 0;
+    box-shadow: 0 0 0 2px;
+  }
+  .roadmap-dot.q1 { background: #7c3aed; box-shadow: 0 0 0 2px #7c3aed; }
+  .roadmap-dot.q2 { background: #1d4ed8; box-shadow: 0 0 0 2px #1d4ed8; }
+  .roadmap-dot.q3 { background: #c2410c; box-shadow: 0 0 0 2px #c2410c; }
+  .roadmap-dot.q4 { background: #059669; box-shadow: 0 0 0 2px #059669; }
+  .roadmap-content {
+    background: white; border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px 20px; flex: 1;
+  }
+  .roadmap-quarter {
+    font-size: 10px; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; margin-bottom: 6px;
+  }
+  .roadmap-content.q1 .roadmap-quarter { color: #7c3aed; }
+  .roadmap-content.q2 .roadmap-quarter { color: #1d4ed8; }
+  .roadmap-content.q3 .roadmap-quarter { color: #c2410c; }
+  .roadmap-content.q4 .roadmap-quarter { color: #059669; }
+  .roadmap-title { font-size: 15px; font-weight: 800; color: var(--text); margin-bottom: 10px; }
+  .roadmap-items-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 8px;
+  }
+  .roadmap-tool {
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 12px;
+  }
+  .roadmap-tool-name { font-size: 12px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+  .roadmap-tool-desc { font-size: 11px; color: var(--muted); line-height: 1.4; }
+  .roadmap-tool.done { border-color: #bbf7d0; background: #f0fdf4; }
+  .roadmap-tool.done .roadmap-tool-name { color: #15803d; }
+
+  /* ── Impact grid ── */
+  .impact-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 14px; margin-top: 24px;
+  }
+  .impact-card {
+    background: white; border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px;
+    text-align: center;
+  }
+  .impact-num {
+    font-size: 24px; font-weight: 800; line-height: 1; margin-bottom: 6px;
+  }
+  .impact-num.purple { color: #7c3aed; }
+  .impact-num.red    { color: var(--red); }
+  .impact-num.green  { color: #15803d; }
+  .impact-num.blue   { color: #1d4ed8; }
+  .impact-num.orange { color: #c2410c; }
+  .impact-label { font-size: 11px; color: var(--muted); line-height: 1.4; }
+
+  /* ── Stack table ── */
+  .stack-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px; margin-top: 22px;
+  }
+  .stack-card {
+    background: white; border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px 16px;
+  }
+  .stack-layer { font-size: 9px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 3px; }
+  .stack-name  { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 3px; }
+  .stack-desc  { font-size: 11px; color: var(--slate-light); line-height: 1.5; }
+
+  /* ── Closing ── */
+  .closing {
+    background: linear-gradient(135deg, #0f1923, #1e1040);
+    border-radius: 16px; padding: 36px 40px;
+    color: white; margin-top: 0;
+  }
+  .closing-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 3px;
+    text-transform: uppercase; color: #a78bfa; margin-bottom: 12px;
+  }
+  .closing-title {
+    font-size: 24px; font-weight: 800; margin-bottom: 16px; line-height: 1.2;
+  }
+  .closing-text {
+    font-size: 14px; color: rgba(255,255,255,0.7); line-height: 1.8;
+    max-width: 680px; margin-bottom: 24px;
+  }
+  .closing-pillars {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+  }
+  .closing-pillar {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px; padding: 14px 16px;
+  }
+  .closing-pillar-icon { font-size: 20px; margin-bottom: 6px; }
+  .closing-pillar-title { font-size: 12px; font-weight: 700; color: white; margin-bottom: 4px; }
+  .closing-pillar-text  { font-size: 11px; color: rgba(255,255,255,0.5); line-height: 1.5; }
+
+  /* ── Footer ── */
+  .footer {
+    background: var(--dark);
+    color: rgba(255,255,255,0.45);
+    padding: 28px 0;
+    text-align: center;
+    font-size: 11px;
+    letter-spacing: 1px;
+  }
+  .footer strong { color: rgba(255,255,255,0.75); }
+
+  /* ── Print button ── */
+  .print-btn {
+    position: fixed; bottom: 24px; right: 24px;
+    background: #7c3aed; color: white;
+    border: none; border-radius: 50px;
+    padding: 11px 22px; font-size: 12px; font-weight: 700;
+    cursor: pointer; box-shadow: 0 4px 20px rgba(124,58,237,0.4);
+    display: flex; align-items: center; gap: 7px;
+    z-index: 100; transition: all 0.2s;
+  }
+  .print-btn:hover { background: #6d28d9; transform: translateY(-2px); }
+
+  /* ── Accent bar colors ── */
+  .accent-bug      { background: linear-gradient(90deg, #f43f5e, #ef4444, #ea580c); }
+  .accent-crash    { background: linear-gradient(90deg, #dc2626, #e11d48, #be123c); }
+  .accent-release  { background: linear-gradient(90deg, #7c3aed, #6d28d9, #4f46e5); }
+  .accent-cicd     { background: linear-gradient(90deg, #0891b2, #0369a1, #1d4ed8); }
+  .accent-review   { background: linear-gradient(90deg, #0d9488, #059669, #16a34a); }
+  .accent-testgap  { background: linear-gradient(90deg, #f59e0b, #f97316, #ea580c); }
+  .accent-onboard  { background: linear-gradient(90deg, #c026d3, #a21caf, #7c3aed); }
+
+  /* ── Icon backgrounds ── */
+  .icon-bug     { background: #ffe4e6; }
+  .icon-crash   { background: #fee2e2; }
+  .icon-release { background: #ede9fe; }
+  .icon-cicd    { background: #ecfeff; }
+  .icon-review  { background: #f0fdfa; }
+  .icon-testgap { background: #fffbeb; }
+  .icon-onboard { background: #fdf4ff; }
+
+  /* ── TOC ── */
+  .toc-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 8px; margin-top: 24px;
+  }
+  .toc-item {
+    display: flex; align-items: center; gap: 10px;
+    background: white; border: 1px solid var(--border);
+    border-radius: 9px; padding: 12px 14px;
+    text-decoration: none; color: var(--text);
+    transition: all 0.15s;
+  }
+  .toc-item:hover { border-color: #c4b5fd; box-shadow: 0 2px 8px rgba(124,58,237,0.08); transform: translateY(-1px); }
+  .toc-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .toc-item-title { font-size: 12px; font-weight: 600; flex: 1; }
+  .toc-item-cat   { font-size: 10px; color: var(--muted); }
+  .toc-badge {
+    font-size: 9px; font-weight: 700; padding: 2px 7px;
+    border-radius: 100px; white-space: nowrap;
+  }
+  .toc-badge.live { background: #dcfce7; color: #15803d; }
+  .toc-badge.q2   { background: #eff6ff; color: #1d4ed8; }
+  .toc-badge.q3   { background: #fff7ed; color: #c2410c; }
+  .toc-badge.q4   { background: #f0fdf4; color: #15803d; }
+
+  /* ── Phase divider ── */
+  .phase-divider {
+    display: flex; align-items: center; gap: 14px;
+    margin: 36px 0 20px;
+  }
+  .phase-divider-line { flex: 1; height: 1px; background: var(--border); }
+  .phase-divider-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 3px;
+    text-transform: uppercase; padding: 5px 14px;
+    border-radius: 100px; white-space: nowrap;
+  }
+  .phase-divider-label.live   { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+  .phase-divider-label.q2     { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+  .phase-divider-label.q3     { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
+  .phase-divider-label.q4     { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+</style>
+</head>
+<body>
+
+<button class="print-btn no-print" onclick="window.print()">⬇ Export to PDF</button>
+
+<!-- ══════════════════════════════════════════════════════════
+     COVER
+══════════════════════════════════════════════════════════ -->
+<header class="cover">
+  <div class="container cover-inner">
+    <div class="cover-eyebrow">Mobile Guild · AI Strategy 2026</div>
+    <h1 class="cover-title">
+      AI for <span class="accent">Mobile Engineering</span><br>
+      <span class="red">What We've Built. What's Next.</span>
+    </h1>
+    <p class="cover-subtitle">
+      A focused AI roadmap built exclusively for the mobile guild — iOS, Android, and React Native.
+      Every initiative targets a real mobile engineering pain point with measurable impact.
+    </p>
+
+    <div class="cover-stats">
+      <div class="cover-stat">
+        <div class="cover-stat-num purple">1</div>
+        <div class="cover-stat-label">Live Today</div>
+      </div>
+      <div class="cover-stat">
+        <div class="cover-stat-num">6</div>
+        <div class="cover-stat-label">Planned This Year</div>
+      </div>
+      <div class="cover-stat">
+        <div class="cover-stat-num green">4–6 hrs</div>
+        <div class="cover-stat-label">Saved Per Sprint (Now)</div>
+      </div>
+      <div class="cover-stat">
+        <div class="cover-stat-num red">40%</div>
+        <div class="cover-stat-label">Target Incident Reduction</div>
+      </div>
+    </div>
+
+    <div class="cover-meta">
+      <div>📅 <strong>June 2026</strong></div>
+      <div>👤 <strong>Amr Hossam</strong> — Mobile Engineering Manager &amp; AI Ambassador</div>
+      <div>📱 iOS · Android · React Native · Fastlane · GitHub Actions · Azure Pipelines</div>
+      <div>🏢 <strong>VOIS</strong> — Mobile Guild</div>
+    </div>
+  </div>
+</header>
+<div class="purple-bar"></div>
+
+<!-- ══════════════════════════════════════════════════════════
+     CONTEXT
+══════════════════════════════════════════════════════════ -->
+<section class="section">
+  <div class="container">
+    <div class="section-label label-purple">Why Now</div>
+    <h2 class="section-title">Mobile Engineering Has Unique AI Leverage Points</h2>
+    <p class="section-desc">Mobile teams generate rich, structured data every sprint — crash reports, build logs, PR diffs, release pipelines — but that data has never been turned into real-time intelligence. Until now.</p>
+
+    <div class="context-grid">
+      <div class="context-card purple">
+        <div class="context-card-label">The Opportunity</div>
+        <div class="context-card-text">
+          Mobile engineers deal with platform-specific complexity that generic AI tools miss entirely — iOS memory management, Android lifecycle, React Native bridge performance, Fastlane lane failures, App Store submission risk. AI trained on mobile patterns is dramatically more effective than generic tooling.
+        </div>
+      </div>
+      <div class="context-card red">
+        <div class="context-card-label">The Problem We're Solving</div>
+        <div class="context-card-text">
+          Mobile engineers spend hours per sprint on tasks that don't require human judgment: triaging crash reports, manually reviewing PRs for Swift/Kotlin anti-patterns, assembling release readiness reports, debugging flaky CI builds. AI can handle all of this — freeing engineers for the work that actually matters.
+        </div>
+      </div>
+      <div class="context-card blue">
+        <div class="context-card-label">Our Approach</div>
+        <div class="context-card-text">
+          Build AI tools that plug directly into our existing mobile workflow — Azure DevOps, GitHub, Fastlane, Firebase Crashlytics, Azure Pipelines — with zero behavior change required from engineers. The intelligence comes to them. Start with one live tool, prove value, then scale across the full roadmap.
+        </div>
+      </div>
+      <div class="context-card green">
+        <div class="context-card-label">The Stack We're Using</div>
+        <div class="context-card-text">
+          All tools are built on Next.js + TypeScript, powered by GitHub Copilot CLI and Azure OpenAI. They connect to Azure DevOps REST API, GitHub API, Firebase Crashlytics API, and our existing CI/CD pipelines. No new infrastructure required — everything runs on what we already have.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     WHAT'S LIVE
+══════════════════════════════════════════════════════════ -->
+<section class="section" style="background:white;">
+  <div class="container">
+    <div class="section-label label-green">Already Delivered</div>
+    <h2 class="section-title">Live in the Guild Today</h2>
+    <p class="section-desc">This tool is fully built, running in the Engineering Intelligence Hub portal, and already saving time for the mobile team every sprint.</p>
+
+    <div class="delivered-banner">
+      <div class="delivered-banner-label">✅ Live in Engineering Intelligence Hub</div>
+      <div class="delivered-banner-title">Built, shipped, and in use — before the roadmap even started.</div>
+      <div class="delivered-tools">
+        <div class="delivered-tool">
+          <div class="live-dot">Live</div>
+          <div class="delivered-tool-name">🐛 Bug Analyzer</div>
+          <div class="delivered-tool-desc">AI classifies every ADO bug by type, severity, and platform. Traces each bug to the originating commit. Generates structured RCA automatically. Saves 4–6 hrs/sprint.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     TOC
+══════════════════════════════════════════════════════════ -->
+<section class="section">
+  <div class="container">
+    <div class="section-label label-purple">This Document</div>
+    <h2 class="section-title">7 AI Initiatives Built for Mobile Engineers</h2>
+    <p class="section-desc">1 live today. 6 planned across 2026. Every initiative is mobile-specific — targeting iOS, Android, React Native, Fastlane, and our CI/CD pipelines.</p>
+
+    <div class="toc-grid">
+      <a class="toc-item" href="#bug-analyzer">
+        <div class="toc-dot" style="background:#e60000"></div>
+        <div style="flex:1">
+          <div class="toc-item-title">Bug Analyzer</div>
+          <div class="toc-item-cat">Quality &amp; Crash Intelligence</div>
+        </div>
+        <span class="toc-badge live">Live</span>
+      </a>
+      <a class="toc-item" href="#crash-intelligence">
+        <div class="toc-dot" style="background:#dc2626"></div>
+        <div style="flex:1">
+          <div class="toc-item-title">Mobile Crash Intelligence</div>
+          <div class="toc-item-cat">Crash Analysis &amp; RCA</div>
+        </div>
+        <span class="toc-badge q2">Q2 2026</span>
+      </a>
+      <a class="toc-item" href="#release-scorer">
+        <div class="toc-dot" style="background:#7c3aed"></div>
+        <div style="flex:1">
+          <div class="toc-item-title">App Store Release Risk Scorer</div>
+          <div class="toc-item-cat">Release Excellence</div>
+        </div>
+        <span class="toc-badge q2">Q2 2026</span>
+      </a>
+      <a class="toc-item" href="#cicd-intelligence">
+        <div class="toc-dot" style="background:#0891b2"></div>
+        <div style="flex:1">
+          <div class="toc-item-title">Mobile CI/CD Intelligence</div>
+          <div class="toc-item-cat">Build &amp; Pipeline Health</div>
+        </div>
+        <span class="toc-badge q3">Q3 2026</span>
+      </a>
+      <a class="toc-item" href="#code-review">
+        <div class="toc-dot" style="background:#059669"></div>
+        <div style="flex:1">
+          <div class="toc-item-title">Mobile Code Review Assistant</div>
+          <div class="toc-item-cat">Engineering Productivity</div>
+        </div>
+        <span class="toc-badge q3">Q3 2026</span>
+      </a>
+      <a class="toc-item" href="#test-gap">
+        <div class="toc-dot" style="background:#f59e0b"></div>
+        <div style="flex:1">
+          <div class="toc-item-title">Mobile Test Gap Analyzer</div>
+          <div class="toc-item-cat">Quality &amp; Testing</div>
+        </div>
+        <span class="toc-badge q3">Q3 2026</span>
+      </a>
+      <a class="toc-item" href="#onboarding">
+        <div class="toc-dot" style="background:#c026d3"></div>
+        <div style="flex:1">
+          <div class="toc-item-title">Mobile Onboarding Accelerator</div>
+          <div class="toc-item-cat">Developer Experience</div>
+        </div>
+        <span class="toc-badge q4">Q4 2026</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     INITIATIVES
+══════════════════════════════════════════════════════════ -->
+<section class="section" style="background:white;">
+  <div class="container">
+    <div class="section-label label-purple">Initiatives</div>
+    <h2 class="section-title">Deep Dive: Every Initiative</h2>
+    <p class="section-desc">Each card covers the pain, the solution, how AI works, mobile-specific value, and projected impact.</p>
+
+    <!-- ── PHASE: LIVE ── -->
+    <div class="phase-divider">
+      <div class="phase-divider-line"></div>
+      <div class="phase-divider-label live">● Live Now — Q1 2026</div>
+      <div class="phase-divider-line"></div>
+    </div>
+
+    <!-- BUG ANALYZER -->
+    <div class="initiative-card" id="bug-analyzer">
+      <div class="accent-bar accent-bug"></div>
+      <div class="init-header">
+        <div class="init-header-top">
+          <div class="init-icon icon-bug">🐛</div>
+          <div class="init-title-block">
+            <div class="init-category" style="color:#e60000;">Quality &amp; Crash Intelligence</div>
+            <div class="init-title">Bug Analyzer</div>
+            <div class="init-subtitle">AI Classification + Automated RCA from Azure DevOps</div>
+          </div>
+          <span class="status-live">Live</span>
+        </div>
+
+        <div class="psai-grid">
+          <div class="psai-block pain">
+            <div class="psai-label">🔴 The Pain</div>
+            <div class="psai-text">Mobile bug triage consumes 4–6 hours per sprint. Engineers manually classify bugs, trace them to commits, and write root cause analysis — repetitive work that delays actual fixes and slows the sprint.</div>
+          </div>
+          <div class="psai-block solution">
+            <div class="psai-label">✅ The Solution</div>
+            <div class="psai-text">AI classifies every bug from Azure DevOps by type, severity, and platform component. It traces each bug to the originating commit and generates a structured RCA automatically — one click, seconds.</div>
+          </div>
+          <div class="psai-block ai">
+            <div class="psai-label">🤖 How AI Works</div>
+            <div class="psai-text">GitHub Copilot CLI reads bug descriptions, stack traces, and commit history. It classifies, traces, and generates RCA narratives — turning hours of manual investigation into a structured, consistent report.</div>
+          </div>
+        </div>
+
+        <div class="mobile-callout">
+          <div class="mobile-callout-label">📱 Mobile-Specific Value</div>
+          <div class="mobile-callout-text">Mobile bugs involve platform-specific patterns that generic tools miss: iOS memory management issues, ARC retain cycles, Android Activity/Fragment lifecycle violations, React Native bridge serialization errors, Kotlin coroutine cancellation bugs. The AI recognizes these patterns and classifies them accurately — producing RCA narratives that reference the correct platform context, not generic descriptions.</div>
+        </div>
+      </div>
+
+      <div class="init-body">
+        <div class="cap-title">What It Does</div>
+        <div class="cap-grid">
+          <div class="cap-item">AI bug classification by type, severity &amp; platform</div>
+          <div class="cap-item">Automated Root Cause Analysis (RCA) generation</div>
+          <div class="cap-item">Regression detection &amp; commit tracing</div>
+          <div class="cap-item">Sprint-level classification reports</div>
+          <div class="cap-item">Excel export with full structured data</div>
+          <div class="cap-item">Azure DevOps API integration</div>
+          <div class="cap-item">iOS / Android / RN pattern recognition</div>
+          <div class="cap-item">Scalable to all ADO-connected teams</div>
+        </div>
+
+        <div class="metrics-row">
+          <div class="metric-box orange">
+            <div class="metric-num">4–6 hrs</div>
+            <div class="metric-label">Saved Per Sprint</div>
+          </div>
+          <div class="metric-box roi">
+            <div class="metric-num">~200 hrs</div>
+            <div class="metric-label">Saved Per Year (1 Team)</div>
+          </div>
+          <div class="metric-box purple">
+            <div class="metric-num">1-Click</div>
+            <div class="metric-label">Full Sprint RCA Report</div>
+          </div>
+          <div class="metric-box hours">
+            <div class="metric-num">ADO</div>
+            <div class="metric-label">Data Source</div>
+          </div>
+        </div>
+
+        <div class="tags">
+          <span class="tag tech">Next.js</span>
+          <span class="tag tech">TypeScript</span>
+          <span class="tag blue">Azure DevOps API</span>
+          <span class="tag purple">GitHub Copilot CLI</span>
+          <span class="tag mobile">iOS Crash Patterns</span>
+          <span class="tag mobile">Android Lifecycle</span>
+          <span class="tag mobile">React Native Bridge</span>
+          <span class="tag green">Excel Reports</span>
+          <span class="tag orange">RCA Generation</span>
+        </div>
+
+        <div class="narrative">
+          <div class="narrative-label">💬 Real Impact</div>
+          <div class="narrative-text">"Bug Analyzer is the reference pattern for everything we're building. It's live, saving 4–6 hours per sprint, and has already been presented to leadership as proof of AI adoption. The RCA generation has changed how we handle post-sprint retrospectives — we now have structured, consistent root cause data for every bug, every sprint. And it understands iOS and Android patterns, not just generic code."</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PHASE: Q2 ── -->
+    <div class="phase-divider">
+      <div class="phase-divider-line"></div>
+      <div class="phase-divider-label q2">◆ Q2 2026 — In Development</div>
+      <div class="phase-divider-line"></div>
+    </div>
+
+    <!-- MOBILE CRASH INTELLIGENCE -->
+    <div class="initiative-card" id="crash-intelligence">
+      <div class="accent-bar accent-crash"></div>
+      <div class="init-header">
+        <div class="init-header-top">
+          <div class="init-icon icon-crash">💥</div>
+          <div class="init-title-block">
+            <div class="init-category" style="color:#dc2626;">Crash Analysis &amp; RCA</div>
+            <div class="init-title">Mobile Crash Intelligence</div>
+            <div class="init-subtitle">Firebase Crashlytics + ADO → AI-Powered Crash Pattern Analysis</div>
+          </div>
+          <span class="status-q2">Q2 2026</span>
+        </div>
+
+        <div class="psai-grid">
+          <div class="psai-block pain">
+            <div class="psai-label">🔴 The Pain</div>
+            <div class="psai-text">Mobile apps generate hundreds of crash events per release. Engineers manually sift through Firebase Crashlytics, try to correlate crashes with recent commits, and write incident reports — a process that takes hours and is often incomplete.</div>
+          </div>
+          <div class="psai-block solution">
+            <div class="psai-label">✅ The Solution</div>
+            <div class="psai-text">AI ingests crash data from Firebase Crashlytics, groups crashes by pattern and affected OS version, correlates them with recent ADO commits, and generates a structured incident report with root cause hypotheses — automatically.</div>
+          </div>
+          <div class="psai-block ai">
+            <div class="psai-label">🤖 How AI Works</div>
+            <div class="psai-text">Azure OpenAI analyzes crash stack traces, identifies recurring patterns (e.g., "null pointer in PaymentViewController on iOS 17.4"), correlates with git blame and recent PRs, and generates a prioritized crash report with fix recommendations.</div>
+          </div>
+        </div>
+
+        <div class="mobile-callout">
+          <div class="mobile-callout-label">📱 Mobile-Specific Value</div>
+          <div class="mobile-callout-text">Crash analysis is uniquely mobile — stack traces from iOS symbolication, Android ProGuard-obfuscated traces, and React Native JS/native bridge crashes each require different analysis approaches. This tool understands all three, automatically de-obfuscates Android traces, and groups crashes by platform, OS version, and device model — giving the guild actionable intelligence instead of raw crash dumps.</div>
+        </div>
+      </div>
+
+      <div class="init-body">
+        <div class="cap-title">What It Does</div>
+        <div class="cap-grid">
+          <div class="cap-item">Firebase Crashlytics API integration</div>
+          <div class="cap-item">AI crash pattern grouping &amp; deduplication</div>
+          <div class="cap-item">Commit correlation (crash → PR → author)</div>
+          <div class="cap-item">iOS symbolication &amp; Android trace parsing</div>
+          <div class="cap-item">Crash rate trend analysis per release</div>
+          <div class="cap-item">OS version &amp; device model breakdown</div>
+          <div class="cap-item">AI-generated fix recommendations</div>
+          <div class="cap-item">Automated incident report generation</div>
+        </div>
+
+        <div class="metrics-row">
+          <div class="metric-box red">
+            <div class="metric-num">Hours → Min</div>
+            <div class="metric-label">Crash Investigation Time</div>
+          </div>
+          <div class="metric-box roi">
+            <div class="metric-num">100%</div>
+            <div class="metric-label">Crash Coverage (All Platforms)</div>
+          </div>
+          <div class="metric-box purple">
+            <div class="metric-num">Auto</div>
+            <div class="metric-label">Incident Report Generation</div>
+          </div>
+          <div class="metric-box orange">
+            <div class="metric-num">iOS + Android + RN</div>
+            <div class="metric-label">Platform Support</div>
+          </div>
+        </div>
+
+        <div class="tags">
+          <span class="tag red">Firebase Crashlytics</span>
+          <span class="tag mobile">iOS Symbolication</span>
+          <span class="tag mobile">Android ProGuard</span>
+          <span class="tag mobile">React Native JS Traces</span>
+          <span class="tag blue">Azure DevOps API</span>
+          <span class="tag purple">Azure OpenAI</span>
+          <span class="tag green">Incident Reports</span>
+        </div>
+
+        <div class="impact-callout">
+          <div class="impact-callout-label">📈 Projected Impact</div>
+          <div class="impact-callout-text">Estimated 3–5 hours saved per release cycle on crash investigation. Faster mean-time-to-resolution (MTTR) for production crashes. Structured crash data feeds back into Bug Analyzer for sprint-level quality tracking. Target: 30% reduction in time from crash detection to fix deployment.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- APP STORE RELEASE RISK SCORER -->
+    <div class="initiative-card" id="release-scorer">
+      <div class="accent-bar accent-release"></div>
+      <div class="init-header">
+        <div class="init-header-top">
+          <div class="init-icon icon-release">🚀</div>
+          <div class="init-title-block">
+            <div class="init-category" style="color:#7c3aed;">Release Excellence</div>
+            <div class="init-title">App Store Release Risk Scorer</div>
+            <div class="init-subtitle">AI-Powered Go/No-Go for iOS App Store &amp; Google Play Submissions</div>
+          </div>
+          <span class="status-q2">Q2 2026</span>
+        </div>
+
+        <div class="psai-grid">
+          <div class="psai-block pain">
+            <div class="psai-label">🔴 The Pain</div>
+            <div class="psai-text">Mobile release decisions are based on gut feel. "Are we ready to submit to the App Store?" has no data-driven answer. Premature submissions lead to App Store rejections, production crashes, and emergency hotfixes — all expensive and damaging to user trust.</div>
+          </div>
+          <div class="psai-block solution">
+            <div class="psai-label">✅ The Solution</div>
+            <div class="psai-text">An AI-powered release readiness score (0–100) that evaluates Fastlane test results, crash rate trends, open critical bugs, code churn, and CI/CD pipeline health — producing a data-driven Go/No-Go recommendation before every App Store submission.</div>
+          </div>
+          <div class="psai-block ai">
+            <div class="psai-label">🤖 How AI Works</div>
+            <div class="psai-text">AI aggregates signals from Fastlane test reports, Firebase crash rates, Azure DevOps open bugs, and GitHub PR history. It compares against historical release patterns and generates a risk score with a plain-English explanation of every contributing factor.</div>
+          </div>
+        </div>
+
+        <div class="mobile-callout">
+          <div class="mobile-callout-label">📱 Mobile-Specific Value</div>
+          <div class="mobile-callout-text">App Store and Google Play releases are uniquely high-stakes — you can't push a hotfix in minutes like a web app. A bad release means a 1–2 day review cycle for a fix, negative App Store reviews, and potential user churn. This tool is built specifically for mobile release gates: it understands Fastlane lane results, iOS TestFlight crash rates, Android Play Console pre-launch reports, and App Store review guideline risk factors.</div>
+        </div>
+      </div>
+
+      <div class="init-body">
+        <div class="cap-title">What It Does</div>
+        <div class="cap-grid">
+          <div class="cap-item">Fastlane test result aggregation</div>
+          <div class="cap-item">Firebase crash rate trend analysis</div>
+          <div class="cap-item">Open critical bug count from ADO</div>
+          <div class="cap-item">Code churn analysis (last 2 weeks)</div>
+          <div class="cap-item">CI/CD pipeline health check</div>
+          <div class="cap-item">Historical release comparison</div>
+          <div class="cap-item">AI Go/No-Go recommendation with reasoning</div>
+          <div class="cap-item">App Store review risk factor detection</div>
+        </div>
+
+        <div class="metrics-row">
+          <div class="metric-box purple">
+            <div class="metric-num">0–100</div>
+            <div class="metric-label">Release Readiness Score</div>
+          </div>
+          <div class="metric-box roi">
+            <div class="metric-num">40%</div>
+            <div class="metric-label">Target Incident Reduction</div>
+          </div>
+          <div class="metric-box orange">
+            <div class="metric-num">Go/No-Go</div>
+            <div class="metric-label">AI Recommendation</div>
+          </div>
+          <div class="metric-box hours">
+            <div class="metric-num">iOS + Android</div>
+            <div class="metric-label">Platform Coverage</div>
+          </div>
+        </div>
+
+        <div class="tags">
+          <span class="tag mobile">Fastlane</span>
+          <span class="tag mobile">iOS App Store</span>
+          <span class="tag mobile">Google Play</span>
+          <span class="tag red">Firebase Crashlytics</span>
+          <span class="tag blue">Azure DevOps API</span>
+          <span class="tag purple">Azure OpenAI</span>
+          <span class="tag green">Release Gate</span>
+          <span class="tag orange">Risk Scoring</span>
+        </div>
+
+        <div class="impact-callout">
+          <div class="impact-callout-label">📈 Projected Impact</div>
+          <div class="impact-callout-text">Target: 40% reduction in post-release production incidents. Faster release cadence — teams can release with confidence instead of waiting for manual sign-off. Estimated £150K–300K annual value from incident cost avoidance and reduced emergency hotfix cycles.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PHASE: Q3 ── -->
+    <div class="phase-divider">
+      <div class="phase-divider-line"></div>
+      <div class="phase-divider-label q3">◆ Q3 2026 — Planned</div>
+      <div class="phase-divider-line"></div>
+    </div>
+
+    <!-- MOBILE CI/CD INTELLIGENCE -->
+    <div class="initiative-card" id="cicd-intelligence">
+      <div class="accent-bar accent-cicd"></div>
+      <div class="init-header">
+        <div class="init-header-top">
+          <div class="init-icon icon-cicd">⚙️</div>
+          <div class="init-title-block">
+            <div class="init-category" style="color:#0891b2;">Build &amp; Pipeline Health</div>
+            <div class="init-title">Mobile CI/CD Intelligence</div>
+            <div class="init-subtitle">AI Monitoring for Fastlane · GitHub Actions · Azure Pipelines</div>
+          </div>
+          <span class="status-q3">Q3 2026</span>
+        </div>
+
+        <div class="psai-grid">
+          <div class="psai-block pain">
+            <div class="psai-label">🔴 The Pain</div>
+            <div class="psai-text">Mobile CI/CD pipelines are complex and fragile. Fastlane lanes fail silently, GitHub Actions runners time out, Azure Pipelines builds take 45+ minutes with no visibility into why. Flaky tests waste hours of engineer time every week with no systematic tracking.</div>
+          </div>
+          <div class="psai-block solution">
+            <div class="psai-label">✅ The Solution</div>
+            <div class="psai-text">AI monitors all mobile CI/CD pipelines in real time — detecting flaky tests, identifying build time regressions, diagnosing Fastlane lane failures, and generating actionable recommendations to reduce build times and improve pipeline reliability.</div>
+          </div>
+          <div class="psai-block ai">
+            <div class="psai-label">🤖 How AI Works</div>
+            <div class="psai-text">AI ingests build logs from GitHub Actions, Azure Pipelines, and Fastlane. It identifies patterns in failures (e.g., "XCTest timeout on iPhone 15 simulator"), detects flaky tests by analyzing pass/fail history, and generates a weekly pipeline health report with prioritized optimization recommendations.</div>
+          </div>
+        </div>
+
+        <div class="mobile-callout">
+          <div class="mobile-callout-label">📱 Mobile-Specific Value</div>
+          <div class="mobile-callout-text">Mobile CI/CD is uniquely complex: iOS builds require macOS runners, Xcode version pinning, code signing certificates, and provisioning profiles. Android builds involve Gradle dependency resolution, ProGuard configuration, and multi-flavor builds. React Native adds Metro bundler and native module compilation. This tool understands all of these layers — it doesn't just say "build failed," it says "Xcode 15.3 simulator timeout on XCTest suite PaymentFlowTests, likely caused by async test timeout configuration."</div>
+        </div>
+      </div>
+
+      <div class="init-body">
+        <div class="cap-title">What It Does</div>
+        <div class="cap-grid">
+          <div class="cap-item">Fastlane lane failure diagnosis</div>
+          <div class="cap-item">GitHub Actions build log analysis</div>
+          <div class="cap-item">Azure Pipelines health monitoring</div>
+          <div class="cap-item">Flaky test detection &amp; tracking</div>
+          <div class="cap-item">Build time regression alerts</div>
+          <div class="cap-item">Code signing &amp; provisioning issue detection</div>
+          <div class="cap-item">Weekly pipeline health report</div>
+          <div class="cap-item">Optimization recommendations (ranked by impact)</div>
+        </div>
+
+        <div class="metrics-row">
+          <div class="metric-box orange">
+            <div class="metric-num">30%</div>
+            <div class="metric-label">Target Build Time Reduction</div>
+          </div>
+          <div class="metric-box roi">
+            <div class="metric-num">Flaky Tests</div>
+            <div class="metric-label">Auto-Detected &amp; Tracked</div>
+          </div>
+          <div class="metric-box purple">
+            <div class="metric-num">3 Pipelines</div>
+            <div class="metric-label">Fastlane + GHA + AzDO</div>
+          </div>
+          <div class="metric-box hours">
+            <div class="metric-num">Weekly</div>
+            <div class="metric-label">Automated Health Report</div>
+          </div>
+        </div>
+
+        <div class="tags">
+          <span class="tag mobile">Fastlane</span>
+          <span class="tag blue">GitHub Actions</span>
+          <span class="tag blue">Azure Pipelines</span>
+          <span class="tag mobile">Xcode Build Logs</span>
+          <span class="tag mobile">Gradle Build Logs</span>
+          <span class="tag purple">Azure OpenAI</span>
+          <span class="tag orange">Flaky Test Detection</span>
+          <span class="tag green">Build Optimization</span>
+        </div>
+
+        <div class="impact-callout">
+          <div class="impact-callout-label">📈 Projected Impact</div>
+          <div class="impact-callout-text">Target: 30% reduction in average build time. Elimination of recurring flaky test failures (estimated 2–3 hrs/week currently wasted). Faster feedback loops for mobile engineers — from commit to test results in under 15 minutes. Estimated 500–1,000 engineer-hours saved annually across the guild.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MOBILE CODE REVIEW ASSISTANT -->
+    <div class="initiative-card" id="code-review">
+      <div class="accent-bar accent-review"></div>
+      <div class="init-header">
+        <div class="init-header-top">
+          <div class="init-icon icon-review">🔍</div>
+          <div class="init-title-block">
+            <div class="init-category" style="color:#059669;">Engineering Productivity</div>
+            <div class="init-title">Mobile Code Review Assistant</div>
+            <div class="init-subtitle">AI First-Pass Review for Swift · Kotlin · React Native PRs</div>
+          </div>
+          <span class="status-q3">Q3 2026</span>
+        </div>
+
+        <div class="psai-grid">
+          <div class="psai-block pain">
+            <div class="psai-label">🔴 The Pain</div>
+            <div class="psai-text">Mobile PR reviews are slow and inconsistent. Reviewers spend time on mechanical checks — Swift force-unwraps, Kotlin null safety violations, RN bridge performance anti-patterns — instead of focusing on architecture and logic. Review quality varies significantly across reviewers.</div>
+          </div>
+          <div class="psai-block solution">
+            <div class="psai-label">✅ The Solution</div>
+            <div class="psai-text">AI provides an automated first-pass review on every mobile PR — flagging Swift memory leaks, Kotlin coroutine misuse, React Native bridge performance issues, and platform-specific anti-patterns before a human reviewer even opens the PR.</div>
+          </div>
+          <div class="psai-block ai">
+            <div class="psai-label">🤖 How AI Works</div>
+            <div class="psai-text">Azure OpenAI analyzes PR diffs with mobile-specific context: Swift ARC patterns, Kotlin coroutine scope management, RN bridge serialization cost, iOS main thread violations, Android ANR-prone patterns. It posts structured review comments directly on the PR in Azure DevOps or GitHub.</div>
+          </div>
+        </div>
+
+        <div class="mobile-callout">
+          <div class="mobile-callout-label">📱 Mobile-Specific Value</div>
+          <div class="mobile-callout-text">Generic AI code review tools don't understand mobile patterns. This tool is trained on mobile-specific anti-patterns: Swift force-unwrap chains that cause crashes, Kotlin coroutine scope leaks that cause memory issues, React Native bridge calls on the JS thread that cause UI jank, iOS viewDidLoad vs. viewWillAppear misuse, Android Fragment backstack management errors. It catches the bugs that cause the crashes we see in Crashlytics — before they ship.</div>
+        </div>
+      </div>
+
+      <div class="init-body">
+        <div class="cap-title">What It Does</div>
+        <div class="cap-grid">
+          <div class="cap-item">Swift force-unwrap &amp; ARC issue detection</div>
+          <div class="cap-item">Kotlin null safety &amp; coroutine scope analysis</div>
+          <div class="cap-item">React Native bridge performance review</div>
+          <div class="cap-item">iOS main thread violation detection</div>
+          <div class="cap-item">Android ANR-prone pattern flagging</div>
+          <div class="cap-item">PR risk score (size, complexity, test coverage)</div>
+          <div class="cap-item">Inline review comments on ADO / GitHub PRs</div>
+          <div class="cap-item">Review time estimation for human reviewers</div>
+        </div>
+
+        <div class="metrics-row">
+          <div class="metric-box orange">
+            <div class="metric-num">35%</div>
+            <div class="metric-label">Target Review Cycle Reduction</div>
+          </div>
+          <div class="metric-box roi">
+            <div class="metric-num">Shift Left</div>
+            <div class="metric-label">Bugs Caught Before Merge</div>
+          </div>
+          <div class="metric-box purple">
+            <div class="metric-num">Swift + Kotlin + RN</div>
+            <div class="metric-label">Language Coverage</div>
+          </div>
+          <div class="metric-box hours">
+            <div class="metric-num">Inline</div>
+            <div class="metric-label">Comments on Every PR</div>
+          </div>
+        </div>
+
+        <div class="tags">
+          <span class="tag mobile">Swift / SwiftUI</span>
+          <span class="tag mobile">Kotlin / Jetpack Compose</span>
+          <span class="tag mobile">React Native</span>
+          <span class="tag blue">Azure DevOps PRs</span>
+          <span class="tag blue">GitHub PRs</span>
+          <span class="tag purple">Azure OpenAI</span>
+          <span class="tag orange">Anti-Pattern Detection</span>
+          <span class="tag green">PR Risk Scoring</span>
+        </div>
+
+        <div class="impact-callout">
+          <div class="impact-callout-label">📈 Projected Impact</div>
+          <div class="impact-callout-text">Target: 35% reduction in PR review cycle time. 25% increase in defects caught at review vs. testing/production. Human reviewers freed to focus on architecture and logic — the work that actually requires expertise. Estimated 1,000–2,000 engineer-hours saved annually across the guild.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MOBILE TEST GAP ANALYZER -->
+    <div class="initiative-card" id="test-gap">
+      <div class="accent-bar accent-testgap"></div>
+      <div class="init-header">
+        <div class="init-header-top">
+          <div class="init-icon icon-testgap">🧪</div>
+          <div class="init-title-block">
+            <div class="init-category" style="color:#f59e0b;">Quality &amp; Testing</div>
+            <div class="init-title">Mobile Test Gap Analyzer</div>
+            <div class="init-subtitle">AI Identifies Untested UI Flows in XCTest · Espresso · Detox</div>
+          </div>
+          <span class="status-q3">Q3 2026</span>
+        </div>
+
+        <div class="psai-grid">
+          <div class="psai-block pain">
+            <div class="psai-label">🔴 The Pain</div>
+            <div class="psai-text">Mobile test coverage metrics (line coverage %) are misleading. Teams have 70% code coverage but critical user flows — checkout, login, payment — have zero UI test coverage. Defects in these flows reach production because no one knows the gaps exist.</div>
+          </div>
+          <div class="psai-block solution">
+            <div class="psai-label">✅ The Solution</div>
+            <div class="psai-text">AI analyzes existing XCTest, Espresso, and Detox test suites against the actual user flows in the app, identifies which critical screens and flows have no test coverage, and generates a prioritized list of test gaps ranked by production risk.</div>
+          </div>
+          <div class="psai-block ai">
+            <div class="psai-label">🤖 How AI Works</div>
+            <div class="psai-text">AI maps existing test files to app screens and user flows, cross-references with Bug Analyzer crash data to identify which untested areas have historically caused production issues, and generates specific test case recommendations — including suggested XCTest/Espresso/Detox code snippets for the highest-risk gaps.</div>
+          </div>
+        </div>
+
+        <div class="mobile-callout">
+          <div class="mobile-callout-label">📱 Mobile-Specific Value</div>
+          <div class="mobile-callout-text">Mobile testing is uniquely complex: XCTest for iOS unit/UI tests, Espresso for Android UI tests, Detox for React Native E2E tests — each with different coverage models. This tool understands all three frameworks, maps tests to actual app screens (not just code files), and integrates with Bug Analyzer data to prioritize gaps in areas that have historically caused crashes. It answers the question: "Which screens have no tests AND have caused production crashes?"</div>
+        </div>
+      </div>
+
+      <div class="init-body">
+        <div class="cap-title">What It Does</div>
+        <div class="cap-grid">
+          <div class="cap-item">XCTest suite analysis (iOS)</div>
+          <div class="cap-item">Espresso test coverage mapping (Android)</div>
+          <div class="cap-item">Detox E2E flow coverage (React Native)</div>
+          <div class="cap-item">Screen-level coverage heatmap</div>
+          <div class="cap-item">Bug Analyzer integration (crash → untested area)</div>
+          <div class="cap-item">Prioritized test gap list (by production risk)</div>
+          <div class="cap-item">AI-generated test case suggestions</div>
+          <div class="cap-item">Coverage trend tracking over time</div>
+        </div>
+
+        <div class="metrics-row">
+          <div class="metric-box red">
+            <div class="metric-num">Critical Flows</div>
+            <div class="metric-label">Identified &amp; Prioritized</div>
+          </div>
+          <div class="metric-box roi">
+            <div class="metric-num">30%</div>
+            <div class="metric-label">Target Defect Escape Reduction</div>
+          </div>
+          <div class="metric-box purple">
+            <div class="metric-num">3 Frameworks</div>
+            <div class="metric-label">XCTest + Espresso + Detox</div>
+          </div>
+          <div class="metric-box orange">
+            <div class="metric-num">AI-Generated</div>
+            <div class="metric-label">Test Case Suggestions</div>
+          </div>
+        </div>
+
+        <div class="tags">
+          <span class="tag mobile">XCTest (iOS)</span>
+          <span class="tag mobile">Espresso (Android)</span>
+          <span class="tag mobile">Detox (React Native)</span>
+          <span class="tag blue">Azure DevOps API</span>
+          <span class="tag purple">Azure OpenAI</span>
+          <span class="tag orange">Coverage Heatmap</span>
+          <span class="tag green">Test Recommendations</span>
+          <span class="tag red">Bug Analyzer Integration</span>
+        </div>
+
+        <div class="impact-callout">
+          <div class="impact-callout-label">📈 Projected Impact</div>
+          <div class="impact-callout-text">Target: 30% reduction in defect escape rate for critical user flows. Systematic elimination of "we didn't know that flow was untested" surprises. Estimated 1,500–3,000 engineer-hours saved annually through reduced rework and targeted testing. Feeds directly into Release Risk Scorer for more accurate release readiness assessment.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PHASE: Q4 ── -->
+    <div class="phase-divider">
+      <div class="phase-divider-line"></div>
+      <div class="phase-divider-label q4">◆ Q4 2026 — Planned</div>
+      <div class="phase-divider-line"></div>
+    </div>
+
+    <!-- MOBILE ONBOARDING ACCELERATOR -->
+    <div class="initiative-card" id="onboarding">
+      <div class="accent-bar accent-onboard"></div>
+      <div class="init-header">
+        <div class="init-header-top">
+          <div class="init-icon icon-onboard">🎓</div>
+          <div class="init-title-block">
+            <div class="init-category" style="color:#c026d3;">Developer Experience</div>
+            <div class="init-title">Mobile Onboarding Accelerator</div>
+            <div class="init-subtitle">AI-Guided Onboarding for iOS · Android · React Native Engineers</div>
+          </div>
+          <span class="status-q4">Q4 2026</span>
+        </div>
+
+        <div class="psai-grid">
+          <div class="psai-block pain">
+            <div class="psai-label">🔴 The Pain</div>
+            <div class="psai-text">New mobile engineers take 2–3 months to become productive. Mobile onboarding is uniquely complex: Xcode setup, provisioning profiles, Fastlane configuration, Android SDK versions, RN environment setup. Senior engineers spend 3–4 hours/week answering the same setup questions repeatedly.</div>
+          </div>
+          <div class="psai-block solution">
+            <div class="psai-label">✅ The Solution</div>
+            <div class="psai-text">An AI-powered onboarding platform with personalized learning paths for iOS, Android, and React Native engineers — including automated environment setup verification, codebase orientation, and a contextual Q&amp;A assistant trained on our specific mobile stack and architecture.</div>
+          </div>
+          <div class="psai-block ai">
+            <div class="psai-label">🤖 How AI Works</div>
+            <div class="psai-text">RAG (Retrieval Augmented Generation) over our internal mobile documentation, architecture decision records, Fastlane lane documentation, and codebase READMEs. New engineers ask questions in plain English and get answers specific to our codebase — not generic Stack Overflow answers.</div>
+          </div>
+        </div>
+
+        <div class="mobile-callout">
+          <div class="mobile-callout-label">📱 Mobile-Specific Value</div>
+          <div class="mobile-callout-text">Mobile onboarding is dramatically more complex than web onboarding: Xcode version pinning, iOS simulator setup, Apple Developer account provisioning, Android SDK and NDK configuration, React Native Metro bundler setup, Fastlane match for code signing, Azure Pipelines agent configuration for macOS runners. This tool automates all of it — with AI that understands our specific Fastlane lanes, our specific provisioning profile setup, and our specific RN architecture. New engineers get to their first PR in days, not weeks.</div>
+        </div>
+      </div>
+
+      <div class="init-body">
+        <div class="cap-title">What It Does</div>
+        <div class="cap-grid">
+          <div class="cap-item">Personalized learning path (iOS / Android / RN)</div>
+          <div class="cap-item">Automated environment setup verification</div>
+          <div class="cap-item">Fastlane &amp; CI/CD configuration guide</div>
+          <div class="cap-item">Codebase orientation (AI-generated tour)</div>
+          <div class="cap-item">Contextual Q&amp;A (RAG over internal docs)</div>
+          <div class="cap-item">Progress tracking for managers</div>
+          <div class="cap-item">Architecture decision record search</div>
+          <div class="cap-item">First PR checklist &amp; review guidance</div>
+        </div>
+
+        <div class="metrics-row">
+          <div class="metric-box orange">
+            <div class="metric-num">3 Months → 6 Weeks</div>
+            <div class="metric-label">Time to Full Productivity</div>
+          </div>
+          <div class="metric-box roi">
+            <div class="metric-num">50%</div>
+            <div class="metric-label">Senior Mentoring Time Reduction</div>
+          </div>
+          <div class="metric-box purple">
+            <div class="metric-num">iOS + Android + RN</div>
+            <div class="metric-label">Platform Coverage</div>
+          </div>
+          <div class="metric-box hours">
+            <div class="metric-num">Days → 3 Days</div>
+            <div class="metric-label">Time to First PR</div>
+          </div>
+        </div>
+
+        <div class="tags">
+          <span class="tag mobile">iOS / Xcode Setup</span>
+          <span class="tag mobile">Android SDK / NDK</span>
+          <span class="tag mobile">React Native / Metro</span>
+          <span class="tag mobile">Fastlane Match</span>
+          <span class="tag blue">Azure Pipelines</span>
+          <span class="tag purple">RAG / Azure OpenAI</span>
+          <span class="tag green">Progress Tracking</span>
+          <span class="tag orange">Architecture Q&amp;A</span>
+        </div>
+
+        <div class="impact-callout">
+          <div class="impact-callout-label">📈 Projected Impact</div>
+          <div class="impact-callout-text">Target: Reduce time-to-first-PR from 2 weeks to 3 days. Reduce time to full productivity from 3 months to 6 weeks. Free 50% of senior engineer mentoring time currently spent on setup questions. Estimated 500–1,000 engineer-hours saved annually — with compounding value as the guild grows.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     ROADMAP
+══════════════════════════════════════════════════════════ -->
+<section class="section">
+  <div class="container">
+    <div class="section-label label-purple">2026 Roadmap</div>
+    <h2 class="section-title">The Full Year at a Glance</h2>
+    <p class="section-desc">From one live tool today to a complete AI intelligence layer for the mobile guild by year-end.</p>
+
+    <div class="roadmap-timeline">
+
+      <div class="roadmap-item">
+        <div class="roadmap-dot q1"></div>
+        <div class="roadmap-content q1">
+          <div class="roadmap-quarter">Q1 2026 — Foundation</div>
+          <div class="roadmap-title">✅ Bug Analyzer — Live</div>
+          <div class="roadmap-items-grid">
+            <div class="roadmap-tool done">
+              <div class="roadmap-tool-name">🐛 Bug Analyzer</div>
+              <div class="roadmap-tool-desc">AI bug classification + automated RCA. 4–6 hrs saved per sprint. Live in Engineering Intelligence Hub.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="roadmap-item">
+        <div class="roadmap-dot q2"></div>
+        <div class="roadmap-content q2">
+          <div class="roadmap-quarter">Q2 2026 — Crash &amp; Release Intelligence</div>
+          <div class="roadmap-title">Crash Analysis + App Store Release Gate</div>
+          <div class="roadmap-items-grid">
+            <div class="roadmap-tool">
+              <div class="roadmap-tool-name">💥 Mobile Crash Intelligence</div>
+              <div class="roadmap-tool-desc">Firebase Crashlytics → AI crash pattern analysis, commit correlation, incident reports.</div>
+            </div>
+            <div class="roadmap-tool">
+              <div class="roadmap-tool-name">🚀 App Store Release Risk Scorer</div>
+              <div class="roadmap-tool-desc">AI Go/No-Go for App Store &amp; Play Store submissions. Fastlane + crash rate + open bugs.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="roadmap-item">
+        <div class="roadmap-dot q3"></div>
+        <div class="roadmap-content q3">
+          <div class="roadmap-quarter">Q3 2026 — Pipeline, Review &amp; Quality</div>
+          <div class="roadmap-title">CI/CD Intelligence + Code Review + Test Gaps</div>
+          <div class="roadmap-items-grid">
+            <div class="roadmap-tool">
+              <div class="roadmap-tool-name">⚙️ Mobile CI/CD Intelligence</div>
+              <div class="roadmap-tool-desc">AI monitoring for Fastlane, GitHub Actions, Azure Pipelines. Flaky test detection + build optimization.</div>
+            </div>
+            <div class="roadmap-tool">
+              <div class="roadmap-tool-name">🔍 Mobile Code Review Assistant</div>
+              <div class="roadmap-tool-desc">AI first-pass review for Swift, Kotlin, RN PRs. Platform-specific anti-pattern detection.</div>
+            </div>
+            <div class="roadmap-tool">
+              <div class="roadmap-tool-name">🧪 Mobile Test Gap Analyzer</div>
+              <div class="roadmap-tool-desc">AI identifies untested UI flows in XCTest, Espresso, Detox. Prioritized by production risk.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="roadmap-item">
+        <div class="roadmap-dot q4"></div>
+        <div class="roadmap-content q4">
+          <div class="roadmap-quarter">Q4 2026 — Developer Experience</div>
+          <div class="roadmap-title">Mobile Onboarding Accelerator + Impact Review</div>
+          <div class="roadmap-items-grid">
+            <div class="roadmap-tool">
+              <div class="roadmap-tool-name">🎓 Mobile Onboarding Accelerator</div>
+              <div class="roadmap-tool-desc">AI-guided onboarding for iOS, Android, RN engineers. RAG over internal docs. Days to first PR.</div>
+            </div>
+            <div class="roadmap-tool">
+              <div class="roadmap-tool-name">📊 Annual Impact Review</div>
+              <div class="roadmap-tool-desc">Full portfolio impact measurement. Hours saved, defect reduction, release confidence, guild productivity gains.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     PROJECTED IMPACT
+══════════════════════════════════════════════════════════ -->
+<section class="section" style="background:white;">
+  <div class="container">
+    <div class="section-label label-green">Projected Impact</div>
+    <h2 class="section-title">What This Means for the Mobile Guild</h2>
+    <p class="section-desc">Cumulative projected impact across all 7 initiatives by end of 2026.</p>
+
+    <div class="impact-grid">
+      <div class="impact-card">
+        <div class="impact-num green">~1,500 hrs</div>
+        <div class="impact-label">Engineer-hours saved annually across the guild</div>
+      </div>
+      <div class="impact-card">
+        <div class="impact-num purple">40%</div>
+        <div class="impact-label">Target reduction in post-release production incidents</div>
+      </div>
+      <div class="impact-card">
+        <div class="impact-num blue">35%</div>
+        <div class="impact-label">Target reduction in PR review cycle time</div>
+      </div>
+      <div class="impact-card">
+        <div class="impact-num orange">30%</div>
+        <div class="impact-label">Target reduction in build pipeline failures</div>
+      </div>
+      <div class="impact-card">
+        <div class="impact-num red">30%</div>
+        <div class="impact-label">Target reduction in defect escape rate</div>
+      </div>
+      <div class="impact-card">
+        <div class="impact-num green">6 Weeks</div>
+        <div class="impact-label">Target time-to-productivity for new mobile engineers (down from 3 months)</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     TECH STACK
+══════════════════════════════════════════════════════════ -->
+<section class="section">
+  <div class="container">
+    <div class="section-label label-blue">Technology</div>
+    <h2 class="section-title">How It's Built</h2>
+    <p class="section-desc">All tools are built on a consistent, maintainable stack — no new infrastructure required. Everything integrates with what the guild already uses.</p>
+
+    <div class="stack-grid">
+      <div class="stack-card">
+        <div class="stack-layer">Frontend</div>
+        <div class="stack-name">Next.js + TypeScript</div>
+        <div class="stack-desc">Proven in Bug Analyzer. Fast, maintainable, deployable anywhere.</div>
+      </div>
+      <div class="stack-card">
+        <div class="stack-layer">AI Engine</div>
+        <div class="stack-name">Azure OpenAI + GitHub Copilot CLI</div>
+        <div class="stack-desc">Org-approved AI services. No new vendor relationships required.</div>
+      </div>
+      <div class="stack-card">
+        <div class="stack-layer">Mobile Data</div>
+        <div class="stack-name">Firebase Crashlytics API</div>
+        <div class="stack-desc">Crash data, session data, and release health metrics for iOS and Android.</div>
+      </div>
+      <div class="stack-card">
+        <div class="stack-layer">Project Data</div>
+        <div class="stack-name">Azure DevOps REST API</div>
+        <div class="stack-desc">Bugs, sprints, PRs, work items. Already integrated in Bug Analyzer.</div>
+      </div>
+      <div class="stack-card">
+        <div class="stack-layer">CI/CD</div>
+        <div class="stack-name">Fastlane · GitHub Actions · Azure Pipelines</div>
+        <div class="stack-desc">Build logs, test results, lane outputs — all ingested for pipeline intelligence.</div>
+      </div>
+      <div class="stack-card">
+        <div class="stack-layer">Code Review</div>
+        <div class="stack-name">GitHub API + ADO PR API</div>
+        <div class="stack-desc">PR diffs, review comments, merge history — for code review assistant and test gap analysis.</div>
+      </div>
+      <div class="stack-card">
+        <div class="stack-layer">Knowledge (Q4)</div>
+        <div class="stack-name">RAG + Azure AI Search</div>
+        <div class="stack-desc">Vector search over internal mobile docs, ADRs, and READMEs for onboarding Q&amp;A.</div>
+      </div>
+      <div class="stack-card">
+        <div class="stack-layer">Output</div>
+        <div class="stack-name">Excel · PDF · Inline PR Comments</div>
+        <div class="stack-desc">Reports, exports, and inline feedback — wherever engineers already work.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     CLOSING
+══════════════════════════════════════════════════════════ -->
+<section class="section">
+  <div class="container">
+    <div class="closing">
+      <div class="closing-label">The Vision</div>
+      <div class="closing-title">An AI Intelligence Layer Built Specifically for Mobile Engineering</div>
+      <div class="closing-text">
+        By the end of 2026, the mobile guild will have a complete AI intelligence layer covering every stage of the mobile development lifecycle — from writing code and reviewing PRs, to running CI/CD pipelines, analyzing crashes, scoring release readiness, and onboarding new engineers. Every tool is mobile-native: it understands Swift, Kotlin, React Native, Fastlane, and the unique constraints of App Store and Google Play delivery. None of this requires engineers to change how they work — the intelligence comes to them.
+      </div>
+      <div class="closing-pillars">
+        <div class="closing-pillar">
+          <div class="closing-pillar-icon">🐛</div>
+          <div class="closing-pillar-title">Quality Intelligence</div>
+          <div class="closing-pillar-text">Bug Analyzer + Crash Intelligence + Test Gap Analyzer — AI-powered quality at every stage.</div>
+        </div>
+        <div class="closing-pillar">
+          <div class="closing-pillar-icon">🚀</div>
+          <div class="closing-pillar-title">Release Confidence</div>
+          <div class="closing-pillar-text">App Store Release Risk Scorer — data-driven Go/No-Go before every submission.</div>
+        </div>
+        <div class="closing-pillar">
+          <div class="closing-pillar-icon">⚙️</div>
+          <div class="closing-pillar-title">Pipeline Health</div>
+          <div class="closing-pillar-text">CI/CD Intelligence — faster builds, fewer failures, flaky tests eliminated.</div>
+        </div>
+        <div class="closing-pillar">
+          <div class="closing-pillar-icon">🔍</div>
+          <div class="closing-pillar-title">Code Excellence</div>
+          <div class="closing-pillar-text">Mobile Code Review Assistant — platform-specific AI review on every PR.</div>
+        </div>
+        <div class="closing-pillar">
+          <div class="closing-pillar-icon">🎓</div>
+          <div class="closing-pillar-title">Developer Experience</div>
+          <div class="closing-pillar-text">Mobile Onboarding Accelerator — new engineers productive in weeks, not months.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     FOOTER
+══════════════════════════════════════════════════════════ -->
+<footer class="footer">
+  <div class="container">
+    <strong>VOIS Mobile Guild · AI Strategy 2026</strong> &nbsp;·&nbsp;
+    Amr Hossam — Mobile Engineering Manager &amp; AI Ambassador &nbsp;·&nbsp;
+    iOS · Android · React Native · Fastlane · GitHub Actions · Azure Pipelines
+  </div>
+</footer>
+
+</body>
+</html>

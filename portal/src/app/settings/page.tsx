@@ -5,7 +5,7 @@ import { AppHeader } from '@/components/AppHeader';
 import {
   Key, Save, CheckCircle, Plus, Settings, Users, GitBranch,
   Layers, Github, Search, ChevronDown, Loader2, RefreshCw, AlertCircle,
-  Eye, EyeOff, ChevronRight, ExternalLink, X, Shield, Cpu,
+  Eye, EyeOff, ChevronRight, ExternalLink, X, Shield, Cpu, Bell,
 } from 'lucide-react';
 
 export type TeamConfig = {
@@ -14,13 +14,14 @@ export type TeamConfig = {
   team: string;
 };
 
-type Section = 'credentials' | 'teams' | 'repos' | 'advanced';
+type Section = 'credentials' | 'teams' | 'repos' | 'advanced' | 'notifications';
 
 const NAV: { id: Section; label: string; icon: React.ReactNode; badge?: string }[] = [
-  { id: 'credentials', label: 'Credentials', icon: <Shield className="w-4 h-4" /> },
-  { id: 'teams',       label: 'Teams',       icon: <Users className="w-4 h-4" /> },
-  { id: 'repos',       label: 'Repositories', icon: <GitBranch className="w-4 h-4" /> },
-  { id: 'advanced',    label: 'Advanced',    icon: <Cpu className="w-4 h-4" /> },
+  { id: 'credentials',   label: 'Credentials',   icon: <Shield className="w-4 h-4" /> },
+  { id: 'teams',         label: 'Teams',         icon: <Users className="w-4 h-4" /> },
+  { id: 'repos',         label: 'Repositories',  icon: <GitBranch className="w-4 h-4" /> },
+  { id: 'notifications', label: 'Notifications', icon: <Bell className="w-4 h-4" /> },
+  { id: 'advanced',      label: 'Advanced',      icon: <Cpu className="w-4 h-4" /> },
 ];
 
 /* ── tiny helpers ── */
@@ -49,12 +50,13 @@ function StatusDot({ ok }: { ok: boolean }) {
 export default function GlobalSettingsPage() {
   const [activeSection, setActiveSection] = useState<Section>('credentials');
 
-  const [patToken, setPatToken]   = useState('');
-  const [githubPat, setGithubPat] = useState('');
-  const [iosPath, setIosPath]     = useState('');
-  const [teams, setTeams]         = useState<TeamConfig[]>([]);
-  const [repos, setRepos]         = useState<string[]>([]);
-  const [saved, setSaved]         = useState(false);
+  const [patToken, setPatToken]       = useState('');
+  const [githubPat, setGithubPat]     = useState('');
+  const [iosPath, setIosPath]         = useState('');
+  const [teamsWebhook, setTeamsWebhook] = useState('');
+  const [teams, setTeams]             = useState<TeamConfig[]>([]);
+  const [repos, setRepos]             = useState<string[]>([]);
+  const [saved, setSaved]             = useState(false);
 
   const [showPat, setShowPat]       = useState(false);
   const [showGhPat, setShowGhPat]   = useState(false);
@@ -80,6 +82,7 @@ export default function GlobalSettingsPage() {
     setPatToken(localStorage.getItem('ado_pat_token') || '');
     setGithubPat(localStorage.getItem('github_pat_token') || '');
     setIosPath(localStorage.getItem('story_ios_path') || 'MVA-iOS/VFUK-iOS/Modules');
+    setTeamsWebhook(localStorage.getItem('teams_webhook_url') || '');
     try { setTeams(JSON.parse(localStorage.getItem('ado_teams') || '[]')); } catch { /* */ }
     try { setRepos(JSON.parse(localStorage.getItem('ado_repos') || '[]')); } catch { /* */ }
   }, []);
@@ -109,6 +112,7 @@ export default function GlobalSettingsPage() {
     localStorage.setItem('ado_pat_token', patToken);
     localStorage.setItem('github_pat_token', githubPat);
     localStorage.setItem('story_ios_path', iosPath);
+    localStorage.setItem('teams_webhook_url', teamsWebhook);
     localStorage.setItem('ado_teams', JSON.stringify(teams));
     localStorage.setItem('ado_repos', JSON.stringify(repos));
     setSaved(true);
@@ -161,10 +165,11 @@ export default function GlobalSettingsPage() {
 
   /* ── badge counts for nav ── */
   const badges: Record<Section, string | undefined> = {
-    credentials: (patToken ? 1 : 0) + (githubPat ? 1 : 0) > 0 ? `${(patToken ? 1 : 0) + (githubPat ? 1 : 0)}/2` : undefined,
-    teams:       teams.length > 0 ? String(teams.length) : undefined,
-    repos:       repos.length > 0 ? String(repos.length) : undefined,
-    advanced:    undefined,
+    credentials:   (patToken ? 1 : 0) + (githubPat ? 1 : 0) > 0 ? `${(patToken ? 1 : 0) + (githubPat ? 1 : 0)}/2` : undefined,
+    teams:         teams.length > 0 ? String(teams.length) : undefined,
+    repos:         repos.length > 0 ? String(repos.length) : undefined,
+    notifications: teamsWebhook ? '1' : undefined,
+    advanced:      undefined,
   };
 
   return (
@@ -611,6 +616,62 @@ export default function GlobalSettingsPage() {
                         ))}
                       </div>
                     )}
+                  </CardRow>
+                </SectionCard>
+              </>
+            )}
+
+            {/* ════ NOTIFICATIONS ════ */}
+            {activeSection === 'notifications' && (
+              <>
+                <div>
+                  <h2 className="text-base font-semibold text-gray-900 mb-1">Notifications</h2>
+                  <p className="text-sm text-gray-500">Configure where AI Productivity digests are sent. Webhook URLs are stored in your browser only.</p>
+                </div>
+
+                <SectionCard>
+                  <CardRow>
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center">
+                          <Bell className="w-4 h-4 text-purple-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900">Microsoft Teams Webhook</p>
+                          <p className="text-xs text-gray-400">Receive monthly AI Productivity scorecards in a Teams channel</p>
+                        </div>
+                      </div>
+                      <span className={`inline-block w-2 h-2 rounded-full mt-1 ${teamsWebhook ? 'bg-emerald-400' : 'bg-gray-300'}`} />
+                    </div>
+                    <input
+                      type="url"
+                      value={teamsWebhook}
+                      onChange={e => setTeamsWebhook(e.target.value)}
+                      placeholder="https://outlook.office.com/webhook/…"
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent transition font-mono"
+                    />
+                    <details className="mt-3 group">
+                      <summary className="cursor-pointer text-xs text-blue-600 hover:text-blue-800 font-medium list-none flex items-center gap-1 select-none">
+                        <ChevronDown className="w-3.5 h-3.5 transition-transform group-open:rotate-180" />
+                        How to create a Teams Incoming Webhook
+                      </summary>
+                      <div className="mt-2 p-3 bg-purple-50 border border-purple-200 rounded-xl text-xs text-purple-800 space-y-1.5">
+                        <ol className="list-decimal list-inside space-y-1 text-purple-700">
+                          <li>Open the Teams channel where you want digests posted</li>
+                          <li>Click <strong>···</strong> (More options) → <strong>Connectors</strong></li>
+                          <li>Search for <strong>Incoming Webhook</strong> and click <strong>Configure</strong></li>
+                          <li>Give it a name (e.g. <em>AI Productivity Digest</em>) and click <strong>Create</strong></li>
+                          <li>Copy the webhook URL and paste it above</li>
+                        </ol>
+                        <p className="text-purple-600 mt-1">
+                          The URL starts with <code className="font-mono">https://outlook.office.com/webhook/</code> or <code className="font-mono">https://&lt;org&gt;.webhook.office.com/</code>
+                        </p>
+                      </div>
+                    </details>
+                    <Hint>
+                      Once configured, use the <strong>Send Digest</strong> button on the AI Productivity Index page to post the current scorecard to this channel.
+                      You can also set up a Power Automate flow to call <code className="font-mono">/api/ai-productivity/digest</code> on a monthly schedule.
+                    </Hint>
                   </CardRow>
                 </SectionCard>
               </>

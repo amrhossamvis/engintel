@@ -5,7 +5,8 @@ import { AppHeader } from '@/components/AppHeader';
 import {
   Brain, ArrowLeft, Target, GitPullRequest, Bug, Zap,
   TrendingUp, Info, CheckCircle2, AlertTriangle, BookOpen,
-  BarChart3, Users, GitBranch, Calculator,
+  BarChart3, Users, GitBranch, Calculator, Flag, DollarSign,
+  BarChart2, Bell,
 } from 'lucide-react';
 
 function Section({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
@@ -408,6 +409,154 @@ export default function AIProductivityAboutPage() {
             <p><strong>Connect Copilot data to unlock the full picture.</strong> Without Copilot data, the index measures delivery and quality only. Adding Copilot metrics enables the AI ROI correlation that makes this tool unique.</p>
             <p><strong>Compare teams, not just time.</strong> The per-team breakdown lets you identify which teams are high performers and which need support — and whether AI adoption correlates with better outcomes.</p>
             <p><strong>Present the trend, not the score.</strong> For executive audiences, the trend (Improving / Stable / Declining) and the direction of change are more compelling than the raw number.</p>
+          </div>
+        </Section>
+
+        {/* Baseline Comparison */}
+        <Section title="Baseline Comparison" icon={<Flag className="w-4 h-4 text-purple-600" />}>
+          <p className="text-sm text-gray-700 leading-relaxed mb-4">
+            The <strong>Baseline Comparison</strong> panel lets you mark a snapshot of the current index at any point in time —
+            typically <em>before</em> a major AI initiative (e.g. Copilot rollout) — so you can measure the before/after impact objectively.
+          </p>
+          <div className="space-y-4">
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+              <p className="text-sm font-semibold text-gray-900 mb-2">What gets saved in a baseline snapshot</p>
+              <ul className="text-sm text-gray-600 space-y-1 list-disc list-inside">
+                <li>AI Productivity Index score at the time of saving</li>
+                <li>All five component scores (Delivery, Quality, Velocity, PR Flow, AI Adoption)</li>
+                <li>Avg sprint completion rate, PR cycle time, bug escape rate</li>
+                <li>Copilot acceptance rate (if connected at the time)</li>
+                <li>A label and timestamp you provide</li>
+              </ul>
+            </div>
+            <FormulaBox
+              label="Delta calculation"
+              formula="Δ Score = currentScore − baselineScore\nΔ Completion = currentAvgCompletion − baselineAvgCompletion\nΔ Bug Escape = currentAvgBugEscape − baselineAvgBugEscape (lower is better)\nΔ Cycle Time = currentAvgCycleTime − baselineCycleTime (lower is better)"
+              note="Green = improvement, Red = regression. Inverse metrics (bug escape, cycle time) are colour-coded accordingly."
+            />
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
+              <p className="text-xs text-amber-700">
+                <strong>Storage:</strong> Baselines are stored in your browser's localStorage under the key <code className="font-mono">ai_productivity_baseline</code>.
+                They persist across sessions but are browser-local — not shared with other users.
+                The baseline overlay also appears on the Productivity Radar chart as a dashed grey polygon.
+              </p>
+            </div>
+          </div>
+        </Section>
+
+        {/* ROI Calculator */}
+        <Section title="ROI Calculator" icon={<DollarSign className="w-4 h-4 text-purple-600" />}>
+          <p className="text-sm text-gray-700 leading-relaxed mb-4">
+            The <strong>ROI Calculator</strong> translates your AI Productivity Index improvement into an estimated annual £ value,
+            giving leadership a concrete financial narrative for AI investment.
+          </p>
+          <div className="space-y-4">
+            <FormulaBox
+              label="Core formula"
+              formula="Annual ROI = Engineers × Blended Rate (£/hr) × Hours/Year × Productivity Gain %"
+              note="All inputs except Productivity Gain % are editable. Productivity Gain % is derived automatically from your index data."
+            />
+            <FormulaBox
+              label="Productivity Gain % derivation"
+              formula="If baseline set:   Gain % = max(0, (currentScore − baselineScore) × 0.5)\nIf no baseline:    Gain % = max(0, (currentScore − 50) × 0.3)"
+              note="Rule of thumb: a 10-point index improvement ≈ 5% productivity gain. Without a baseline, scores above 50 are assumed to represent gains above a neutral baseline."
+            />
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs text-center">
+              {[
+                { label: 'Annual ROI', desc: 'Total £ value of productivity gain', color: 'emerald' },
+                { label: 'Hours Saved', desc: 'Across all engineers per year', color: 'blue' },
+                { label: 'Value / Engineer', desc: 'Annual gain per head', color: 'purple' },
+                { label: 'Salary Pool', desc: 'Total annual cost base', color: 'gray' },
+              ].map(({ label, desc, color }) => (
+                <div key={label} className={`bg-${color}-50 border border-${color}-200 rounded-xl p-3`}>
+                  <p className={`font-semibold text-${color}-700 text-sm mb-1`}>{label}</p>
+                  <p className={`text-${color}-600`}>{desc}</p>
+                </div>
+              ))}
+            </div>
+            <div className="bg-purple-50 border border-purple-200 rounded-xl p-3">
+              <p className="text-xs text-purple-700">
+                <strong>Defaults:</strong> 50 engineers · £75/hr blended rate · 1,800 hrs/year. Adjust these to match your organisation.
+                The Productivity Gain % field is read-only — it updates automatically as your index improves.
+              </p>
+            </div>
+          </div>
+        </Section>
+
+        {/* Correlation Chart */}
+        <Section title="AI Adoption vs. Delivery Correlation" icon={<BarChart2 className="w-4 h-4 text-purple-600" />}>
+          <p className="text-sm text-gray-700 leading-relaxed mb-4">
+            The <strong>Correlation Chart</strong> builds a longitudinal view of how Copilot adoption correlates with delivery
+            outcomes over time. It answers the question: <em>"As our Copilot acceptance rate increases, does our sprint completion rate improve?"</em>
+          </p>
+          <div className="space-y-4">
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+              <p className="text-sm font-semibold text-gray-900 mb-2">How data is recorded</p>
+              <p className="text-sm text-gray-600 mb-2">
+                Each time you refresh the dashboard with Copilot data connected, the current month's data point is automatically
+                saved to localStorage. The chart shows up to 12 months of history.
+              </p>
+              <ul className="text-sm text-gray-600 space-y-1 list-disc list-inside">
+                <li><strong>Completion % (area)</strong> — avg sprint completion rate for completed sprints</li>
+                <li><strong>Copilot Acceptance % (dashed line)</strong> — acceptance rate at time of refresh</li>
+                <li><strong>Bug Escape % (red line)</strong> — avg bug escape rate for completed sprints</li>
+              </ul>
+            </div>
+            <FormulaBox
+              label="Monthly entry structure"
+              formula='{ month: "Jun 2026", acceptanceRate: 32, avgCompletion: 78, avgBugEscape: 12, avgCycleTime: 2.4 }'
+              note="One entry per calendar month. Re-refreshing in the same month overwrites the existing entry."
+            />
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-3">
+              <p className="text-xs text-blue-700">
+                <strong>Minimum data:</strong> The chart requires at least 2 months of history to render. Until then, a placeholder
+                is shown confirming the first data point has been recorded.
+                Data is stored under localStorage key <code className="font-mono">ai_productivity_copilot_history</code>.
+              </p>
+            </div>
+          </div>
+        </Section>
+
+        {/* Teams Digest */}
+        <Section title="Monthly Teams Digest" icon={<Bell className="w-4 h-4 text-purple-600" />}>
+          <p className="text-sm text-gray-700 leading-relaxed mb-4">
+            The <strong>Send Digest</strong> button posts the current AI Productivity scorecard to a Microsoft Teams channel
+            as a rich Adaptive Card — giving leadership a formatted, at-a-glance summary without needing to open the portal.
+          </p>
+          <div className="space-y-4">
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+              <p className="text-sm font-semibold text-gray-900 mb-2">What the Adaptive Card includes</p>
+              <ul className="text-sm text-gray-600 space-y-1 list-disc list-inside">
+                <li>AI Productivity Index score with RAG colour (🟢/🟡/🔴) and label</li>
+                <li>Trend direction and baseline delta (if a baseline is set)</li>
+                <li>All five component scores with individual RAG indicators</li>
+                <li>Delivery metrics: avg completion %, PR cycle time, bug escape rate, PRs merged</li>
+                <li>GitHub Copilot stats (acceptance rate, active users, lines accepted)</li>
+                <li>Top 3 key insights generated by the index engine</li>
+                <li>Estimated productivity gain % (if &gt; 0)</li>
+              </ul>
+            </div>
+            <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
+              <p className="text-sm font-semibold text-gray-900 mb-2">Setup</p>
+              <ol className="text-sm text-gray-600 space-y-1 list-decimal list-inside">
+                <li>Go to <strong>Settings → Notifications</strong></li>
+                <li>Create an Incoming Webhook in your Teams channel (channel → ··· → Connectors → Incoming Webhook)</li>
+                <li>Paste the webhook URL and click <strong>Save Settings</strong></li>
+                <li>Return to the AI Productivity dashboard and click <strong>Send Digest</strong></li>
+              </ol>
+            </div>
+            <FormulaBox
+              label="API endpoint (for automation)"
+              formula="POST /api/ai-productivity/digest\nBody: { webhookUrl, score, trend, components, orgStats, copilot, baseline, insights, teamCount, productivityGainPct }"
+              note="You can call this endpoint from a Power Automate scheduled flow to send the digest automatically on the first of each month."
+            />
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
+              <p className="text-xs text-amber-700">
+                <strong>Note:</strong> The webhook URL is stored in your browser's localStorage only. The digest is sent server-side
+                (via the Next.js API route) so the webhook URL is transmitted to the server at send time — ensure you trust the
+                deployment environment before configuring this.
+              </p>
+            </div>
           </div>
         </Section>
 
