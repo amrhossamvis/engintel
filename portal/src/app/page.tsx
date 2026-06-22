@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   Bug,
   BarChart3,
@@ -24,6 +25,7 @@ import {
   FlaskConical,
   UserCheck,
   Smartphone,
+  LogOut,
 } from 'lucide-react';
 import { APP_THEMES } from '@/lib/app-config';
 
@@ -423,9 +425,16 @@ function CategorySection({ group }: { group: CategoryGroup }) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function HubPage() {
+  const router = useRouter();
   const groups = buildGroups();
   const activeCount = allInitiatives.filter(i => i.status === 'active').length;
   const totalCount = allInitiatives.length;
+
+  async function handleLogout() {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    router.push('/login');
+    router.refresh();
+  }
 
   return (
     <div className="min-h-screen bg-[#fafafa]">
@@ -479,6 +488,13 @@ export default function HubPage() {
                 <Settings className="w-4 h-4" />
                 Settings
               </Link>
+              <button
+                onClick={handleLogout}
+                className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/5 backdrop-blur-sm px-5 py-3 text-sm font-medium text-white hover:bg-red-500/20 hover:border-red-400/40 transition-all duration-200"
+              >
+                <LogOut className="w-4 h-4" />
+                Sign Out
+              </button>
             </div>
           </div>
         </div>
