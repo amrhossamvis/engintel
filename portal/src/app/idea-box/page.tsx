@@ -2,10 +2,12 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { AppHeader } from '@/components/AppHeader';
+import { AdminBar } from '@/components/AdminBar';
 import {
   Lightbulb, ChevronUp, MessageSquare, Pin, Plus, X,
   Flame, Sparkles, CheckCircle2, Clock, XCircle, Search,
   ChevronDown, ArrowUpRight, Rocket, AlertCircle,
+  Pencil, Trash2, PinOff,
 } from 'lucide-react';
 
 type IdeaStatus = 'new' | 'under-review' | 'planned' | 'in-progress' | 'shipped' | 'declined';
@@ -48,6 +50,8 @@ const DOMAINS: IdeaDomain[] = [
   'Engineering Productivity', 'AI Value & Knowledge', 'Platform & Infrastructure', 'Other',
 ];
 
+const STATUSES: IdeaStatus[] = ['new', 'under-review', 'planned', 'in-progress', 'shipped', 'declined'];
+
 function timeAgo(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diff / 60000);
@@ -57,7 +61,19 @@ function timeAgo(iso: string) {
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
-function IdeaCard({ idea, onVote, onExpand }: { idea: Idea; onVote: (id: string) => void; onExpand: (idea: Idea) => void }) {
+// ─── IdeaCard ────────────────────────────────────────────────────────────────
+function IdeaCard({
+  idea, onVote, onExpand, isAdmin, onEdit, onDelete, onPin, onStatusChange,
+}: {
+  idea: Idea;
+  onVote: (id: string) => void;
+  onExpand: (idea: Idea) => void;
+  isAdmin: boolean;
+  onEdit: (idea: Idea) => void;
+  onDelete: (id: string) => void;
+  onPin: (id: string, pinned: boolean) => void;
+  onStatusChange: (id: string, status: IdeaStatus) => void;
+}) {
   const sm = STATUS_META[idea.status];
   const im = IMPACT_META[idea.estimatedImpact];
   const isTrending = idea.votes >= 10;
@@ -95,9 +111,23 @@ function IdeaCard({ idea, onVote, onExpand }: { idea: Idea; onVote: (id: string)
             </div>
             <p className="text-sm text-gray-500 leading-relaxed mb-3 line-clamp-2">{idea.problemStatement}</p>
             <div className="flex items-center gap-2 flex-wrap">
-              <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border ${sm.color}`}>
-                {sm.icon}{sm.label}
-              </span>
+              {/* Status — admin can change inline */}
+              {isAdmin ? (
+                <select
+                  value={idea.status}
+                  onChange={e => onStatusChange(idea.id, e.target.value as IdeaStatus)}
+                  onClick={e => e.stopPropagation()}
+                  className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border cursor-pointer bg-white ${sm.color}`}
+                >
+                  {STATUSES.map(s => (
+                    <option key={s} value={s}>{STATUS_META[s].label}</option>
+                  ))}
+                </select>
+              ) : (
+                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border ${sm.color}`}>
+                  {sm.icon}{sm.label}
+                </span>
+              )}
               <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${im.color}`}>
                 {im.label}
               </span>
@@ -116,18 +146,52 @@ function IdeaCard({ idea, onVote, onExpand }: { idea: Idea; onVote: (id: string)
             <span>·</span>
             <span className="flex items-center gap-1"><MessageSquare className="w-3 h-3" />{idea.comments.length}</span>
           </div>
-          <button
-            onClick={() => onExpand(idea)}
-            className="inline-flex items-center gap-1 text-xs font-medium text-violet-600 hover:text-violet-800 transition-colors"
-          >
-            View <ArrowUpRight className="w-3 h-3" />
-          </button>
+
+          <div className="flex items-center gap-2">
+            {/* Admin actions */}
+            {isAdmin && (
+              <>
+                <button
+                  onClick={() => onPin(idea.id, !idea.isPinned)}
+                  title={idea.isPinned ? 'Unpin' : 'Pin to top'}
+                  className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${
+                    idea.isPinned
+                      ? 'bg-amber-100 text-amber-600 hover:bg-amber-200'
+                      : 'bg-gray-100 text-gray-400 hover:bg-amber-100 hover:text-amber-600'
+                  }`}
+                >
+                  {idea.isPinned ? <PinOff className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}
+                </button>
+                <button
+                  onClick={() => onEdit(idea)}
+                  title="Edit idea"
+                  className="w-7 h-7 rounded-lg bg-gray-100 text-gray-400 hover:bg-blue-100 hover:text-blue-600 flex items-center justify-center transition-colors"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => onDelete(idea.id)}
+                  title="Delete idea"
+                  className="w-7 h-7 rounded-lg bg-gray-100 text-gray-400 hover:bg-red-100 hover:text-red-600 flex items-center justify-center transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </>
+            )}
+            <button
+              onClick={() => onExpand(idea)}
+              className="inline-flex items-center gap-1 text-xs font-medium text-violet-600 hover:text-violet-800 transition-colors"
+            >
+              View <ArrowUpRight className="w-3 h-3" />
+            </button>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
+// ─── SubmitModal ─────────────────────────────────────────────────────────────
 function SubmitModal({ onClose, onSubmit }: { onClose: () => void; onSubmit: (data: Partial<Idea>) => void }) {
   const [form, setForm] = useState({
     title: '', problemStatement: '', proposedSolution: '',
@@ -256,6 +320,179 @@ function SubmitModal({ onClose, onSubmit }: { onClose: () => void; onSubmit: (da
   );
 }
 
+// ─── EditIdeaModal ────────────────────────────────────────────────────────────
+function EditIdeaModal({ idea, onClose, onSaved }: { idea: Idea; onClose: () => void; onSaved: () => void }) {
+  const [form, setForm] = useState({
+    title: idea.title,
+    problemStatement: idea.problemStatement,
+    proposedSolution: idea.proposedSolution,
+    domain: idea.domain,
+    estimatedImpact: idea.estimatedImpact,
+    status: idea.status,
+  });
+  const [saving, setSaving] = useState(false);
+
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    await fetch(`/api/ideas/${idea.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'edit', ...form }),
+    });
+    setSaving(false);
+    onSaved();
+    onClose();
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-6 border-b border-gray-100">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
+              <Pencil className="w-5 h-5 text-blue-600" />
+            </div>
+            <div>
+              <h2 className="font-bold text-gray-900">Edit Idea</h2>
+              <p className="text-xs text-gray-400">Admin · changes are saved immediately</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center transition-colors">
+            <X className="w-4 h-4 text-gray-500" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSave} className="p-6 space-y-5">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Title</label>
+            <input
+              value={form.title}
+              onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Problem Statement</label>
+            <textarea
+              value={form.problemStatement}
+              onChange={e => setForm(f => ({ ...f, problemStatement: e.target.value }))}
+              rows={3}
+              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Proposed Solution</label>
+            <textarea
+              value={form.proposedSolution}
+              onChange={e => setForm(f => ({ ...f, proposedSolution: e.target.value }))}
+              rows={2}
+              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Domain</label>
+              <select
+                value={form.domain}
+                onChange={e => setForm(f => ({ ...f, domain: e.target.value as IdeaDomain }))}
+                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
+              >
+                {DOMAINS.map(d => <option key={d} value={d}>{d}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Impact</label>
+              <select
+                value={form.estimatedImpact}
+                onChange={e => setForm(f => ({ ...f, estimatedImpact: e.target.value as 'low' | 'medium' | 'high' }))}
+                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
+              >
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Status</label>
+            <select
+              value={form.status}
+              onChange={e => setForm(f => ({ ...f, status: e.target.value as IdeaStatus }))}
+              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
+            >
+              {STATUSES.map(s => <option key={s} value={s}>{STATUS_META[s].label}</option>)}
+            </select>
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={onClose} className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={saving}
+              className="flex-1 px-4 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 transition-colors"
+            >
+              {saving ? 'Saving…' : 'Save Changes'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ─── DeleteConfirmModal ───────────────────────────────────────────────────────
+function DeleteConfirmModal({ idea, onClose, onDeleted }: { idea: Idea; onClose: () => void; onDeleted: () => void }) {
+  const [deleting, setDeleting] = useState(false);
+
+  async function handleDelete() {
+    setDeleting(true);
+    await fetch(`/api/ideas/${idea.id}`, { method: 'DELETE' });
+    setDeleting(false);
+    onDeleted();
+    onClose();
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center">
+            <Trash2 className="w-5 h-5 text-red-600" />
+          </div>
+          <div>
+            <h2 className="font-bold text-gray-900">Delete Idea</h2>
+            <p className="text-xs text-gray-400">This action cannot be undone</p>
+          </div>
+        </div>
+        <p className="text-sm text-gray-600 mb-6">
+          Are you sure you want to delete <span className="font-semibold text-gray-900">&ldquo;{idea.title}&rdquo;</span>?
+        </p>
+        <div className="flex gap-3">
+          <button onClick={onClose} className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+            Cancel
+          </button>
+          <button
+            onClick={handleDelete}
+            disabled={deleting}
+            className="flex-1 px-4 py-2.5 rounded-xl bg-red-600 text-white text-sm font-semibold hover:bg-red-700 disabled:opacity-50 transition-colors"
+          >
+            {deleting ? 'Deleting…' : 'Delete'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── IdeaDetailPanel ──────────────────────────────────────────────────────────
 function IdeaDetailPanel({ idea, onClose, onVote }: { idea: Idea; onClose: () => void; onVote: (id: string) => void }) {
   const sm = STATUS_META[idea.status];
   const im = IMPACT_META[idea.estimatedImpact];
@@ -365,11 +602,15 @@ function IdeaDetailPanel({ idea, onClose, onVote }: { idea: Idea; onClose: () =>
   );
 }
 
+// ─── Page ─────────────────────────────────────────────────────────────────────
 export default function IdeaBoxPage() {
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [showSubmit, setShowSubmit] = useState(false);
   const [selectedIdea, setSelectedIdea] = useState<Idea | null>(null);
+  const [editingIdea, setEditingIdea] = useState<Idea | null>(null);
+  const [deletingIdea, setDeletingIdea] = useState<Idea | null>(null);
   const [sort, setSort] = useState('votes');
   const [filterDomain, setFilterDomain] = useState('all');
   const [search, setSearch] = useState('');
@@ -378,10 +619,16 @@ export default function IdeaBoxPage() {
     const res = await fetch(`/api/ideas?sort=${sort}${filterDomain !== 'all' ? `&domain=${encodeURIComponent(filterDomain)}` : ''}`);
     const data = await res.json();
     setIdeas(data.ideas ?? []);
+    if (data.isAdmin !== undefined) setIsAdmin(data.isAdmin);
     setLoading(false);
   }, [sort, filterDomain]);
 
   useEffect(() => { loadIdeas(); }, [loadIdeas]);
+
+  const handleAdminChange = useCallback((admin: boolean) => {
+    setIsAdmin(admin);
+    loadIdeas();
+  }, [loadIdeas]);
 
   async function handleVote(id: string) {
     await fetch(`/api/ideas/${id}`, {
@@ -395,6 +642,24 @@ export default function IdeaBoxPage() {
       const data = await res.json();
       setSelectedIdea(data.idea);
     }
+  }
+
+  async function handlePin(id: string, pinned: boolean) {
+    await fetch(`/api/ideas/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'pin', isPinned: pinned }),
+    });
+    loadIdeas();
+  }
+
+  async function handleStatusChange(id: string, status: IdeaStatus) {
+    await fetch(`/api/ideas/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'status', status }),
+    });
+    loadIdeas();
   }
 
   const filtered = ideas.filter(i =>
@@ -416,6 +681,11 @@ export default function IdeaBoxPage() {
       />
 
       <main className="container mx-auto px-6 py-10">
+
+        {/* Admin bar */}
+        <div className="mb-8">
+          <AdminBar onAdminChange={handleAdminChange} />
+        </div>
 
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10">
@@ -492,6 +762,11 @@ export default function IdeaBoxPage() {
                 idea={idea}
                 onVote={handleVote}
                 onExpand={setSelectedIdea}
+                isAdmin={isAdmin}
+                onEdit={setEditingIdea}
+                onDelete={(id) => setDeletingIdea(ideas.find(i => i.id === id) ?? null)}
+                onPin={handlePin}
+                onStatusChange={handleStatusChange}
               />
             ))}
           </div>
@@ -510,6 +785,22 @@ export default function IdeaBoxPage() {
           idea={selectedIdea}
           onClose={() => setSelectedIdea(null)}
           onVote={handleVote}
+        />
+      )}
+
+      {editingIdea && (
+        <EditIdeaModal
+          idea={editingIdea}
+          onClose={() => setEditingIdea(null)}
+          onSaved={loadIdeas}
+        />
+      )}
+
+      {deletingIdea && (
+        <DeleteConfirmModal
+          idea={deletingIdea}
+          onClose={() => setDeletingIdea(null)}
+          onDeleted={loadIdeas}
         />
       )}
     </div>

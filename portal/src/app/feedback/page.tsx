@@ -1,10 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { AppHeader } from '@/components/AppHeader';
+import { AdminBar } from '@/components/AdminBar';
 import {
   MessageSquare, Bug, Sparkles, ThumbsUp, Star,
   Filter, BarChart2, CheckCircle, Clock, XCircle, AlertCircle, ChevronDown,
+  Trash2,
 } from 'lucide-react';
 
 type FeedbackEntry = {
@@ -20,6 +22,8 @@ type FeedbackEntry = {
   tags: string[];
 };
 
+type FeedbackStatus = FeedbackEntry['status'];
+
 const TYPE_META = {
   bug: { label: 'Bug Report', icon: <Bug className="w-3.5 h-3.5" />, color: 'bg-red-100 text-red-700 border-red-200' },
   'feature-request': { label: 'Feature Request', icon: <Sparkles className="w-3.5 h-3.5" />, color: 'bg-violet-100 text-violet-700 border-violet-200' },
@@ -27,13 +31,15 @@ const TYPE_META = {
   praise: { label: 'Praise', icon: <ThumbsUp className="w-3.5 h-3.5" />, color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
 };
 
-const STATUS_META = {
+const STATUS_META: Record<FeedbackStatus, { label: string; icon: React.ReactNode; color: string }> = {
   new: { label: 'New', icon: <AlertCircle className="w-3.5 h-3.5" />, color: 'bg-gray-100 text-gray-600 border-gray-200' },
   acknowledged: { label: 'Acknowledged', icon: <CheckCircle className="w-3.5 h-3.5" />, color: 'bg-blue-100 text-blue-700 border-blue-200' },
   'in-progress': { label: 'In Progress', icon: <Clock className="w-3.5 h-3.5" />, color: 'bg-amber-100 text-amber-700 border-amber-200' },
   resolved: { label: 'Resolved', icon: <CheckCircle className="w-3.5 h-3.5" />, color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
   'wont-fix': { label: "Won't Fix", icon: <XCircle className="w-3.5 h-3.5" />, color: 'bg-gray-100 text-gray-400 border-gray-200' },
 };
+
+const FEEDBACK_STATUSES: FeedbackStatus[] = ['new', 'acknowledged', 'in-progress', 'resolved', 'wont-fix'];
 
 function StarRating({ rating }: { rating: number }) {
   return (
@@ -54,17 +60,149 @@ function timeAgo(iso: string) {
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
+// ─── DeleteConfirmModal ───────────────────────────────────────────────────────
+function DeleteConfirmModal({
+  entry, onClose, onDeleted,
+}: { entry: FeedbackEntry; onClose: () => void; onDeleted: () => void }) {
+  const [deleting, setDeleting] = useState(false);
+
+  async function handleDelete() {
+    setDeleting(true);
+    await fetch(`/api/feedback?id=${entry.id}`, { method: 'DELETE' });
+    setDeleting(false);
+    onDeleted();
+    onClose();
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center">
+            <Trash2 className="w-5 h-5 text-red-600" />
+          </div>
+          <div>
+            <h2 className="font-bold text-gray-900">Delete Feedback</h2>
+            <p className="text-xs text-gray-400">This action cannot be undone</p>
+          </div>
+        </div>
+        <p className="text-sm text-gray-600 mb-6 line-clamp-3">
+          Delete this {TYPE_META[entry.type].label.toLowerCase()} from <span className="font-semibold text-gray-900">{entry.appName || entry.appId}</span>?
+        </p>
+        <div className="flex gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleDelete}
+            disabled={deleting}
+            className="flex-1 px-4 py-2.5 rounded-xl bg-red-600 text-white text-sm font-semibold hover:bg-red-700 disabled:opacity-50 transition-colors"
+          >
+            {deleting ? 'Deleting…' : 'Delete'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── FeedbackCard ─────────────────────────────────────────────────────────────
+function FeedbackCard({
+  entry, isAdmin, onStatusChange, onDelete,
+}: {
+  entry: FeedbackEntry;
+  isAdmin: boolean;
+  onStatusChange: (id: string, status: FeedbackStatus) => void;
+  onDelete: (entry: FeedbackEntry) => void;
+}) {
+  const tm = TYPE_META[entry.type];
+  const sm = STATUS_META[entry.status];
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-200 p-5 hover:shadow-md transition-shadow">
+      <div className="flex items-start justify-between gap-4 mb-3">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border ${tm.color}`}>
+            {tm.icon}{tm.label}
+          </span>
+
+          {/* Status — admin can change inline */}
+          {isAdmin ? (
+            <select
+              value={entry.status}
+              onChange={e => onStatusChange(entry.id, e.target.value as FeedbackStatus)}
+              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border cursor-pointer bg-white ${sm.color}`}
+            >
+              {FEEDBACK_STATUSES.map(s => (
+                <option key={s} value={s}>{STATUS_META[s].label}</option>
+              ))}
+            </select>
+          ) : (
+            <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border ${sm.color}`}>
+              {sm.icon}{sm.label}
+            </span>
+          )}
+
+          <span className="text-xs text-gray-400 bg-gray-50 border border-gray-200 rounded-full px-2.5 py-1">
+            {entry.appName || entry.appId}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-3 shrink-0">
+          <StarRating rating={entry.rating} />
+          <span className="text-xs text-gray-400">{timeAgo(entry.submittedAt)}</span>
+          {/* Admin delete button */}
+          {isAdmin && (
+            <button
+              onClick={() => onDelete(entry)}
+              title="Delete feedback"
+              className="w-7 h-7 rounded-lg bg-gray-100 text-gray-400 hover:bg-red-100 hover:text-red-600 flex items-center justify-center transition-colors"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+      </div>
+      <p className="text-sm text-gray-700 leading-relaxed">{entry.message}</p>
+    </div>
+  );
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 export default function FeedbackDashboard() {
   const [feedback, setFeedback] = useState<FeedbackEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [filterType, setFilterType] = useState('all');
   const [filterApp, setFilterApp] = useState('all');
+  const [deletingEntry, setDeletingEntry] = useState<FeedbackEntry | null>(null);
 
-  useEffect(() => {
-    fetch('/api/feedback')
-      .then(r => r.json())
-      .then(d => { setFeedback(d.feedback ?? []); setLoading(false); });
+  const loadFeedback = useCallback(async () => {
+    const res = await fetch('/api/feedback');
+    const d = await res.json();
+    setFeedback(d.feedback ?? []);
+    if (d.isAdmin !== undefined) setIsAdmin(d.isAdmin);
+    setLoading(false);
   }, []);
+
+  useEffect(() => { loadFeedback(); }, [loadFeedback]);
+
+  const handleAdminChange = useCallback((admin: boolean) => {
+    setIsAdmin(admin);
+    loadFeedback();
+  }, [loadFeedback]);
+
+  async function handleStatusChange(id: string, status: FeedbackStatus) {
+    await fetch('/api/feedback', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, status }),
+    });
+    loadFeedback();
+  }
 
   const apps = Array.from(new Set(feedback.map(f => f.appId)));
   const filtered = feedback.filter(f =>
@@ -88,6 +226,11 @@ export default function FeedbackDashboard() {
       />
 
       <main className="container mx-auto px-6 py-10">
+
+        {/* Admin bar */}
+        <div className="mb-8">
+          <AdminBar onAdminChange={handleAdminChange} />
+        </div>
 
         {/* Stats row */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10">
@@ -175,35 +318,26 @@ export default function FeedbackDashboard() {
           </div>
         ) : (
           <div className="space-y-4">
-            {filtered.map(f => {
-              const tm = TYPE_META[f.type];
-              const sm = STATUS_META[f.status];
-              return (
-                <div key={f.id} className="bg-white rounded-2xl border border-gray-200 p-5 hover:shadow-md transition-shadow">
-                  <div className="flex items-start justify-between gap-4 mb-3">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border ${tm.color}`}>
-                        {tm.icon}{tm.label}
-                      </span>
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border ${sm.color}`}>
-                        {sm.icon}{sm.label}
-                      </span>
-                      <span className="text-xs text-gray-400 bg-gray-50 border border-gray-200 rounded-full px-2.5 py-1">
-                        {f.appName || f.appId}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-3 shrink-0">
-                      <StarRating rating={f.rating} />
-                      <span className="text-xs text-gray-400">{timeAgo(f.submittedAt)}</span>
-                    </div>
-                  </div>
-                  <p className="text-sm text-gray-700 leading-relaxed">{f.message}</p>
-                </div>
-              );
-            })}
+            {filtered.map(f => (
+              <FeedbackCard
+                key={f.id}
+                entry={f}
+                isAdmin={isAdmin}
+                onStatusChange={handleStatusChange}
+                onDelete={setDeletingEntry}
+              />
+            ))}
           </div>
         )}
       </main>
+
+      {deletingEntry && (
+        <DeleteConfirmModal
+          entry={deletingEntry}
+          onClose={() => setDeletingEntry(null)}
+          onDeleted={loadFeedback}
+        />
+      )}
     </div>
   );
 }

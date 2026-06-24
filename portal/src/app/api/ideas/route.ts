@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { readDB, writeDB } from '@/lib/db';
 
 export type IdeaStatus = 'new' | 'under-review' | 'planned' | 'in-progress' | 'shipped' | 'declined';
 export type IdeaDomain =
@@ -35,81 +36,88 @@ export type Idea = {
   isPinned: boolean;
 };
 
-declare global {
-  // eslint-disable-next-line no-var
-  var _ideasStore: Idea[] | undefined;
+const DB_KEY = 'ideas';
+
+const SEED: Idea[] = [
+  {
+    id: 'idea_seed_1',
+    title: 'Slack Integration for Bug Analyzer Alerts',
+    problemStatement: 'Engineers miss critical bug spikes because they have to manually check the portal.',
+    proposedSolution: 'Push real-time Slack notifications when a new P1/P2 bug cluster is detected by the Bug Analyzer.',
+    domain: 'Mobile Guild',
+    estimatedImpact: 'high',
+    status: 'under-review',
+    submittedBy: 'Engineering Team',
+    submittedAt: new Date(Date.now() - 86400000 * 2).toISOString(),
+    votes: 14,
+    voters: [],
+    comments: [],
+    tags: ['slack', 'notifications', 'bug-analyzer'],
+    isPinned: true,
+  },
+  {
+    id: 'idea_seed_2',
+    title: 'Weekly AI Digest Email',
+    problemStatement: 'Leadership wants a weekly summary of AI tool usage and impact without logging in.',
+    proposedSolution: 'Auto-generate and email a weekly digest: top bugs found, stories extracted, Copilot ROI metrics.',
+    domain: 'AI Value & Knowledge',
+    estimatedImpact: 'medium',
+    status: 'planned',
+    submittedBy: 'Engineering Team',
+    submittedAt: new Date(Date.now() - 86400000 * 5).toISOString(),
+    votes: 9,
+    voters: [],
+    comments: [],
+    tags: ['email', 'digest', 'reporting'],
+    isPinned: false,
+  },
+  {
+    id: 'idea_seed_3',
+    title: 'Dark Mode for the Hub',
+    problemStatement: 'Engineers working late find the bright white UI straining on the eyes.',
+    proposedSolution: 'Add a dark mode toggle that persists across sessions using localStorage.',
+    domain: 'Platform & Infrastructure',
+    estimatedImpact: 'low',
+    status: 'new',
+    submittedBy: 'Engineering Team',
+    submittedAt: new Date(Date.now() - 86400000).toISOString(),
+    votes: 22,
+    voters: [],
+    comments: [],
+    tags: ['ui', 'dark-mode', 'accessibility'],
+    isPinned: false,
+  },
+];
+
+function getIdeas(): Idea[] {
+  const stored = readDB<Idea[] | null>(DB_KEY, null);
+  if (!stored) {
+    writeDB(DB_KEY, SEED);
+    return SEED;
+  }
+  return stored;
 }
 
-function getStore(): Idea[] {
-  if (!global._ideasStore) {
-    // Seed with a couple of example ideas
-    global._ideasStore = [
-      {
-        id: 'idea_seed_1',
-        title: 'Teams Integration for Bug Analyzer Alerts',
-        problemStatement: 'Engineers miss critical bug spikes because they have to manually check the portal.',
-        proposedSolution: 'Push real-time Teams notifications when a new P1/P2 bug cluster is detected by the Bug Analyzer.',
-        domain: 'Mobile Guild',
-        estimatedImpact: 'high',
-        status: 'under-review',
-        submittedBy: 'Engineering Team',
-        submittedAt: new Date(Date.now() - 86400000 * 2).toISOString(),
-        votes: 14,
-        voters: [],
-        comments: [],
-        tags: ['teams', 'notifications', 'bug-analyzer'],
-        isPinned: true,
-      },
-      {
-        id: 'idea_seed_2',
-        title: 'Weekly AI Digest Email',
-        problemStatement: 'Leadership wants a weekly summary of AI tool usage and impact without logging in.',
-        proposedSolution: 'Auto-generate and email a weekly digest: top bugs found, stories extracted, Copilot ROI metrics.',
-        domain: 'AI Value & Knowledge',
-        estimatedImpact: 'medium',
-        status: 'planned',
-        submittedBy: 'Engineering Team',
-        submittedAt: new Date(Date.now() - 86400000 * 5).toISOString(),
-        votes: 9,
-        voters: [],
-        comments: [],
-        tags: ['email', 'digest', 'reporting'],
-        isPinned: false,
-      },
-      {
-        id: 'idea_seed_3',
-        title: 'Dark Mode for the Hub',
-        problemStatement: 'Engineers working late find the bright white UI straining on the eyes.',
-        proposedSolution: 'Add a dark mode toggle that persists across sessions using localStorage.',
-        domain: 'Platform & Infrastructure',
-        estimatedImpact: 'low',
-        status: 'new',
-        submittedBy: 'Engineering Team',
-        submittedAt: new Date(Date.now() - 86400000).toISOString(),
-        votes: 22,
-        voters: [],
-        comments: [],
-        tags: ['ui', 'dark-mode', 'accessibility'],
-        isPinned: false,
-      },
-    ];
-  }
-  return global._ideasStore;
+function saveIdeas(ideas: Idea[]) {
+  writeDB(DB_KEY, ideas);
+}
+
+function isAdmin(req: NextRequest) {
+  return req.cookies.get('engintel_admin')?.value === 'true';
 }
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const sort = searchParams.get('sort') ?? 'votes'; // votes | recent | status
+  const sort = searchParams.get('sort') ?? 'votes';
   const domain = searchParams.get('domain');
   const status = searchParams.get('status');
 
-  let ideas = getStore().slice();
+  let ideas = getIdeas();
 
   if (domain) ideas = ideas.filter(i => i.domain === domain);
   if (status) ideas = ideas.filter(i => i.status === status);
 
-  // Pinned always first
-  ideas.sort((a, b) => {
+  ideas = [...ideas].sort((a, b) => {
     if (a.isPinned && !b.isPinned) return -1;
     if (!a.isPinned && b.isPinned) return 1;
     if (sort === 'votes') return b.votes - a.votes;
@@ -117,7 +125,7 @@ export async function GET(req: NextRequest) {
     return 0;
   });
 
-  return NextResponse.json({ ideas });
+  return NextResponse.json({ ideas, isAdmin: isAdmin(req) });
 }
 
 export async function POST(req: NextRequest) {
@@ -146,7 +154,10 @@ export async function POST(req: NextRequest) {
       isPinned: false,
     };
 
-    getStore().push(idea);
+    const ideas = getIdeas();
+    ideas.push(idea);
+    saveIdeas(ideas);
+
     return NextResponse.json({ ok: true, idea }, { status: 201 });
   } catch {
     return NextResponse.json({ error: 'Bad request.' }, { status: 400 });

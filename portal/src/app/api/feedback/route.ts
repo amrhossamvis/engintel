@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { readDB, writeDB } from '@/lib/db';
 
-// In-memory store for MVP (replace with DB in production)
 export type FeedbackEntry = {
   id: string;
   appId: string;
@@ -15,22 +15,26 @@ export type FeedbackEntry = {
   sessionContext?: { page: string; action?: string };
 };
 
-declare global {
-  // eslint-disable-next-line no-var
-  var _feedbackStore: FeedbackEntry[] | undefined;
+const DB_KEY = 'feedback';
+
+function getFeedback(): FeedbackEntry[] {
+  return readDB<FeedbackEntry[]>(DB_KEY, []);
 }
 
-function getStore(): FeedbackEntry[] {
-  if (!global._feedbackStore) global._feedbackStore = [];
-  return global._feedbackStore;
+function saveFeedback(entries: FeedbackEntry[]) {
+  writeDB(DB_KEY, entries);
+}
+
+function isAdmin(req: NextRequest) {
+  return req.cookies.get('engintel_admin')?.value === 'true';
 }
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const appId = searchParams.get('appId');
-  const store = getStore();
-  const results = appId ? store.filter(f => f.appId === appId) : store;
-  return NextResponse.json({ feedback: results.slice().reverse() });
+  const all = getFeedback();
+  const results = appId ? all.filter(f => f.appId === appId) : all;
+  return NextResponse.json({ feedback: results.slice().reverse(), isAdmin: isAdmin(req) });
 }
 
 export async function POST(req: NextRequest) {
@@ -56,21 +60,50 @@ export async function POST(req: NextRequest) {
       sessionContext,
     };
 
-    getStore().push(entry);
+    const all = getFeedback();
+    all.push(entry);
+    saveFeedback(all);
+
     return NextResponse.json({ ok: true, id: entry.id }, { status: 201 });
   } catch {
     return NextResponse.json({ error: 'Bad request.' }, { status: 400 });
   }
 }
 
+// PATCH — update status (admin only)
 export async function PATCH(req: NextRequest) {
+  if (!isAdmin(req)) {
+    return NextResponse.json({ error: 'Admin access required.' }, { status: 403 });
+  }
   try {
     const body = await req.json();
-    const { id, status } = body;
-    const store = getStore();
-    const entry = store.find(f => f.id === id);
+    const { id, status, message } = body;
+    const all = getFeedback();
+    const entry = all.find(f => f.id === id);
     if (!entry) return NextResponse.json({ error: 'Not found.' }, { status: 404 });
-    entry.status = status;
+    if (status)  entry.status = status;
+    if (message) entry.message = message;
+    saveFeedback(all);
+    return NextResponse.json({ ok: true });
+  } catch {
+    return NextResponse.json({ error: 'Bad request.' }, { status: 400 });
+  }
+}
+
+// DELETE — admin only
+export async function DELETE(req: NextRequest) {
+  if (!isAdmin(req)) {
+    return NextResponse.json({ error: 'Admin access required.' }, { status: 403 });
+  }
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+    if (!id) return NextResponse.json({ error: 'Missing id.' }, { status: 400 });
+    const all = getFeedback();
+    const idx = all.findIndex(f => f.id === id);
+    if (idx === -1) return NextResponse.json({ error: 'Not found.' }, { status: 404 });
+    all.splice(idx, 1);
+    saveFeedback(all);
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ error: 'Bad request.' }, { status: 400 });

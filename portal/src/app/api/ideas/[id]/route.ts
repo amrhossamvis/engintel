@@ -1,25 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server';
-import type { Comment } from '../route';
+import { readDB, writeDB } from '@/lib/db';
+import type { Idea, Comment } from '../route';
 
-declare global {
-  // eslint-disable-next-line no-var
-  var _ideasStore: import('../route').Idea[] | undefined;
+const DB_KEY = 'ideas';
+
+function getIdeas(): Idea[] {
+  return readDB<Idea[]>(DB_KEY, []);
 }
 
-function getStore() {
-  return global._ideasStore ?? [];
+function saveIdeas(ideas: Idea[]) {
+  writeDB(DB_KEY, ideas);
 }
 
-// PATCH /api/ideas/[id] — vote, change status, add comment
+function isAdmin(req: NextRequest) {
+  return req.cookies.get('engintel_admin')?.value === 'true';
+}
+
+export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+  const idea = getIdeas().find(i => i.id === params.id);
+  if (!idea) return NextResponse.json({ error: 'Not found.' }, { status: 404 });
+  return NextResponse.json({ idea });
+}
+
+// PATCH — vote, status, comment, pin, or admin edit
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const { id } = params;
     const body = await req.json();
-    const store = getStore();
-    const idea = store.find(i => i.id === id);
+    const ideas = getIdeas();
+    const idea = ideas.find(i => i.id === id);
     if (!idea) return NextResponse.json({ error: 'Not found.' }, { status: 404 });
 
-    // Vote toggle
+    // Vote toggle (any user)
     if (body.action === 'vote') {
       const voter = body.voter ?? 'anonymous';
       if (idea.voters.includes(voter)) {
@@ -29,16 +41,11 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
         idea.voters.push(voter);
         idea.votes += 1;
       }
-      return NextResponse.json({ ok: true, votes: idea.votes, voted: idea.voters.includes(voter) });
+      saveIdeas(ideas);
+      return NextResponse.json({ ok: true, votes: idea.votes });
     }
 
-    // Status change
-    if (body.action === 'status') {
-      idea.status = body.status;
-      return NextResponse.json({ ok: true, status: idea.status });
-    }
-
-    // Add comment
+    // Add comment (any user)
     if (body.action === 'comment') {
       const comment: Comment = {
         id: `cmt_${Date.now()}`,
@@ -48,13 +55,36 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
         createdAt: new Date().toISOString(),
       };
       idea.comments.push(comment);
+      saveIdeas(ideas);
       return NextResponse.json({ ok: true, comment });
     }
 
-    // Pin toggle
+    // ── Admin-only actions ──────────────────────────────────────────────────
+    if (!isAdmin(req)) {
+      return NextResponse.json({ error: 'Admin access required.' }, { status: 403 });
+    }
+
+    if (body.action === 'status') {
+      idea.status = body.status;
+      saveIdeas(ideas);
+      return NextResponse.json({ ok: true, status: idea.status });
+    }
+
     if (body.action === 'pin') {
       idea.isPinned = !idea.isPinned;
+      saveIdeas(ideas);
       return NextResponse.json({ ok: true, isPinned: idea.isPinned });
+    }
+
+    if (body.action === 'edit') {
+      if (body.title)            idea.title = body.title;
+      if (body.problemStatement) idea.problemStatement = body.problemStatement;
+      if (body.proposedSolution !== undefined) idea.proposedSolution = body.proposedSolution;
+      if (body.domain)           idea.domain = body.domain;
+      if (body.estimatedImpact)  idea.estimatedImpact = body.estimatedImpact;
+      if (body.status)           idea.status = body.status;
+      saveIdeas(ideas);
+      return NextResponse.json({ ok: true, idea });
     }
 
     return NextResponse.json({ error: 'Unknown action.' }, { status: 400 });
@@ -63,8 +93,15 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 }
 
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
-  const idea = getStore().find(i => i.id === params.id);
-  if (!idea) return NextResponse.json({ error: 'Not found.' }, { status: 404 });
-  return NextResponse.json({ idea });
+// DELETE — admin only
+export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+  if (!isAdmin(req)) {
+    return NextResponse.json({ error: 'Admin access required.' }, { status: 403 });
+  }
+  const ideas = getIdeas();
+  const idx = ideas.findIndex(i => i.id === params.id);
+  if (idx === -1) return NextResponse.json({ error: 'Not found.' }, { status: 404 });
+  ideas.splice(idx, 1);
+  saveIdeas(ideas);
+  return NextResponse.json({ ok: true });
 }

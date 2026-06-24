@@ -38,3 +38,6 @@ next-env.d.ts
 
 # story-extractor persistence (runtime data — never overwrite on deploy)
 portal/data/
+
+# JSON file persistence for feedback, ideas, etc. (runtime data — never commit)
+portal/.data/
