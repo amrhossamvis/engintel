@@ -665,12 +665,56 @@ export default function AIProductivityPage() {
     }
   };
 
-  // Auto-fetch only when we have PAT + teams configured
+  // Auto-fetch only when we have PAT + teams configured.
+  // Read repos directly from localStorage here to avoid the race condition where
+  // setSelectedRepos() from the first useEffect hasn't propagated to state yet.
   useEffect(() => {
     const pat = localStorage.getItem('ado_pat_token') || '';
     let teams: TeamConfig[] = [];
     try { teams = JSON.parse(localStorage.getItem('ado_teams') || '[]'); } catch { /* ignore */ }
-    if (pat && teams.length > 0) fetchData();
+    if (!pat || teams.length === 0) return;
+
+    // Resolve repos directly from localStorage (state not yet updated at this point)
+    let reposForFetch: string[] = [];
+    try {
+      const pool: string[] = JSON.parse(localStorage.getItem('ado_repos') || '[]');
+      const savedSelected = localStorage.getItem('ai_productivity_selected_repos');
+      if (savedSelected) {
+        const parsed: string[] = JSON.parse(savedSelected);
+        const filtered = parsed.filter((r: string) => pool.includes(r));
+        // Only use saved selection if it's non-empty; otherwise fall back to full pool
+        reposForFetch = filtered.length > 0 ? filtered : pool;
+      } else {
+        reposForFetch = pool;
+      }
+    } catch { /* ignore */ }
+
+    const copilotInput = (() => {
+      try {
+        const saved = localStorage.getItem('copilot_metrics');
+        if (!saved) return undefined;
+        const p = JSON.parse(saved);
+        return p.acceptanceRate ? p : undefined;
+      } catch { return undefined; }
+    })();
+
+    setLoading(true);
+    setError('');
+    fetch('/api/ai-productivity', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        patToken: pat,
+        teams,
+        sprintCount,
+        selectedRepos: reposForFetch,
+        copilotInput,
+      }),
+    })
+      .then(res => res.ok ? res.json() : res.json().then((e: any) => Promise.reject(new Error(e.error || 'Failed'))))
+      .then(json => setData(json))
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'An error occurred'))
+      .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

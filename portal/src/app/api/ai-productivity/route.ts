@@ -151,9 +151,35 @@ async function fetchPRsForDateRange(
   minDate: string, maxDate: string, auth: string
 ): Promise<any[]> {
   try {
-    const url = `https://dev.azure.com/${org}/${project}/_apis/git/repositories/${repoId}/pullrequests?searchCriteria.status=completed&searchCriteria.minTime=${minDate}&searchCriteria.maxTime=${maxDate}&$top=200&api-version=7.0`;
-    const res = await axios.get(url, { headers: { Authorization: auth } });
-    return res.data.value || [];
+    // ADO PR API: searchCriteria.minTime filters by CREATION date, not closedDate.
+    // A PR created before the sprint but merged during it would be missed if we use
+    // sprint start as minTime. Use 90 days before sprint end as a wide net, then
+    // filter client-side by closedDate within the sprint window.
+    const sprintEnd = new Date(maxDate);
+    const wideMinDate = new Date(sprintEnd);
+    wideMinDate.setDate(wideMinDate.getDate() - 90);
+    const wideMinDateStr = wideMinDate.toISOString().split('T')[0]; // YYYY-MM-DD
+
+    const baseUrl = `https://dev.azure.com/${org}/${project}/_apis/git/repositories/${repoId}/pullrequests`;
+    const res = await axios.get(baseUrl, {
+      headers: { Authorization: auth },
+      params: {
+        'searchCriteria.status': 'completed',
+        'searchCriteria.minTime': wideMinDateStr,
+        '$top': 500,
+        'api-version': '7.0',
+      },
+    });
+    const prs: any[] = res.data.value || [];
+
+    // Filter to PRs whose closedDate falls within the sprint window
+    const sprintStart = new Date(minDate).getTime();
+    const sprintEndMs = sprintEnd.getTime();
+    return prs.filter(pr => {
+      if (!pr.closedDate) return false;
+      const closed = new Date(pr.closedDate).getTime();
+      return closed >= sprintStart && closed <= sprintEndMs;
+    });
   } catch {
     return [];
   }
