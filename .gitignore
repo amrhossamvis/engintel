@@ -36,8 +36,5 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# story-extractor persistence (runtime data — never overwrite on deploy)
+# Runtime data directory — story-persistence, ideas, feedback (never commit, preserved by deploy script)
 portal/data/
-
-# JSON file persistence for feedback, ideas, etc. (runtime data — never commit)
-portal/.data/

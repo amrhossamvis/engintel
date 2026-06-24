@@ -1,0 +1,64 @@
+[
+  {
+    "id": "idea_seed_1",
+    "title": "Slack Integration for Bug Analyzer Alerts",
+    "problemStatement": "Engineers miss critical bug spikes because they have to manually check the portal.",
+    "proposedSolution": "Push real-time Slack notifications when a new P1/P2 bug cluster is detected by the Bug Analyzer.",
+    "domain": "Mobile Guild",
+    "estimatedImpact": "high",
+    "status": "under-review",
+    "submittedBy": "Engineering Team",
+    "submittedAt": "2026-06-22T11:13:10.080Z",
+    "votes": 15,
+    "voters": [
+      "user_session"
+    ],
+    "comments": [],
+    "tags": [
+      "slack",
+      "notifications",
+      "bug-analyzer"
+    ],
+    "isPinned": true
+  },
+  {
+    "id": "idea_seed_2",
+    "title": "Weekly AI Digest Email",
+    "problemStatement": "Leadership wants a weekly summary of AI tool usage and impact without logging in.",
+    "proposedSolution": "Auto-generate and email a weekly digest: top bugs found, stories extracted, Copilot ROI metrics.",
+    "domain": "AI Value & Knowledge",
+    "estimatedImpact": "medium",
+    "status": "planned",
+    "submittedBy": "Engineering Team",
+    "submittedAt": "2026-06-19T11:13:10.080Z",
+    "votes": 9,
+    "voters": [],
+    "comments": [],
+    "tags": [
+      "email",
+      "digest",
+      "reporting"
+    ],
+    "isPinned": false
+  },
+  {
+    "id": "idea_seed_3",
+    "title": "Dark Mode for the Hub",
+    "problemStatement": "Engineers working late find the bright white UI straining on the eyes.",
+    "proposedSolution": "Add a dark mode toggle that persists across sessions using localStorage.",
+    "domain": "Platform & Infrastructure",
+    "estimatedImpact": "low",
+    "status": "new",
+    "submittedBy": "Engineering Team",
+    "submittedAt": "2026-06-23T11:13:10.080Z",
+    "votes": 22,
+    "voters": [],
+    "comments": [],
+    "tags": [
+      "ui",
+      "dark-mode",
+      "accessibility"
+    ],
+    "isPinned": false
+  }
+]

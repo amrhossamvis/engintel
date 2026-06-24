@@ -59,9 +59,11 @@ jobs:
 
             cd ~/engintel
 
-            echo "==> Preserving runtime data (story-persistence)"
+            echo "==> Preserving runtime data (story-persistence, ideas, feedback)"
             mkdir -p /tmp/engintel-data-backup
             [ -f portal/data/story-persistence.json ] && cp portal/data/story-persistence.json /tmp/engintel-data-backup/ || true
+            [ -f portal/data/ideas.json ]             && cp portal/data/ideas.json             /tmp/engintel-data-backup/ || true
+            [ -f portal/data/feedback.json ]          && cp portal/data/feedback.json          /tmp/engintel-data-backup/ || true
 
             echo "==> Pulling latest source code"
             git fetch origin main
@@ -70,6 +72,8 @@ jobs:
             echo "==> Restoring runtime data"
             mkdir -p portal/data
             [ -f /tmp/engintel-data-backup/story-persistence.json ] && cp /tmp/engintel-data-backup/story-persistence.json portal/data/ || true
+            [ -f /tmp/engintel-data-backup/ideas.json ]             && cp /tmp/engintel-data-backup/ideas.json             portal/data/ || true
+            [ -f /tmp/engintel-data-backup/feedback.json ]          && cp /tmp/engintel-data-backup/feedback.json          portal/data/ || true
 
             echo "==> Installing production dependencies"
             cd portal

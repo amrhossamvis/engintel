@@ -1,13 +1,14 @@
 /**
  * Lightweight JSON file persistence for Ideas and Feedback.
- * Stores data in portal/.data/ directory (gitignored).
+ * Stores data in portal/data/ directory (gitignored, same as story-persistence).
+ * The deploy script preserves this directory across git reset --hard.
  * Uses synchronous fs for simplicity in Next.js API routes.
  */
 
 import fs from 'fs';
 import path from 'path';
 
-const DATA_DIR = path.join(process.cwd(), '.data');
+const DATA_DIR = path.join(process.cwd(), 'data');
 
 function ensureDir() {
   if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
