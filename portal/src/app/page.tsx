@@ -26,6 +26,9 @@ import {
   UserCheck,
   Smartphone,
   LogOut,
+  CheckCircle2,
+  MessageSquare,
+  Lightbulb,
 } from 'lucide-react';
 import { APP_THEMES } from '@/lib/app-config';
 
@@ -38,16 +41,16 @@ type Initiative = {
   href: string;
   status: 'active' | 'coming-soon';
   category: string;
-  quarter?: string; // e.g. 'Q2 2026'
+  quarter?: string;
 };
 
 type CategoryGroup = {
   id: string;
   label: string;
   description: string;
-  color: string;        // Tailwind text color
-  borderColor: string;  // Tailwind border color
-  bgColor: string;      // Tailwind bg color for header
+  color: string;
+  borderColor: string;
+  bgColor: string;
   emoji: string;
   initiatives: Initiative[];
 };
@@ -239,6 +242,38 @@ const allInitiatives: Initiative[] = [
     quarter: 'Q4 2026',
   },
 
+  // ── Platform & Community ─────────────────────────────────────────────────
+  {
+    id: 'feedback',
+    title: 'Feedback Dashboard',
+    shortTitle: 'Feedback',
+    description: 'Rate every tool, report bugs, request features, and share praise — directly from within the app. Structured feedback with satisfaction scores and trend tracking.',
+    icon: <MessageSquare className="w-6 h-6" />,
+    href: '/feedback',
+    status: 'active',
+    category: 'Platform & Community',
+  },
+  {
+    id: 'idea-box',
+    title: 'Idea Box',
+    shortTitle: 'Idea Box',
+    description: 'Submit tool ideas, vote on what matters most, and watch them move from concept to shipped. Community-owned backlog with status tracking and comments.',
+    icon: <Lightbulb className="w-6 h-6" />,
+    href: '/idea-box',
+    status: 'active',
+    category: 'Platform & Community',
+  },
+  {
+    id: 'playground',
+    title: 'AI Playground',
+    shortTitle: 'AI Playground',
+    description: 'Explore GitHub Copilot CLI and Azure OpenAI with pre-built prompt templates. Experiment, learn, and prototype new AI workflows in a safe sandbox.',
+    icon: <FlaskConical className="w-6 h-6" />,
+    href: '/playground',
+    status: 'active',
+    category: 'Platform & Community',
+  },
+
   // ── AI Value & Knowledge ──────────────────────────────────────────────────
   {
     id: 'ai-productivity',
@@ -318,8 +353,11 @@ const CATEGORY_GROUPS: Omit<CategoryGroup, 'initiatives'>[] = [
 function buildGroups(): CategoryGroup[] {
   return CATEGORY_GROUPS.map(group => ({
     ...group,
-    initiatives: allInitiatives.filter(i => i.category === group.label),
-  }));
+    // Only include coming-soon tools in the category sections
+    initiatives: allInitiatives.filter(
+      i => i.category === group.label && i.status === 'coming-soon'
+    ),
+  })).filter(g => g.initiatives.length > 0);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -342,8 +380,49 @@ function StatusBadge({ status, quarter }: { status: string; quarter?: string }) 
   );
 }
 
+function LiveCard({ initiative }: { initiative: Initiative }) {
+  const theme = APP_THEMES[initiative.href];
+
+  return (
+    <Link
+      href={initiative.href}
+      className="group relative bg-white rounded-2xl border border-gray-200 overflow-hidden transition-all duration-300 hover:border-gray-300 hover:shadow-2xl hover:shadow-gray-100 hover:-translate-y-1 cursor-pointer"
+    >
+      {/* Top gradient accent — thicker for live cards */}
+      <div className={`h-1.5 bg-gradient-to-r ${theme?.gradient ?? 'from-gray-400 to-gray-600'}`} />
+
+      <div className="p-6">
+        {/* Header row */}
+        <div className="flex items-start justify-between mb-4">
+          <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${theme?.iconBg ?? 'bg-gray-100 text-gray-600'}`}>
+            {initiative.icon}
+          </div>
+          <StatusBadge status={initiative.status} />
+        </div>
+
+        {/* Content */}
+        <h3 className="text-base font-semibold mb-2 text-gray-900 group-hover:text-gray-700 transition-colors leading-snug">
+          {initiative.shortTitle}
+        </h3>
+        <p className="text-sm leading-relaxed mb-4 text-gray-500">
+          {initiative.description}
+        </p>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between pt-4 border-t border-emerald-100">
+          <span className="text-xs font-medium text-gray-400">
+            {initiative.category}
+          </span>
+          <span className={`inline-flex items-center gap-1 text-xs font-semibold group-hover:gap-2 transition-all bg-gradient-to-r ${theme?.gradient ?? 'from-gray-500 to-gray-700'} bg-clip-text text-transparent`}>
+            Launch <ArrowRight className="w-3 h-3 text-gray-400 group-hover:text-gray-600 transition-colors" />
+          </span>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
 function InitiativeCard({ initiative }: { initiative: Initiative }) {
-  const isActive = initiative.status === 'active';
   const theme = APP_THEMES[initiative.href];
 
   return (
@@ -377,7 +456,7 @@ function InitiativeCard({ initiative }: { initiative: Initiative }) {
             {initiative.category}
           </span>
           <span className={`inline-flex items-center gap-1 text-xs font-semibold group-hover:gap-2 transition-all bg-gradient-to-r ${theme?.gradient ?? 'from-gray-500 to-gray-700'} bg-clip-text text-transparent`}>
-            {isActive ? 'Launch' : 'Preview'} <ArrowRight className="w-3 h-3 text-gray-400 group-hover:text-gray-600 transition-colors" />
+            Preview <ArrowRight className="w-3 h-3 text-gray-400 group-hover:text-gray-600 transition-colors" />
           </span>
         </div>
       </div>
@@ -386,10 +465,8 @@ function InitiativeCard({ initiative }: { initiative: Initiative }) {
 }
 
 function CategorySection({ group }: { group: CategoryGroup }) {
-  const liveCount = group.initiatives.filter(i => i.status === 'active').length;
-
   return (
-    <section className="mb-14">
+    <section className="mb-12">
       {/* Category header */}
       <div className={`flex items-start gap-4 mb-6 p-4 rounded-2xl border ${group.borderColor} ${group.bgColor}`}>
         <div className="text-3xl leading-none mt-0.5">{group.emoji}</div>
@@ -397,14 +474,8 @@ function CategorySection({ group }: { group: CategoryGroup }) {
           <div className="flex items-center gap-3 flex-wrap">
             <h2 className={`text-lg font-bold ${group.color}`}>{group.label}</h2>
             <span className="text-xs font-medium text-gray-500 bg-white border border-gray-200 rounded-full px-2.5 py-0.5">
-              {group.initiatives.length} initiative{group.initiatives.length !== 1 ? 's' : ''}
+              {group.initiatives.length} upcoming
             </span>
-            {liveCount > 0 && (
-              <span className="inline-flex items-center gap-1 text-xs font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-full px-2.5 py-0.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                {liveCount} live
-              </span>
-            )}
           </div>
           <p className="text-sm text-gray-500 mt-1 leading-relaxed">{group.description}</p>
         </div>
@@ -427,7 +498,8 @@ function CategorySection({ group }: { group: CategoryGroup }) {
 export default function HubPage() {
   const router = useRouter();
   const groups = buildGroups();
-  const activeCount = allInitiatives.filter(i => i.status === 'active').length;
+  const liveInitiatives = allInitiatives.filter(i => i.status === 'active');
+  const activeCount = liveInitiatives.length;
   const totalCount = allInitiatives.length;
 
   async function handleLogout() {
@@ -503,11 +575,43 @@ export default function HubPage() {
       {/* ── Main Content ── */}
       <main className="container mx-auto px-6 py-12">
 
-        {/* Quick stats bar */}
+        {/* ── LIVE NOW SECTION ── */}
+        <section className="mb-16">
+          {/* Section header */}
+          <div className="flex items-center gap-3 mb-6">
+            <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-2xl px-5 py-3">
+              <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+              <h2 className="text-lg font-bold text-emerald-700">Live Now</h2>
+              <span className="inline-flex items-center gap-1 ml-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                {activeCount} tools
+              </span>
+            </div>
+            <div className="flex-1 h-px bg-emerald-100" />
+          </div>
+
+          {/* Live cards grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
+            {liveInitiatives.map(initiative => (
+              <LiveCard key={initiative.id} initiative={initiative} />
+            ))}
+          </div>
+        </section>
+
+        {/* ── DIVIDER ── */}
+        <div className="flex items-center gap-4 mb-12">
+          <div className="flex-1 h-px bg-gray-200" />
+          <span className="text-xs font-semibold text-gray-400 uppercase tracking-widest px-3">Roadmap</span>
+          <div className="flex-1 h-px bg-gray-200" />
+        </div>
+
+        {/* ── Quick category nav ── */}
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-12">
           {CATEGORY_GROUPS.map(group => {
-            const groupInitiatives = allInitiatives.filter(i => i.category === group.label);
-            const live = groupInitiatives.filter(i => i.status === 'active').length;
+            const pending = allInitiatives.filter(
+              i => i.category === group.label && i.status === 'coming-soon'
+            ).length;
+            if (pending === 0) return null;
             return (
               <a
                 key={group.id}
@@ -516,13 +620,13 @@ export default function HubPage() {
               >
                 <span className="text-xl">{group.emoji}</span>
                 <span className={`text-xs font-bold ${group.color} leading-tight`}>{group.label}</span>
-                <span className="text-xs text-gray-400">{groupInitiatives.length} tools{live > 0 ? ` · ${live} live` : ''}</span>
+                <span className="text-xs text-gray-400">{pending} upcoming</span>
               </a>
             );
           })}
         </div>
 
-        {/* Category sections */}
+        {/* ── Category sections (pending only) ── */}
         {groups.map(group => (
           <div key={group.id} id={group.id}>
             <CategorySection group={group} />

@@ -110,6 +110,23 @@ export const APP_THEMES: Record<string, AppTheme> = {
     headerGradient: 'bg-gradient-to-br from-fuchsia-600 via-purple-600 to-violet-700',
     iconBg:         'bg-fuchsia-100 text-fuchsia-600',
   },
+
+  // ── Community & Platform ───────────────────────────────────────────────────
+  '/feedback': {
+    gradient:       'from-blue-600 via-blue-500 to-cyan-600',
+    headerGradient: 'bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-600',
+    iconBg:         'bg-blue-100 text-blue-600',
+  },
+  '/idea-box': {
+    gradient:       'from-violet-600 via-purple-600 to-indigo-700',
+    headerGradient: 'bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700',
+    iconBg:         'bg-violet-100 text-violet-600',
+  },
+  '/playground': {
+    gradient:       'from-orange-500 via-amber-500 to-yellow-500',
+    headerGradient: 'bg-gradient-to-br from-orange-500 via-amber-500 to-yellow-500',
+    iconBg:         'bg-amber-100 text-amber-600',
+  },
 };
 
 /** Fallback theme for unknown routes */
