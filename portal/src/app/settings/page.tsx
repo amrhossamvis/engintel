@@ -182,10 +182,10 @@ export default function GlobalSettingsPage() {
       />
 
       <div className="container mx-auto px-6 py-10 max-w-5xl">
-        <div className="flex gap-8 items-start">
+        <div className="flex flex-col lg:flex-row gap-8 items-start">
 
           {/* ── Sidebar nav ── */}
-          <aside className="w-52 shrink-0 sticky top-8">
+          <aside className="w-full lg:w-52 shrink-0 lg:sticky lg:top-8">
             <nav className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
               {NAV.map(({ id, label, icon }) => (
                 <button
@@ -213,7 +213,7 @@ export default function GlobalSettingsPage() {
               ))}
             </nav>
 
-            {/* Save button in sidebar */}
+            {/* Save button — visible in sidebar on desktop */}
             <button
               onClick={handleSave}
               className={`mt-4 w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition shadow-sm ${

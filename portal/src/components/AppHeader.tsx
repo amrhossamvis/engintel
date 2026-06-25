@@ -33,21 +33,21 @@ export const AppHeader = ({
   return (
     <>
       <header className={`${resolvedGradient} text-white sticky top-0 z-20 shadow-sm`}>
-        <div className="container mx-auto px-6 py-8">
+        <div className="container mx-auto px-4 sm:px-6 py-5 sm:py-8">
           <Link href="/" className="inline-flex items-center gap-1.5 text-white/70 hover:text-white text-xs font-medium mb-3 transition">
             <ArrowLeft className="w-3.5 h-3.5" /> Back to Hub
           </Link>
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex items-center gap-4">
-              <div className="h-11 w-11 rounded-xl bg-white/15 flex items-center justify-center backdrop-blur-sm">
+            <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+              <div className="h-10 w-10 sm:h-11 sm:w-11 rounded-xl bg-white/15 flex items-center justify-center backdrop-blur-sm shrink-0">
                 {icon || <Zap className="w-5 h-5 text-white" />}
               </div>
-              <div>
-                <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-                {subtitle && <p className="text-sm text-white/80">{subtitle}</p>}
+              <div className="min-w-0">
+                <h1 className="text-xl sm:text-2xl font-semibold tracking-tight leading-tight">{title}</h1>
+                {subtitle && <p className="text-xs sm:text-sm text-white/80 mt-0.5 leading-snug line-clamp-2">{subtitle}</p>}
               </div>
             </div>
-            {actions && <div className="flex flex-wrap gap-3">{actions}</div>}
+            {actions && <div className="flex flex-wrap gap-2 sm:gap-3">{actions}</div>}
           </div>
         </div>
       </header>

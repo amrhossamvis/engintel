@@ -337,9 +337,9 @@ export default function StoryExtractorPage() {
         }
       />
 
-      <div className="flex flex-1 min-h-0 overflow-hidden" style={{ height: 'calc(100vh - 120px)' }}>
+      <div className="flex flex-col lg:flex-row flex-1 min-h-0 overflow-hidden" style={{ height: 'calc(100vh - 120px)' }}>
         {/* LEFT PANEL */}
-        <aside className="w-72 shrink-0 border-r border-gray-200 flex flex-col bg-white overflow-y-auto shadow-sm">
+        <aside className="w-full lg:w-72 shrink-0 border-b lg:border-b-0 lg:border-r border-gray-200 flex flex-col bg-white overflow-y-auto shadow-sm lg:max-h-full max-h-80">
           <div className="px-4 pt-5 pb-3 border-b border-gray-100">
             <div className="flex items-center gap-2">
               <Layers size={14} className="text-gray-400" />

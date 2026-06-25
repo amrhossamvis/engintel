@@ -203,7 +203,7 @@ function ROICalculator({ productivityGainPct }: { productivityGainPct: number })
         </div>
       </div>
       <div className="p-5">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-5">
           {[
             { label: 'Engineers', value: engineers, set: setEngineers, prefix: '', suffix: '', ph: '50' },
             { label: 'Blended Rate (£/hr)', value: hourlyRate, set: setHourlyRate, prefix: '£', suffix: '/hr', ph: '75' },
@@ -226,7 +226,7 @@ function ROICalculator({ productivityGainPct }: { productivityGainPct: number })
             </div>
           ))}
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
           {[
             { label: 'Annual ROI', value: fmt(annualROI), sub: 'estimated value saved', color: 'emerald', bold: true },
             { label: 'Hours Saved / Year', value: hoursSaved.toLocaleString(), sub: 'across all engineers', color: 'blue', bold: false },
@@ -338,7 +338,7 @@ function BaselinePanel({
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
               {[
                 { label: 'Index Score', baseline: saved.score, current: data.orgIndex.score, delta, suffix: '', inverse: false },
                 { label: 'Avg Completion', baseline: saved.avgCompletion, current: orgStats?.avgCompletion ?? 0, delta: completionDelta, suffix: '%', inverse: false },
@@ -1089,7 +1089,7 @@ export default function AIProductivityPage() {
 
             {/* Row 3: Summary cards */}
             {orgStats && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <div className="bg-white rounded-2xl border border-gray-200 p-5">
                   <div className="flex items-center gap-2 mb-2"><Target className="w-4 h-4 text-purple-500" /><span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Avg Completion</span></div>
                   <p className="text-3xl font-bold text-gray-900">{orgStats.avgCompletion}%</p>

@@ -530,41 +530,41 @@ export default function HubPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              {/* Icon-only utility links */}
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Utility links */}
               <Link
                 href="/feedback"
                 title="Feedback Dashboard"
-                className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/5 backdrop-blur-sm px-4 py-2.5 text-sm font-medium text-white hover:bg-white/10 transition-all duration-200"
+                className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/5 backdrop-blur-sm px-3 py-2.5 text-sm font-medium text-white hover:bg-white/10 transition-all duration-200"
               >
                 <MessageSquare className="w-4 h-4" />
-                Feedback
+                <span className="hidden sm:inline">Feedback</span>
               </Link>
               <Link
                 href="/idea-box"
                 title="Idea Box"
-                className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/5 backdrop-blur-sm px-4 py-2.5 text-sm font-medium text-white hover:bg-white/10 transition-all duration-200"
+                className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/5 backdrop-blur-sm px-3 py-2.5 text-sm font-medium text-white hover:bg-white/10 transition-all duration-200"
               >
                 <Lightbulb className="w-4 h-4" />
-                Idea Box!
+                <span className="hidden sm:inline">Idea Box!</span>
               </Link>
 
               {/* Divider */}
-              <div className="w-px h-6 bg-white/20 mx-1" />
+              <div className="hidden sm:block w-px h-6 bg-white/20 mx-1" />
 
               <Link
                 href="/settings"
-                className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/5 backdrop-blur-sm px-4 py-2.5 text-sm font-medium text-white hover:bg-white/10 transition-all duration-200"
+                className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/5 backdrop-blur-sm px-3 py-2.5 text-sm font-medium text-white hover:bg-white/10 transition-all duration-200"
               >
                 <Settings className="w-4 h-4" />
-                Settings
+                <span className="hidden sm:inline">Settings</span>
               </Link>
               <button
                 onClick={handleLogout}
-                className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/5 backdrop-blur-sm px-4 py-2.5 text-sm font-medium text-white hover:bg-red-500/20 hover:border-red-400/40 transition-all duration-200"
+                className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/5 backdrop-blur-sm px-3 py-2.5 text-sm font-medium text-white hover:bg-red-500/20 hover:border-red-400/40 transition-all duration-200"
               >
                 <LogOut className="w-4 h-4" />
-                Sign Out
+                <span className="hidden sm:inline">Sign Out</span>
               </button>
             </div>
           </div>

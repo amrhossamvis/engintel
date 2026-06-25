@@ -158,7 +158,7 @@ export default function PlaygroundPage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-[280px_1fr_1fr] gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-[280px_1fr_1fr] gap-6">
 
           {/* ── LEFT: Template Library ── */}
           <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden flex flex-col">
