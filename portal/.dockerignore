@@ -1,0 +1,14 @@
+node_modules
+.next
+.git
+.env*
+npm-debug.log*
+.pnpm-debug.log*
+coverage
+*.tsbuildinfo
+.DS_Store
+.vercel
+images
+.playwright-mcp
+Dockerfile
+docker-compose.yml

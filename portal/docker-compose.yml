@@ -1,0 +1,35 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: hub
+      POSTGRES_DB: hub
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d hub"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build:
+      context: .
+    ports:
+      - "3000:3000"
+    environment:
+      # App wiring. The schema self-applies on first request.
+      DATABASE_URL: postgres://postgres:hub@db:5432/hub
+    # Optional: pass ADO/pipeline/admin vars from your local file if present.
+    env_file:
+      - path: .env.local
+        required: false
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db-data:
