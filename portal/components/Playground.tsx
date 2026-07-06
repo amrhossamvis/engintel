@@ -128,6 +128,8 @@ export function Playground() {
   const [values, setValues] = useState<Record<string, string>>({});
   const [prompt, setPrompt] = useState<string>(template.prompt);
   const [contextDir, setContextDir] = useState<string>("");
+  const [specKitEnabled, setSpecKitEnabled] = useState(false);
+  const [specKitArtifacts, setSpecKitArtifacts] = useState<Record<string, string>>({});
 
   const [messages, setMessages] = useState<ChatMsg[]>([]);
   const [followup, setFollowup] = useState<string>("");
@@ -145,6 +147,26 @@ export function Playground() {
 
   const running = runState === "running";
   const chatting = messages.length > 0;
+
+  // Fetch Spec Kit artifacts when the toggle is enabled.
+  useEffect(() => {
+    if (!specKitEnabled) {
+      setSpecKitArtifacts({});
+      return;
+    }
+    const sid = typeof window !== "undefined" ? sessionStorage.getItem("speckit:session") : null;
+    if (!sid) {
+      setSpecKitArtifacts({});
+      return;
+    }
+    fetch(`/api/speckit?sessionId=${encodeURIComponent(sid)}`)
+      .then((r) => (r.ok ? r.json() : { artifacts: {} }))
+      .then((data) => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setSpecKitArtifacts(data.artifacts ?? {});
+      })
+      .catch(() => setSpecKitArtifacts({}));
+  }, [specKitEnabled]);
 
   // Autoscroll the transcript as replies stream in.
   useEffect(() => {
@@ -341,11 +363,25 @@ export function Playground() {
     abortRef.current = ac;
 
     try {
+      // Build the prompt, optionally prepending Spec Kit artifacts as project context.
+      let conversationPrompt = buildConversationPrompt(template.persona, history);
+      if (specKitEnabled && Object.keys(specKitArtifacts).length > 0) {
+        const artifactBlock = Object.entries(specKitArtifacts)
+          .filter(([, v]) => v.trim())
+          .map(([k, v]) => `--- ${k} ---\n${v.trim()}\n--- end ${k} ---`)
+          .join("\n\n");
+        if (artifactBlock) {
+          conversationPrompt =
+            `## Project Context (from Spec Kit)\n\n${artifactBlock}\n\n` +
+            conversationPrompt;
+        }
+      }
+
       const res = await fetch("/api/playground", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          prompt: buildConversationPrompt(template.persona, history),
+          prompt: conversationPrompt,
           githubToken,
           contextDir: contextDir.trim(),
         }),
@@ -460,6 +496,34 @@ export function Playground() {
           </div>
         </motion.div>
       </section>
+
+      {/* Spec Kit wizard banner */}
+      <Link
+        href="/playground/speckit"
+        className="mb-6 block rounded-2xl border p-5 hover:border-red transition-all group"
+        style={{ borderColor: "var(--hairline-strong)", background: "var(--panel-2)" }}
+      >
+        <div className="flex items-center gap-4">
+          <span
+            className="grid place-items-center h-12 w-12 rounded-2xl border shrink-0 group-hover:border-red/40 transition-colors"
+            style={{ borderColor: "var(--hairline)", background: "var(--canvas)" }}
+          >
+            <FolderGit2 className="h-6 w-6 text-red" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold flex items-center gap-2">
+              Spec Kit Wizard
+              <span className="text-[0.65rem] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded bg-red/10 text-red">
+                New
+              </span>
+            </p>
+            <p className="text-xs text-muted mt-0.5 leading-relaxed">
+              Guided spec-driven development — define principles, write a spec, plan architecture, and generate tasks in a multi-step flow.
+            </p>
+          </div>
+          <span className="text-muted group-hover:text-red transition-colors shrink-0">→</span>
+        </div>
+      </Link>
 
       {/* token gate */}
       {!ready && (
@@ -845,6 +909,62 @@ export function Playground() {
                     </p>
                   </div>
 
+                  {/* Spec Kit context toggle */}
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <p className="kicker flex items-center gap-1.5">
+                        <Sparkles className="h-3.5 w-3.5 text-red" /> Spec Kit context
+                        <span className="normal-case tracking-normal text-muted font-sans">— optional</span>
+                      </p>
+                      <button
+                        onClick={() => setSpecKitEnabled((v) => !v)}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                          specKitEnabled ? "bg-red" : "bg-[var(--hairline-strong)]"
+                        }`}
+                        role="switch"
+                        aria-checked={specKitEnabled}
+                        aria-label="Use Spec Kit context"
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            specKitEnabled ? "translate-x-6" : "translate-x-1"
+                          }`}
+                        />
+                      </button>
+                    </div>
+                    {specKitEnabled && (
+                      <div className="mt-2 rounded-xl border px-3.5 py-2.5" style={{ borderColor: "var(--hairline)", background: "var(--canvas)" }}>
+                        {Object.keys(specKitArtifacts).length > 0 ? (
+                          <div className="space-y-1">
+                            <p className="text-xs text-live font-medium">✓ Artifacts loaded</p>
+                            <div className="flex flex-wrap gap-1.5">
+                              {Object.keys(specKitArtifacts).map((f) => (
+                                <span
+                                  key={f}
+                                  className="inline-flex items-center rounded-md px-2 py-0.5 text-[0.7rem] font-mono bg-[var(--panel-2)] text-muted border"
+                                  style={{ borderColor: "var(--hairline)" }}
+                                >
+                                  {f}
+                                </span>
+                              ))}
+                            </div>
+                            <p className="text-[0.7rem] text-muted mt-1">
+                              These artifacts will be prepended as project context to every message.
+                            </p>
+                          </div>
+                        ) : (
+                          <p className="text-xs text-muted">
+                            No Spec Kit session found. Run the{" "}
+                            <Link href="/playground/speckit" className="text-red hover:underline">
+                              Spec Kit Wizard
+                            </Link>{" "}
+                            first to generate artifacts.
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
                   {secondaryVars.length > 0 && (
                     <div>
                       <p className="kicker mb-2">Fields</p>
@@ -968,6 +1088,9 @@ export function Playground() {
               <Terminal className="h-3 w-3" /> copilot · {template.persona}
               {!chatting && contextDir.trim() && (
                 <span className="text-faint">· context on</span>
+              )}
+              {specKitEnabled && Object.keys(specKitArtifacts).length > 0 && (
+                <span className="text-live">· spec kit on</span>
               )}
             </p>
           </div>
