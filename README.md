@@ -1,6 +1,6 @@
 # Engineering Intelligence Hub
 
-> A unified portal of AI-powered tools for mobile engineering, delivery excellence, quality prediction, productivity, and AI value measurement.
+> A unified portal of AI-powered capabilities for delivery excellence, quality, agile backlog, and AI value measurement.
 
 The **Engineering Intelligence Hub** is a Next.js portal that hosts a growing set of AI-assisted delivery capabilities behind a single authenticated platform. It was built to reduce engineering effort on repetitive delivery activities and accelerate software delivery through AI-assisted workflows.
 
@@ -13,86 +13,170 @@ The platform is **capability-driven rather than market-specific** — capabiliti
 ## Project Structure
 
 ```
-portal/                  Next.js 14 app (App Router)
-├── src/app/             Page routes — one folder per capability
-├── src/components/      Shared UI components (AppHeader, FeedbackWidget, …)
-├── src/lib/             Service layer (ADO, Copilot CLI, bug analysis, …)
-└── src/types/           Shared TypeScript types
+portal/                  Next.js 16 app (App Router)
+├── app/                 Page routes + API route handlers
+│   ├── pulse/           Guild-scoped capability views
+│   ├── playground/      Copilot CLI prompt playground
+│   ├── skills/          Community skills marketplace
+│   ├── ideas/           Idea Box (community backlog)
+│   ├── settings/        Per-user credentials + ADO sign-in
+│   └── api/             Server routes (ado, ideas, skills, feedback, run, …)
+├── components/          Shared UI (Hub, Pulse, widgets, …)
+├── lib/                 Service layer (ADO, capabilities catalog, db, skills, …)
+├── db/                  Postgres schema (schema.sql)
+└── public/             Static assets
 ```
 
-**Tech stack:** Next.js 14 · TypeScript · Tailwind CSS · Recharts · Azure DevOps API · GitHub Copilot CLI · Azure OpenAI
+**Tech stack:** Next.js 16 (App Router, Turbopack) · React 19 · TypeScript · Tailwind CSS v4 · Recharts · Motion · Postgres (`pg`) · Azure DevOps API · GitHub Copilot CLI · Vitest
+
+**Execution models**
+
+- **Pipeline** — the capability triggers an Azure DevOps pipeline that runs a Copilot CLI script and writes results back to the work item / PR.
+- **Hub-inline** — read-only analytics computed inside the app directly from ADO (no pipeline, no credits).
 
 ---
 
-## Live Apps
+## Capabilities
 
-These capabilities are fully deployed and available today.
+Each capability carries an Egyptian-pantheon codename that nods to what it does. **6 live · 23 total.**
 
-| App | Route | Category | What it does |
-|-----|-------|----------|--------------|
-| **Feedback Dashboard** | `/feedback` | Platform & Community | Centralised view of all engineer feedback submitted across every tool in the hub. Tracks bug reports, feature requests, praise, and general feedback with star ratings, status tracking (New → Acknowledged → In Progress → Resolved), and per-app filtering. Admin mode enables inline status changes and deletion. |
-| **Idea Box** | `/idea-box` | Platform & Community | Community-driven feature backlog for the hub itself. Engineers submit ideas with a problem statement, proposed solution, domain tag, and impact estimate. Ideas are upvoted, commented on, pinned by admins, and tracked through a full lifecycle (New → Under Review → Planned → In Progress → Shipped). |
-| **Bug Analyzer** | `/bug-analyzer` | Mobile Guild | AI classifies every ADO bug by type, severity, and mobile platform. Traces each bug to the originating commit and generates structured RCA automatically. Supports release-folder query picker or custom ADO query URL. |
-| **Executive Dashboard** | `/exec-dashboard` | Delivery Excellence | Real-time engineering health visibility for leadership — RAG status, velocity trends, bug trends, and AI-generated executive summaries per team and org-wide. Powered by GitHub Copilot CLI. |
-| **Story Extractor** | `/story-extractor` | Engineering Productivity | AI reverse-engineers iOS source code into structured Agile user stories with acceptance criteria. Uses Claude Sonnet 4.5 via GitHub Copilot. Results cached locally; exportable to Excel and clipboard. |
-| **AI Productivity Index** | `/ai-productivity` | AI Value & Knowledge | Measures and proves AI ROI by correlating GitHub Copilot usage with engineering outcomes — sprint completion, PR cycle time, bug escape rate, and velocity. Includes baseline comparison, ROI calculator, and Teams digest. |
-| **AI Playground** | `/playground` | Platform & Community | Explore GitHub Copilot CLI with pre-built prompt templates across Bug Analysis, Story Generation, Code Review, Delivery, Test Generation, and Copilot CLI categories. Experiment, learn, and prototype new AI workflows. |
+### Live
+
+| Capability | Codename | Category | Execution | What it does |
+|-----------|----------|----------|-----------|--------------|
+| **PR Reviewer** | Maat | Quality & Review | Pipeline | Reads the PR diff, linked work items and repo coding guidelines, then posts inline + summary review comments. Blocks merge only on high-severity, high-confidence findings. |
+| **Bug Triage** | Anubis | Quality & Review | Pipeline | Pulls bug context, screenshots, history and linked PRs, correlates DataDog logs, then diagnoses the affected service + owning team and posts the triage back to the work item. |
+| **Feature Breakdown** | Ptah | Agile & Backlog | Pipeline | Reverse-engineers an epic or feature into a structured backlog with acceptance criteria, applying team-specific rules. Creates child work items in ADO. |
+| **Business Intent Builder** | Atum | Agile & Backlog | Pipeline | Turns a plain-language business intent into a complete Epic → Feature → Story hierarchy in ADO, applying team breakdown rulebooks. |
+| **Executive Dashboard** | Ra | Delivery Intelligence | Hub-inline | Reads a team's last 6 ADO sprints and computes a RAG health score from completion, velocity stability and bug resolution, with trend charts. Read-only. |
+| **AI Productivity Index** | Hapi | Delivery Intelligence | Hub-inline | Scores a team's last 6 sprints into one 0–100 index across delivery, quality, velocity, PR speed and Copilot adoption, plus a £ ROI estimate. Read-only. |
+
+### Coming soon
+
+Sprint Health Coach · Test Case Generator · Figma Test Cases · UI Test Data Reviewer · Story Extractor · Mobile Crash Intelligence · App Store Release Risk Scorer · Mobile CI/CD Intelligence · Mobile Code Review Assistant · Mobile Test Gap Analyzer · Mobile Onboarding Accelerator · Delivery Intelligence Platform · Release Risk Scorer · Dependency & Blocker Radar · Test Gap Analyzer · Developer Onboarding Accelerator · Engineering Knowledge Copilot
+
+The full catalog (fields, credits, pipelines, status) lives in [`portal/lib/capabilities.ts`](portal/lib/capabilities.ts).
+
+### Platform surfaces
+
+| Surface | Route | What it does |
+|---------|-------|--------------|
+| **Hub** | `/` | Landing page — live count and entry into every capability. |
+| **Pulse** | `/pulse` | Guild-scoped view of the capabilities available to your guild. |
+| **Playground** | `/playground` | Explore the GitHub Copilot CLI with pre-built prompt templates. |
+| **Skills** | `/skills` | Community marketplace of installable Copilot skills. |
+| **Idea Box** | `/ideas` | Community backlog for the hub itself — submit, upvote, comment, track. |
+| **Settings** | `/settings` | Per-user credentials and Azure DevOps sign-in. |
 
 ---
 
-## Roadmap
+## Local Installation Guide
 
-Capabilities are grouped into delivery domains. Each is independently shippable.
+Get the hub running on your machine in a few minutes. Everything lives under `portal/`.
 
-### 📱 Mobile Guild
+### 1. Prerequisites
 
-| Capability | Target | Purpose |
-|------------|--------|---------|
-| **Mobile Crash Intelligence** | Q2 2026 | Firebase Crashlytics → AI crash pattern analysis. Groups crashes by platform, OS version, and device model. Correlates with commits and generates incident reports. |
-| **App Store Release Risk Scorer** | Q2 2026 | AI-powered Go/No-Go for iOS App Store & Google Play. Evaluates Fastlane results, crash rates, open bugs, and code churn into a 0–100 readiness score. |
-| **Mobile CI/CD Intelligence** | Q3 2026 | AI monitoring for Fastlane, GitHub Actions, and Azure Pipelines. Detects flaky tests, diagnoses build failures, and generates weekly pipeline health reports. |
-| **Mobile Code Review Assistant** | Q3 2026 | AI first-pass review for Swift, Kotlin, and React Native PRs. Flags force-unwraps, ARC issues, coroutine scope leaks, ANR-prone patterns, and bridge performance problems. |
-| **Mobile Test Gap Analyzer** | Q3 2026 | AI identifies untested UI flows across XCTest, Espresso, and Detox. Prioritises gaps by production crash history and generates test case suggestions. |
-| **Mobile Onboarding Accelerator** | Q4 2026 | AI-guided onboarding for iOS, Android, and React Native engineers. RAG over internal docs, Fastlane lanes, and architecture decisions. Days to first PR. |
+| Tool | Version | Why |
+|------|---------|-----|
+| **Node.js** | 22 LTS or newer | Runtime for Next.js 16. |
+| **pnpm** | 9+ | Package manager this repo is pinned to (`pnpm-workspace.yaml`, `pnpm-lock.yaml`). Install with `npm i -g pnpm` or `corepack enable pnpm`. |
+| **Azure CLI** (`az`) | latest | *Optional.* Per-user ADO auth for the live analytics capabilities. Without it, ADO-backed views fall back to local simulation. |
+| **Postgres** | 14+ | *Optional.* Backs the **Idea Box** and **Skills** marketplace. Without it, those surfaces degrade gracefully. Local Docker or a hosted URL (e.g. Neon) both work. |
 
-### 🚀 Delivery Excellence
+### 2. Clone and install
 
-| Capability | Target | Purpose |
-|------------|--------|---------|
-| **Delivery Intelligence Platform** | Q2 2026 | Automated sprint health scoring, velocity tracking, risk prediction, and executive-ready delivery reports. Eliminates 80% of manual reporting effort. |
-| **Release Risk Scorer** | Q3 2026 | Data-driven release readiness scores before every deployment. Evaluates test results, code churn, open bugs, and historical patterns to prevent production incidents. |
-| **Dependency & Blocker Radar** | Q3 2026 | Auto-detect cross-team dependencies and predict blockers before they cause delivery delays. Visual dependency graph with escalation alerts. |
+```bash
+git clone <repo-url>
+cd ai-delivery-capabilities/portal
+pnpm install
+```
 
-### 🧪 Quality & Testing
+### 3. Configure environment
 
-| Capability | Target | Purpose |
-|------------|--------|---------|
-| **Sprint Quality Predictor** | Q2 2026 | Predict sprint quality risk before testing begins using code churn, complexity, and historical defect patterns. Shift left on quality. |
-| **Test Gap Analyzer** | Q3 2026 | Identify highest-value testing gaps by combining code complexity, defect history, and change frequency. Ranked by production incident risk. |
+Copy the example file and fill in what you need. Every value is optional — the app runs with an empty file and simulates ADO data.
 
-### ⚡ Engineering Productivity
+```bash
+cp .env.example .env.local
+```
 
-| Capability | Target | Purpose |
-|------------|--------|---------|
-| **PR Review Intelligence** | Q2 2026 | Automated first-pass PR analysis with risk scoring, standards compliance checking, and stale PR alerts. Reduces review cycle time by 35%. |
-| **Developer Onboarding Accelerator** | Q4 2026 | AI-assisted onboarding with personalised learning paths, codebase orientation, and contextual Q&A. Reduces time-to-productivity from 3 months to 6 weeks. |
+Key variables (`.env.local` is git-ignored):
 
-### 🧠 AI Value & Knowledge
+| Variable | Needed for | Notes |
+|----------|-----------|-------|
+| `ADO_ORG`, `ADO_PROJECT` | ADO data | Default to `vfuk-digital` / `Digital`. |
+| `AZDO_PAT` | ADO fallback | Shared service token — only used when no per-user PAT and `az` is signed out. Per-user identity is set in the app (**Settings → Azure DevOps access**), not here. |
+| `PIPELINE_*` | Pipeline capabilities | Pipeline definition id per capability. Find the id in the pipeline URL (`…/_build?definitionId=<ID>`). |
+| `DATABASE_URL` | Idea Box + Skills | Postgres connection string. Leave empty to run without those boards. |
+| `IDEAS_ADMINS` | Idea Box curation | Comma-separated UPNs allowed to change status/impact/pin. Empty → open (prototype). |
 
-| Capability | Target | Purpose |
-|------------|--------|---------|
-| **Engineering Knowledge Copilot** | Q3 2026 | AI assistant that answers engineering questions from your internal docs, code, and architecture decisions. |
+### 4. (Optional) Sign in to Azure DevOps
+
+The hub mints a per-user ADO token from your local Azure CLI session — no app registration required. Run once:
+
+```bash
+az login
+```
+
+Azure CLI's first-party client is already consented for Azure DevOps, so this works even when the tenant blocks new app registrations. You can also sign in from the in-app **Settings** page.
+
+**Shared or hosted deploy (no host `az`):** each user instead pastes their own Azure DevOps Personal Access Token in **Settings → Azure DevOps access**. It's stored in their browser and sent per request, so every user reads and queues as their own identity — no shared `AZDO_PAT` needed. ADO auth resolves per request: **user PAT → `az login` → `AZDO_PAT`**.
+
+### 5. (Optional) Start Postgres
+
+Any Postgres 14+ works. Quick local instance with Docker:
+
+```bash
+docker run --name hub-db -e POSTGRES_PASSWORD=hub -p 5432:5432 -d postgres:16
+```
+
+Then set in `.env.local`:
+
+```
+DATABASE_URL=postgres://postgres:hub@localhost:5432/postgres
+```
+
+The schema **applies itself on first request** (mirrors [`db/schema.sql`](portal/db/schema.sql)) — no manual migration step.
+
+### 6. Run the dev server
+
+```bash
+pnpm dev
+```
+
+Open **<http://localhost:3000>**.
+
+### 7. Useful commands
+
+```bash
+pnpm dev      # start the dev server (Turbopack)
+pnpm build    # production build
+pnpm start    # serve the production build
+pnpm lint     # eslint
+pnpm test     # run the vitest suite once
+pnpm test:watch
+```
+
+### 8. (Alternative) Run with Docker
+
+The `portal/` folder ships a `Dockerfile` and `docker-compose.yml` that bring up the app and a Postgres instance together — no local Node, pnpm, or database needed.
+
+```bash
+cd portal
+docker compose up --build
+```
+
+Open **<http://localhost:3000>**. Compose wires `DATABASE_URL` to the bundled Postgres and the schema self-applies on first request. To feed ADO / pipeline credentials into the container, drop them in `.env.local` — Compose loads it if present. `az login` isn't available inside the container, so each user connects ADO by pasting their own Personal Access Token in **Settings → Azure DevOps access** (per-user identity, stored in their browser). A server-wide `AZDO_PAT` in `.env.local` also works as a shared fallback.
 
 ---
 
 ## How it works
 
-1. **Sign in** via the login page (Entra-secured).
-2. **Configure credentials** in Settings — your Azure DevOps PAT, GitHub PAT, and team/repo list are stored in your browser.
+1. **Sign in** via Entra.
+2. **Configure credentials** in Settings — your GitHub Copilot token, plus ADO access via `az login` or your own Azure DevOps PAT. Both stay in your browser and are sent per-run; no shared credential pool.
 3. **Pick a capability** from the hub.
-4. **Point it at a target** — a release query, ADO team, iOS module, or sprint range.
-5. **It runs under your own token** — no shared credential pool.
-6. **Results are returned in-app** — exportable to Excel, clipboard, or Teams via webhook digest.
+4. **Point it at a target** — a PR, work item, ADO team, or business intent.
+5. **It runs under your own token** — pipeline capabilities kick off an ADO pipeline; hub-inline capabilities compute results directly.
+6. **Results are returned in-app** or written back to the work item / PR.
 
 ---
 
@@ -106,18 +190,6 @@ Capabilities are grouped into delivery domains. Each is independently shippable.
 
 ---
 
-## Getting Started
-
-```bash
-cd portal
-npm install
-npm run dev
-```
-
-The portal runs on `http://localhost:3000` by default.
-
----
-
 ## Status
 
-**7 capabilities live** (Feedback Dashboard, Idea Box, Bug Analyzer, Executive Dashboard, Story Extractor, AI Productivity Index, AI Playground) · **14 capabilities on the roadmap** across Mobile Guild, Delivery Excellence, Quality & Testing, Engineering Productivity, and AI Value & Knowledge.
+**6 capabilities live** (PR Reviewer, Bug Triage, Feature Breakdown, Business Intent Builder, Executive Dashboard, AI Productivity Index) · **17 more on the roadmap** across Quality, Agile & Backlog, Delivery Intelligence, Mobile, Testing, and Enablement.
