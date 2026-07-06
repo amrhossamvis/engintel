@@ -128,6 +128,34 @@ export function SpecKitWizard() {
 
   useEffect(() => {
     sessionId.current = getOrCreateSessionId();
+    // Hydrate outputs from server session (survives navigation)
+    if (sessionId.current) {
+      fetch(`/api/speckit?sessionId=${encodeURIComponent(sessionId.current)}`)
+        .then((r) => (r.ok ? r.json() : { artifacts: {} }))
+        .then((data) => {
+          const artifacts: Record<string, string> = data.artifacts ?? {};
+          if (Object.keys(artifacts).length === 0) return;
+          // Map server filenames back to step IDs
+          const fileToStep: Record<string, string> = {
+            "constitution.md": "constitution",
+            "spec.md": "specify",
+            "clarifications.md": "clarify",
+            "plan.md": "plan",
+            "tasks.md": "tasks",
+          };
+          const restored: Record<string, string> = {};
+          for (const [file, content] of Object.entries(artifacts)) {
+            const stepId = fileToStep[file];
+            if (stepId && content.trim()) {
+              restored[stepId] = content;
+            }
+          }
+          if (Object.keys(restored).length > 0) {
+            setOutputs(restored);
+          }
+        })
+        .catch(() => {});
+    }
   }, []);
 
   // Auto-scroll output
@@ -584,14 +612,25 @@ export function SpecKitWizard() {
             >
               <ArrowLeft className="h-4 w-4" /> Previous
             </button>
-            <button
-              onClick={() => setCurrentStep((s) => s + 1)}
-              disabled={!canGoNext}
-              className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-              style={{ background: canGoNext ? "linear-gradient(180deg, var(--red-bright), var(--red))" : "var(--faint)" }}
-            >
-              Next <ArrowRight className="h-4 w-4" />
-            </button>
+            {currentStep === STEPS.length - 1 ? (
+              <button
+                onClick={downloadAll}
+                disabled={completedSteps === 0 || running}
+                className="inline-flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-medium text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                style={{ background: completedSteps > 0 && !running ? "linear-gradient(180deg, var(--red-bright), var(--red))" : "var(--faint)" }}
+              >
+                <Download className="h-4 w-4" /> Finish & Save All
+              </button>
+            ) : (
+              <button
+                onClick={() => setCurrentStep((s) => s + 1)}
+                disabled={!canGoNext}
+                className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                style={{ background: canGoNext ? "linear-gradient(180deg, var(--red-bright), var(--red))" : "var(--faint)" }}
+              >
+                Next <ArrowRight className="h-4 w-4" />
+              </button>
+            )}
           </div>
         </motion.section>
       </AnimatePresence>
