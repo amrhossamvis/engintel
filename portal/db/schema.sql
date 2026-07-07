@@ -53,3 +53,36 @@ CREATE TABLE IF NOT EXISTS skills (
 );
 CREATE INDEX IF NOT EXISTS idx_skills_created ON skills(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_skills_installs ON skills(install_count DESC);
+
+CREATE TABLE IF NOT EXISTS pg_personas (
+  id          text PRIMARY KEY,
+  user_key    text NOT NULL,
+  name        text NOT NULL,
+  category    text NOT NULL,
+  icon        text NOT NULL,
+  description text NOT NULL,
+  persona     text NOT NULL,
+  variables   jsonb NOT NULL DEFAULT '[]',
+  prompt      text NOT NULL,
+  created_at  timestamptz NOT NULL DEFAULT now(),
+  updated_at  timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_pg_personas_user ON pg_personas(user_key, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS pg_threads (
+  id          text PRIMARY KEY,
+  user_key    text NOT NULL,
+  template_id text NOT NULL,
+  title       text NOT NULL,
+  context_dir text NOT NULL DEFAULT '',
+  messages    jsonb NOT NULL DEFAULT '[]',
+  updated_at  timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_pg_threads_user ON pg_threads(user_key, updated_at DESC);
+
+CREATE TABLE IF NOT EXISTS pg_session (
+  user_key   text PRIMARY KEY,
+  thread_id  text,
+  persona_id text,
+  updated_at timestamptz NOT NULL DEFAULT now()
+);

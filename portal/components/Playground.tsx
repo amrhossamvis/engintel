@@ -43,43 +43,19 @@ import {
 import { CapIcon, ICON_KEYS } from "./icons";
 import { Markdown } from "./Markdown";
 import { useApp } from "./AppProvider";
+import {
+  loadState,
+  saveThread as storeSaveThread,
+  deleteThread as storeDeleteThread,
+  savePersona as storeSavePersona,
+  deletePersona as storeDeletePersona,
+  saveSession,
+  upsertThreadList,
+  type ChatMsg,
+  type Thread,
+} from "@/lib/playground-store";
 
 type RunState = "idle" | "running" | "error";
-type ChatMsg = { id: number; role: "user" | "assistant"; content: string };
-type Thread = {
-  id: string;
-  templateId: string;
-  title: string;
-  messages: ChatMsg[];
-  contextDir: string;
-  updatedAt: number;
-};
-
-const THREADS_KEY = "pg:threads";
-const PERSONAS_KEY = "pg:personas";
-const MAX_THREADS = 30;
-
-function loadThreads(): Thread[] {
-  try {
-    const raw = localStorage.getItem(THREADS_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? (parsed as Thread[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-function loadPersonas(): CustomPersona[] {
-  try {
-    const raw = localStorage.getItem(PERSONAS_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? (parsed as CustomPersona[]) : [];
-  } catch {
-    return [];
-  }
-}
 
 function slugify(s: string): string {
   return s
@@ -107,7 +83,8 @@ const ERROR_MESSAGES: Record<string, string> = {
 };
 
 export function Playground() {
-  const { ready, githubToken } = useApp();
+  const { ready, githubToken, adoPatIdentity, adoIdentity } = useApp();
+  const userKey = adoPatIdentity ?? adoIdentity;
 
   const [customPersonas, setCustomPersonas] = useState<CustomPersona[]>([]);
   const [editorInit, setEditorInit] = useState<CustomPersona | null>(null);
@@ -174,45 +151,47 @@ export function Playground() {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages]);
 
+  const restored = useRef(false);
   useEffect(() => {
-    // Hydrate history from client-only localStorage after mount to avoid an SSR mismatch.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setThreads(loadThreads());
-  }, []);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(THREADS_KEY, JSON.stringify(threads));
-    } catch {
-      // storage full or blocked — history just won't persist
-    }
-  }, [threads]);
-
-  const personasHydrated = useRef(false);
-  useEffect(() => {
-    // Hydrate custom personas from client-only localStorage after mount.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setCustomPersonas(loadPersonas());
-    personasHydrated.current = true;
-  }, []);
-
-  useEffect(() => {
-    // Skip the pre-hydration render so we never overwrite saved personas with [].
-    if (!personasHydrated.current) return;
-    try {
-      localStorage.setItem(PERSONAS_KEY, JSON.stringify(customPersonas));
-    } catch {
-      // storage full or blocked — personas just won't persist
-    }
-  }, [customPersonas]);
+    // Load personas + history from the per-user store (DB when ADO-identified,
+    // else localStorage), then restore the previously open session once.
+    let cancelled = false;
+    restored.current = false;
+    loadState(userKey).then((st) => {
+      if (cancelled) return;
+      setThreads(st.threads);
+      setCustomPersonas(st.personas);
+      const session = st.session;
+      if (restored.current || !session) return;
+      restored.current = true;
+      const pool = [...st.personas, ...PG_TEMPLATES];
+      const th = session.threadId ? st.threads.find((t) => t.id === session.threadId) : undefined;
+      if (th) {
+        const tpl = pool.find((x) => x.id === th.templateId) ?? PG_TEMPLATES[0];
+        setSelectedId(tpl.id);
+        setPrompt(tpl.prompt);
+        setContextDir(th.contextDir);
+        setMessages(th.messages);
+        setCurrentThreadId(th.id);
+      } else if (session.personaId) {
+        const tpl = pool.find((x) => x.id === session.personaId);
+        if (tpl) {
+          setSelectedId(tpl.id);
+          setPrompt(tpl.prompt);
+        }
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [userKey]);
 
   // Persist the live chat into a thread record as it grows. The id is minted
   // in send() so this effect only mirrors state into the thread store.
   useEffect(() => {
     if (messages.length === 0 || !currentThreadId) return;
-    const id = currentThreadId;
     const rec: Thread = {
-      id,
+      id: currentThreadId,
       templateId: selectedId,
       title: threadTitle(messages, template.name),
       messages,
@@ -220,8 +199,9 @@ export function Playground() {
       updatedAt: Date.now(),
     };
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setThreads((prev) => [rec, ...prev.filter((t) => t.id !== id)].slice(0, MAX_THREADS));
-  }, [messages, contextDir, currentThreadId, selectedId, template.name]);
+    setThreads((prev) => upsertThreadList(prev, rec));
+    storeSaveThread(userKey, rec);
+  }, [messages, contextDir, currentThreadId, selectedId, template.name, userKey]);
 
   function selectTemplate(t: PgTemplate) {
     if (running) return;
@@ -232,6 +212,7 @@ export function Playground() {
     setFollowup("");
     setRunState("idle");
     setCurrentThreadId(null);
+    saveSession(userKey, { threadId: null, personaId: t.id });
   }
 
   function resetPrompt() {
@@ -244,6 +225,7 @@ export function Playground() {
     setFollowup("");
     setRunState("idle");
     setCurrentThreadId(null);
+    saveSession(userKey, { threadId: null, personaId: selectedId });
   }
 
   function openThread(t: Thread) {
@@ -257,10 +239,12 @@ export function Playground() {
     setFollowup("");
     setRunState("idle");
     setCurrentThreadId(t.id);
+    saveSession(userKey, { threadId: t.id, personaId: tpl.id });
   }
 
   function deleteThread(id: string) {
     setThreads((prev) => prev.filter((t) => t.id !== id));
+    storeDeleteThread(userKey, id);
     if (id === currentThreadId) newChat();
   }
 
@@ -293,12 +277,14 @@ export function Playground() {
         ? prev.map((x) => (x.id === p.id ? p : x))
         : [p, ...prev],
     );
+    storeSavePersona(userKey, p);
     setEditorInit(null);
     selectTemplate(p);
   }
 
   function deletePersona(id: string) {
     setCustomPersonas((prev) => prev.filter((x) => x.id !== id));
+    storeDeletePersona(userKey, id);
     setPendingDelete(null);
     if (selectedId === id) selectTemplate(PG_TEMPLATES[0]);
   }
@@ -338,7 +324,10 @@ export function Playground() {
           createdAt: typeof raw.createdAt === "number" ? raw.createdAt : Date.now(),
         });
       }
-      if (incoming.length) setCustomPersonas((prev) => [...incoming, ...prev]);
+      if (incoming.length) {
+        setCustomPersonas((prev) => [...incoming, ...prev]);
+        for (const p of incoming) storeSavePersona(userKey, p);
+      }
     } catch {
       // invalid file — ignore
     }
