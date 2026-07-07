@@ -86,7 +86,7 @@ function buildParams(
     case "testcase-ado": {
       const workItemId = parseWorkItemId(String(inputs.workItemUrl ?? ""));
       if (!workItemId) return { error: "bad_work_item_url" };
-      return { params: { workItemId, dryRun: false } };
+      return { params: { workItemId } };
     }
     default:
       // e.g. testcase-figma has no live pipeline yet.
@@ -126,10 +126,19 @@ export async function POST(req: Request) {
   }
 
   try {
+    // Pass secrets the pipeline script needs at runtime:
+    // - COPILOT_GITHUB_TOKEN for AI calls
+    // - ADO_PAT / GIT_PAT for git clone/push operations
+    const secrets: Record<string, string> = { COPILOT_GITHUB_TOKEN: githubToken };
+    if (adoPat?.trim()) {
+      secrets.ADO_PAT = adoPat.trim();
+      secrets.GIT_PAT = adoPat.trim();
+    }
+
     const run = await runPipeline(
       pipelineId,
       built.params,
-      { COPILOT_GITHUB_TOKEN: githubToken },
+      secrets,
       adoAuth,
     );
     return NextResponse.json({ ...run, pipelineId });
