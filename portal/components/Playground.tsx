@@ -151,6 +151,7 @@ export function Playground() {
   // Fetch Spec Kit artifacts when the toggle is enabled.
   useEffect(() => {
     if (!specKitEnabled) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSpecKitArtifacts({});
       return;
     }
