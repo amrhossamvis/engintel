@@ -9,7 +9,7 @@ import { initialsOf } from "./session";
 
 const NAV = [
   { href: "/", icon: Home, label: "Home" },
-  { href: "/playground", icon: FlaskConical, label: "Playground" },
+  { href: "/playground", icon: FlaskConical, label: "Personas" },
   { href: "/pulse", icon: Activity, label: "Pulse" },
   { href: "/ideas", icon: Lightbulb, label: "Ideas" },
   { href: "/skills", icon: Boxes, label: "Skills" },
@@ -39,8 +39,7 @@ export function AppShell() {
             />
           </div>
           <div className="leading-tight hidden sm:block">
-            <p className="font-display font-semibold text-base">Hub</p>
-            <p className="text-xs text-muted font-mono">Digital · VOIS</p>
+            <p className="font-display font-semibold text-base">VOIS Digital Engineering Hub</p>
           </div>
         </Link>
 

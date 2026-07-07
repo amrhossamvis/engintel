@@ -106,7 +106,7 @@ export function NunDrawer() {
                 <div className="flex items-start justify-between gap-3 mb-1">
                   <div>
                     <p className="kicker flex items-center gap-1.5 mb-1">
-                      <Lightbulb className="h-3.5 w-3.5 text-red" /> Nun · Ideas
+                      <Lightbulb className="h-3.5 w-3.5 text-red" /> Ideas
                     </p>
                     <p className="font-display font-semibold text-base">Where ideas surface.</p>
                   </div>

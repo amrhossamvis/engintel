@@ -24,16 +24,18 @@ export const GUILDS: Guild[] = ["mobile", "web", "java", "full-stack", "product"
 export type Capability = {
   id: string;
   name: string;
-  /** Egyptian-pantheon codename — a nod to what the capability does */
+  /** SDLC phase this capability lives in — Plan, Build, Review, Test, Release, Operate, Enable */
   codename: string;
-  /** who the deity was — the mythology, shown in the detail view */
+  /** what the SDLC phase is, shown in the detail view */
   codenameWho: string;
-  /** why the deity fits this capability, shown in the detail view */
+  /** why this capability belongs to that phase, shown in the detail view */
   codenameWhy: string;
   tagline: string;
   description: string;
   category: string;
   status: Status;
+  /** target release quarter for 'soon' capabilities (e.g. "Q3 2026") */
+  targetRelease?: string;
   icon: string; // lucide icon key, mapped in components/icons.ts
   /** env var the capability reads as the per-run identity token (copilot runs only) */
   tokenEnv?: string;
@@ -53,15 +55,105 @@ export type Capability = {
   credGate: "copilot" | "none";
 };
 
+const PHASE = {
+  plan: "Plan — the SDLC phase where business goals become a structured, estimable backlog: epics, features and stories with clear acceptance criteria before any code is written.",
+  review:
+    "Review — the SDLC quality gate where every change is checked against standards, guidelines and best practices before it merges.",
+  test: "Test — the SDLC phase where the product is verified against its requirements through cases, coverage and edge conditions before release.",
+  release:
+    "Release — the SDLC phase where a validated build ships to users, with risk weighed and rollout controlled.",
+  operate:
+    "Operate — the SDLC phase after release: monitoring delivery health, diagnosing issues and feeding insight back into the next cycle.",
+  enable:
+    "Enablement — the cross-cutting SDLC theme that ramps people and surfaces knowledge so teams move faster across every phase.",
+} as const;
+
 export const CAPABILITIES: Capability[] = [
+  {
+    id: "bug-triage",
+    name: "Bug Triage",
+    codename: "Operate",
+    codenameWho: PHASE.operate,
+    codenameWhy:
+      "It picks up production signals — logs, history and linked PRs — diagnoses the failing service and routes the bug to its owning team.",
+    tagline: "Diagnose the service and route the bug to its owning team",
+    description:
+      "Pulls bug context, screenshots, history and linked PRs, correlates DataDog logs, then diagnoses the affected service and owning team and posts the triage back to the work item.",
+    category: "Quality & Review",
+    status: "live",
+    icon: "Bug",
+    tokenEnv: "COPILOT_GITHUB_TOKEN",
+    estCredits: 200,
+    estDuration: "3–5 min",
+    pipeline: "cicd/pipelines/bug-triage.yml",
+    script: "ado_copilot_bug_triage.py",
+    guild: "cross-guild",
+    provider: ["ado", "datadog"],
+    execution: "pipeline",
+    source: "native",
+    credGate: "copilot",
+    fields: [
+      {
+        key: "bugUrl",
+        label: "Bug URL",
+        type: "url",
+        placeholder: "https://dev.azure.com/vfuk-digital/Digital/_workitems/edit/4184017",
+        help: "The bug id is parsed from the link.",
+        required: true,
+      },
+    ],
+  },
+  {
+    id: "exec-dashboard",
+    name: "Executive Dashboard",
+    codename: "Operate",
+    codenameWho: PHASE.operate,
+    codenameWhy:
+      "It reads completed sprints and scores delivery health — the operate-phase view of velocity, completion and bugs across teams.",
+    tagline: "Delivery health at a glance — score, trend, bugs, current sprint",
+    description:
+      "Reads a team's last 6 ADO sprints and computes a health score (RAG) from completion, velocity stability and bug resolution, with delivery/bug trend charts, sprint history and current-sprint stats. Completed sprints only. Read-only. Enter your team below.",
+    category: "Delivery Intelligence",
+    status: "live",
+    icon: "LayoutDashboard",
+    estCredits: 0,
+    estDuration: "5–15 sec",
+    guild: "cross-guild",
+    provider: ["ado"],
+    execution: "hub-inline",
+    source: "hub-a",
+    credGate: "none",
+    fields: [
+      { key: "team", label: "ADO team", type: "text", default: "VOXI Digital", placeholder: "VOXI Digital", help: "The Azure DevOps team whose sprints are scored." },
+    ],
+  },
+  {
+    id: "ai-productivity", name: "AI Productivity Index", codename: "Operate",
+    codenameWho: PHASE.operate,
+    codenameWhy: "It rolls delivery, quality, velocity, PR speed and AI adoption into one operate-phase index, with a £ ROI estimate.",
+    tagline: "One 0–100 score for delivery, quality, velocity, PR speed and AI adoption",
+    description:
+      "Scores a team's last 6 ADO sprints into one 0–100 index across delivery, quality, velocity, PR speed and Copilot adoption — plus a £ ROI estimate. Read-only. Enter your team; Copilot fields optional.",
+    category: "Delivery Intelligence", icon: "Activity",
+    guild: "cross-guild", provider: ["ado", "github"],
+    execution: "hub-inline", source: "hub-a", credGate: "none",
+    estCredits: 0, estDuration: "5–15 sec", status: "live",
+    fields: [
+      { key: "team", label: "ADO team", type: "text", default: "VOXI Digital", placeholder: "VOXI Digital", help: "The Azure DevOps team whose sprints are scored." },
+      { key: "copilotAcceptanceRate", label: "Copilot acceptance rate % (optional)", type: "text" },
+      { key: "copilotActiveUsers", label: "Copilot active users (optional)", type: "text" },
+      { key: "copilotTotalSuggestions", label: "Copilot total suggestions (optional)", type: "text" },
+      { key: "copilotAcceptedSuggestions", label: "Copilot accepted suggestions (optional)", type: "text" },
+      { key: "copilotLinesAccepted", label: "Copilot lines accepted (optional)", type: "text" },
+    ],
+  },
   {
     id: "pr-review",
     name: "PR Reviewer",
-    codename: "Maat",
-    codenameWho:
-      "Goddess of truth, justice, order and balance. She judged whether a soul was worthy by weighing its heart against the Feather of Truth.",
+    codename: "Review",
+    codenameWho: PHASE.review,
     codenameWhy:
-      "A PR reviewer does the same: it weighs code against engineering guidelines, coding standards and best practices before deciding whether it's worthy to merge.",
+      "It weighs every pull request against engineering guidelines, coding standards and best practices before deciding whether it's fit to merge.",
     tagline: "AI review on every pull request",
     description:
       "Reads the PR diff, linked work items and repo coding guidelines, then posts inline + summary review comments. Blocks merge only on high-severity, high-confidence findings.",
@@ -96,48 +188,12 @@ export const CAPABILITIES: Capability[] = [
     ],
   },
   {
-    id: "bug-triage",
-    name: "Bug Triage",
-    codename: "Anubis",
-    codenameWho:
-      "God of the dead and guide of souls through the afterlife. He oversaw the judgment process and led each soul to the truth.",
-    codenameWhy:
-      "Triage follows a bug's trail — signals, logs and history — back to its true origin and owning team, much like Anubis guides souls to their final judgment.",
-    tagline: "Diagnose the service and route the bug to its owning team",
-    description:
-      "Pulls bug context, screenshots, history and linked PRs, correlates DataDog logs, then diagnoses the affected service and owning team and posts the triage back to the work item.",
-    category: "Quality & Review",
-    status: "live",
-    icon: "Bug",
-    tokenEnv: "COPILOT_GITHUB_TOKEN",
-    estCredits: 200,
-    estDuration: "3–5 min",
-    pipeline: "cicd/pipelines/bug-triage.yml",
-    script: "ado_copilot_bug_triage.py",
-    guild: "cross-guild",
-    provider: ["ado", "datadog"],
-    execution: "pipeline",
-    source: "native",
-    credGate: "copilot",
-    fields: [
-      {
-        key: "bugUrl",
-        label: "Bug URL",
-        type: "url",
-        placeholder: "https://dev.azure.com/vfuk-digital/Digital/_workitems/edit/4184017",
-        help: "The bug id is parsed from the link.",
-        required: true,
-      },
-    ],
-  },
-  {
     id: "feature-breakdown",
     name: "Feature Breakdown",
-    codename: "Ptah",
-    codenameWho:
-      "Creator god, patron of craftsmen, architects and builders. Myth says he created the world through thought and speech.",
+    codename: "Plan",
+    codenameWho: PHASE.plan,
     codenameWhy:
-      "This agent takes a large epic or feature and shapes it into implementable stories and tasks — turning ideas into structured work.",
+      "It decomposes an epic or feature into implementable stories and tasks with acceptance criteria before build begins.",
     tagline: "Epic → Feature → Story decomposition",
     description:
       "Reverse-engineers an epic or feature into a structured backlog with acceptance criteria, applying team-specific breakdown instructions. Creates child work items in ADO.",
@@ -198,11 +254,10 @@ export const CAPABILITIES: Capability[] = [
   {
     id: "business-intent",
     name: "Business Intent Builder",
-    codename: "Atum",
-    codenameWho:
-      "The self-created creator god who rose alone from the primordial waters of Nun and brought the universe and the first gods into being from nothing, by his own will.",
+    codename: "Plan",
+    codenameWho: PHASE.plan,
     codenameWhy:
-      "This agent starts from nothing but a business intent — no existing work item — and brings a whole Epic → Feature → Story universe into being. Atum's creation from pure will mirrors turning raw intent into a complete backlog.",
+      "It turns a plain-language business intent into a complete Epic → Feature → Story hierarchy, ready for the team to pick up.",
     tagline: "Business intent → full Epic hierarchy",
     description:
       "Takes a plain-language business intent plus delivery metadata and generates a complete Epic with child Features and User Stories — applying team-specific breakdown rules. Creates the whole hierarchy in ADO, assigned to you.",
@@ -269,16 +324,16 @@ export const CAPABILITIES: Capability[] = [
   {
     id: "sprint-health",
     name: "Sprint Health Coach",
-    codename: "Sekhmet",
-    codenameWho:
-      "Warrior goddess of both destruction and healing. Though fierce, she was also worshipped as a goddess of medicine and recovery.",
+    codename: "Operate",
+    codenameWho: PHASE.operate,
     codenameWhy:
-      "The Sprint Health agent diagnoses delivery issues, surfaces blockers and prescribes corrective actions to keep the team healthy and productive.",
+      "It watches live delivery signals mid-flight — WIP, stale items, blockers and PR wait — and coaches the squad to stay healthy.",
     tagline: "Live delivery-health signals",
     description:
       "Scans the team backlog and iteration for WIP overload, stale items, blocked work and PR wait times, then coaches the squad with prioritised actions.",
     category: "Delivery Intelligence",
     status: "soon",
+    targetRelease: "Q3 2026",
     icon: "Activity",
     tokenEnv: "COPILOT_GITHUB_TOKEN",
     estCredits: 180,
@@ -309,16 +364,16 @@ export const CAPABILITIES: Capability[] = [
   {
     id: "testcase-ado",
     name: "Test Case Generator",
-    codename: "Thoth",
-    codenameWho:
-      "God of wisdom, knowledge, writing and science. He served as the divine scribe and keeper of all knowledge.",
+    codename: "Test",
+    codenameWho: PHASE.test,
     codenameWhy:
-      "Test case generation is about understanding requirements and documenting them as structured tests — making Thoth the perfect scribe for the job.",
+      "It generates structured test cases straight from a work item, ready to run in Azure Test Plans.",
     tagline: "Test cases from a work item",
     description:
       "Generates structured test cases from a user story or feature, ready to import into Azure Test Plans.",
     category: "Quality & Testing",
     status: "soon",
+    targetRelease: "Q3 2026",
     icon: "FlaskConical",
     tokenEnv: "COPILOT_GITHUB_TOKEN",
     estCredits: 150,
@@ -343,16 +398,16 @@ export const CAPABILITIES: Capability[] = [
   {
     id: "testcase-figma",
     name: "Figma Test Cases",
-    codename: "Seshat",
-    codenameWho:
-      "Goddess of writing, architecture, record-keeping and measurement — often regarded as Thoth's counterpart, who 'stretched the cord' to lay out every temple.",
+    codename: "Test",
+    codenameWho: PHASE.test,
     codenameWhy:
-      "This agent translates UI designs into test scenarios, so Seshat's bond with architecture, documentation and design makes her the ideal choice.",
+      "It reads a design frame and its linked work item to produce UI test cases covering states, edge cases and data variations.",
     tagline: "Test cases from a Figma design",
     description:
       "Reads a Figma frame plus its linked work item and produces UI test cases covering states, edge cases and data variations.",
     category: "Quality & Testing",
     status: "soon",
+    targetRelease: "Q4 2026",
     icon: "Frame",
     tokenEnv: "COPILOT_GITHUB_TOKEN",
     estCredits: 220,
@@ -383,16 +438,16 @@ export const CAPABILITIES: Capability[] = [
   {
     id: "ui-testdata",
     name: "UI Test Data Reviewer",
-    codename: "Horus",
-    codenameWho:
-      "God of the sky, symbolised by the all-seeing Eye of Horus — a sign of protection and vision.",
+    codename: "Test",
+    codenameWho: PHASE.test,
     codenameWhy:
-      "This agent scans the UI for missing test IDs, accessibility attributes and automation gaps — the all-seeing eye over the interface.",
+      "It audits the UI for missing automation test-data IDs so the suite has stable hooks before tests are written.",
     tagline: "Audit test-data IDs in the UI",
     description:
       "Reviews UI changes for missing or inconsistent automation test-data identifiers and flags gaps before they reach the automation suite.",
     category: "Quality & Testing",
     status: "soon",
+    targetRelease: "Q3 2026",
     icon: "ScanSearch",
     tokenEnv: "COPILOT_GITHUB_TOKEN",
     estCredits: 90,
@@ -415,193 +470,148 @@ export const CAPABILITIES: Capability[] = [
     ],
   },
   {
-    id: "exec-dashboard",
-    name: "Executive Dashboard",
-    codename: "Ra",
-    codenameWho:
-      "The sun god and king of the gods, who sailed across the sky each day seeing all that happened in the Two Lands.",
-    codenameWhy:
-      "An executive dashboard is the all-seeing eye over delivery — sprint health, velocity and bugs across every team, viewed from above.",
-    tagline: "Delivery health at a glance — score, trend, bugs, current sprint",
-    description:
-      "Reads a team's last 6 ADO sprints and computes a health score (RAG) from completion, velocity stability and bug resolution, with delivery/bug trend charts, sprint history and current-sprint stats. Completed sprints only. Read-only. Enter your team below.",
-    category: "Delivery Intelligence",
-    status: "live",
-    icon: "LayoutDashboard",
-    estCredits: 0,
-    estDuration: "5–15 sec",
-    guild: "cross-guild",
-    provider: ["ado"],
-    execution: "hub-inline",
-    source: "hub-a",
-    credGate: "none",
-    fields: [
-      { key: "team", label: "ADO team", type: "text", default: "VOXI Digital", placeholder: "VOXI Digital", help: "The Azure DevOps team whose sprints are scored." },
-    ],
-  },
-  {
-    id: "ai-productivity", name: "AI Productivity Index", codename: "Hapi",
-    codenameWho: "God of the Nile flood, bringer of the year's abundance.",
-    codenameWhy: "Measures the flood of engineering output — the yield of the delivery year.",
-    tagline: "One 0–100 score for delivery, quality, velocity, PR speed and AI adoption",
-    description:
-      "Scores a team's last 6 ADO sprints into one 0–100 index across delivery, quality, velocity, PR speed and Copilot adoption — plus a £ ROI estimate. Read-only. Enter your team; Copilot fields optional.",
-    category: "Delivery Intelligence", icon: "Activity",
-    guild: "cross-guild", provider: ["ado", "github"],
-    execution: "hub-inline", source: "hub-a", credGate: "none",
-    estCredits: 0, estDuration: "5–15 sec", status: "live",
-    fields: [
-      { key: "team", label: "ADO team", type: "text", default: "VOXI Digital", placeholder: "VOXI Digital", help: "The Azure DevOps team whose sprints are scored." },
-      { key: "copilotAcceptanceRate", label: "Copilot acceptance rate % (optional)", type: "text" },
-      { key: "copilotActiveUsers", label: "Copilot active users (optional)", type: "text" },
-      { key: "copilotTotalSuggestions", label: "Copilot total suggestions (optional)", type: "text" },
-      { key: "copilotAcceptedSuggestions", label: "Copilot accepted suggestions (optional)", type: "text" },
-      { key: "copilotLinesAccepted", label: "Copilot lines accepted (optional)", type: "text" },
-    ],
-  },
-  {
-    id: "mobile-crash", name: "Mobile Crash Intelligence", codename: "Set",
-    codenameWho: "God of chaos, storms and sudden violent disorder.",
-    codenameWhy: "Crashes are chaos erupting in production; this tames Set's storm into signal.",
+    id: "mobile-crash", name: "Mobile Crash Intelligence", codename: "Operate",
+    codenameWho: PHASE.operate,
+    codenameWhy: "It turns post-release crash feeds into ranked, actionable signal for the mobile team.",
     tagline: "Turn crash chaos into ranked, actionable signal",
     description: "Coming soon. Intended locus: hub-inline analytics over crash feeds + ADO.",
     category: "Mobile Quality", icon: "TriangleAlert",
     guild: "mobile", provider: ["ado", "internal"],
     execution: "hub-inline", source: "hub-a", credGate: "none",
-    estCredits: 0, estDuration: "—", status: "soon", fields: [],
+    estCredits: 0, estDuration: "—", status: "soon", targetRelease: "Q2 2027", fields: [],
   },
   {
-    id: "app-store-release-risk", name: "App Store Release Risk Scorer", codename: "Shai",
-    codenameWho: "God of fate and destiny, who fixed each life's fortune.",
-    codenameWhy: "Scores the fate of a store release before it ships.",
+    id: "app-store-release-risk", name: "App Store Release Risk Scorer", codename: "Release",
+    codenameWho: PHASE.release,
+    codenameWhy: "It scores the risk of a store submission before you ship, so releases go out with eyes open.",
     tagline: "Predict release risk before you submit to the store",
     description: "Coming soon. Intended locus: hub-inline scoring over ADO + store signals.",
     category: "Mobile Delivery", icon: "Rocket",
     guild: "mobile", provider: ["ado", "internal"],
     execution: "hub-inline", source: "hub-a", credGate: "none",
-    estCredits: 0, estDuration: "—", status: "soon", fields: [],
+    estCredits: 0, estDuration: "—", status: "soon", targetRelease: "Q2 2027", fields: [],
   },
   {
-    id: "mobile-cicd", name: "Mobile CI/CD Intelligence", codename: "Khepri",
-    codenameWho: "The scarab of the rising sun, self-renewal and becoming.",
-    codenameWhy: "CI/CD is continuous rebirth of the build, each run a new dawn.",
+    id: "mobile-cicd", name: "Mobile CI/CD Intelligence", codename: "Release",
+    codenameWho: PHASE.release,
+    codenameWhy: "It surfaces pipeline health and flakiness across mobile CI/CD so builds ship reliably.",
     tagline: "Health and flakiness insight across mobile pipelines",
     description: "Coming soon. Intended locus: hub-inline analytics over ADO + GitHub Actions.",
     category: "Mobile Delivery", icon: "GitBranch",
     guild: "mobile", provider: ["ado", "github"],
     execution: "hub-inline", source: "hub-a", credGate: "none",
-    estCredits: 0, estDuration: "—", status: "soon", fields: [],
+    estCredits: 0, estDuration: "—", status: "soon", targetRelease: "Q2 2027", fields: [],
   },
   {
-    id: "mobile-code-review", name: "Mobile Code Review Assistant", codename: "Wadjet",
-    codenameWho: "The cobra guardian, the watchful protective eye of the pharaoh.",
-    codenameWhy: "Guards the merge with a watchful eye over mobile code.",
+    id: "mobile-code-review", name: "Mobile Code Review Assistant", codename: "Review",
+    codenameWho: PHASE.review,
+    codenameWhy: "It reviews mobile changes against platform conventions before they merge.",
     tagline: "AI review tuned for mobile codebases",
     description: "Coming soon. Intended locus: pipeline (posts review comments) once built.",
     category: "Mobile Quality", icon: "ShieldCheck",
     guild: "mobile", provider: ["ado"],
     execution: "hub-inline", source: "hub-a", credGate: "none",
-    estCredits: 0, estDuration: "—", status: "soon", fields: [],
+    estCredits: 0, estDuration: "—", status: "soon", targetRelease: "Q3 2027", fields: [],
   },
   {
-    id: "mobile-test-gap", name: "Mobile Test Gap Analyzer", codename: "Nephthys",
-    codenameWho: "Goddess of the hidden, the unseen and what is mourned.",
-    codenameWhy: "Reveals the coverage gaps no one saw.",
+    id: "mobile-test-gap", name: "Mobile Test Gap Analyzer", codename: "Test",
+    codenameWho: PHASE.test,
+    codenameWhy: "It finds the untested seams in mobile code so coverage lands where it matters.",
     tagline: "Find the untested seams in mobile code",
     description: "Coming soon. Intended locus: hub-inline analysis over ADO.",
     category: "Mobile Quality", icon: "TestTube",
     guild: "mobile", provider: ["ado"],
     execution: "hub-inline", source: "hub-a", credGate: "none",
-    estCredits: 0, estDuration: "—", status: "soon", fields: [],
+    estCredits: 0, estDuration: "—", status: "soon", targetRelease: "Q3 2027", fields: [],
   },
   {
-    id: "mobile-onboarding", name: "Mobile Onboarding Accelerator", codename: "Bes",
-    codenameWho: "Protector of households, mothers and newcomers.",
-    codenameWhy: "Shields and speeds the new mobile joiner.",
+    id: "mobile-onboarding", name: "Mobile Onboarding Accelerator", codename: "Enable",
+    codenameWho: PHASE.enable,
+    codenameWhy: "It ramps new mobile engineers to their first productive commit faster.",
     tagline: "Get new mobile engineers productive faster",
     description: "Coming soon. Intended locus: hub-inline guide over ADO + GitHub.",
     category: "Mobile Enablement", icon: "Smartphone",
     guild: "mobile", provider: ["ado", "github"],
     execution: "hub-inline", source: "hub-a", credGate: "none",
-    estCredits: 0, estDuration: "—", status: "soon", fields: [],
+    estCredits: 0, estDuration: "—", status: "soon", targetRelease: "Q3 2027", fields: [],
   },
   {
-    id: "delivery-intel", name: "Delivery Intelligence Platform", codename: "Wepwawet",
-    codenameWho: "The opener of the ways, the scout who clears the path ahead.",
-    codenameWhy: "Maps and clears the delivery path before the team walks it.",
+    id: "delivery-intel", name: "Delivery Intelligence Platform", codename: "Operate",
+    codenameWho: PHASE.operate,
+    codenameWhy: "It maps end-to-end delivery flow and surfaces the bottlenecks slowing the team.",
     tagline: "End-to-end delivery flow and bottleneck insight",
     description: "Coming soon. Intended locus: hub-inline analytics over ADO.",
     category: "Delivery Intelligence", icon: "Compass",
     guild: "cross-guild", provider: ["ado"],
     execution: "hub-inline", source: "hub-a", credGate: "none",
-    estCredits: 0, estDuration: "—", status: "soon", fields: [],
+    estCredits: 0, estDuration: "—", status: "soon", targetRelease: "Q4 2026", fields: [],
   },
   {
-    id: "release-risk", name: "Release Risk Scorer", codename: "Meskhenet",
-    codenameWho: "Goddess present at birth who foretold each newborn's destiny.",
-    codenameWhy: "Predicts a release's fate at the moment of its birth.",
+    id: "release-risk", name: "Release Risk Scorer", codename: "Release",
+    codenameWho: PHASE.release,
+    codenameWhy: "It scores the risk of any release before it goes out, from ADO delivery signals.",
     tagline: "Score the risk of any release before it goes out",
     description: "Coming soon. Intended locus: hub-inline scoring over ADO.",
     category: "Delivery Intelligence", icon: "Gauge",
     guild: "cross-guild", provider: ["ado"],
     execution: "hub-inline", source: "hub-a", credGate: "none",
-    estCredits: 0, estDuration: "—", status: "soon", fields: [],
+    estCredits: 0, estDuration: "—", status: "soon", targetRelease: "Q1 2027", fields: [],
   },
   {
-    id: "dependency-radar", name: "Dependency & Blocker Radar", codename: "Sobek",
-    codenameWho: "The crocodile god lurking in the Nile, watching the waters.",
-    codenameWhy: "Spots blockers and threats before they surface.",
+    id: "dependency-radar", name: "Dependency & Blocker Radar", codename: "Operate",
+    codenameWho: PHASE.operate,
+    codenameWhy: "It surfaces cross-team blockers and risky dependencies early, before they stall delivery.",
     tagline: "Surface cross-team blockers and risky dependencies early",
     description: "Coming soon. Intended locus: hub-inline analysis over ADO.",
     category: "Delivery Intelligence", icon: "Radar",
     guild: "cross-guild", provider: ["ado"],
     execution: "hub-inline", source: "hub-a", credGate: "none",
-    estCredits: 0, estDuration: "—", status: "soon", fields: [],
+    estCredits: 0, estDuration: "—", status: "soon", targetRelease: "Q1 2027", fields: [],
   },
   {
-    id: "test-gap", name: "Test Gap Analyzer", codename: "Neith",
-    codenameWho: "The weaver of the world, goddess of wisdom and war.",
-    codenameWhy: "Spots the holes in the test-coverage weave.",
+    id: "test-gap", name: "Test Gap Analyzer", codename: "Test",
+    codenameWho: PHASE.test,
+    codenameWhy: "It ranks the highest-value testing gaps across the stack.",
     tagline: "Rank the highest-value testing gaps across the stack",
     description: "Coming soon. Intended locus: hub-inline analysis over ADO.",
     category: "Quality & Testing", icon: "TestTube2",
     guild: "testing", provider: ["ado"],
     execution: "hub-inline", source: "hub-a", credGate: "none",
-    estCredits: 0, estDuration: "—", status: "soon", fields: [],
+    estCredits: 0, estDuration: "—", status: "soon", targetRelease: "Q4 2026", fields: [],
   },
   {
-    id: "dev-onboarding", name: "Developer Onboarding Accelerator", codename: "Hathor",
-    codenameWho: "Goddess of welcome, joy and nurture.",
-    codenameWhy: "Greets and grows the new developer.",
+    id: "dev-onboarding", name: "Developer Onboarding Accelerator", codename: "Enable",
+    codenameWho: PHASE.enable,
+    codenameWhy: "It gives new engineers a guided path to their first commit.",
     tagline: "A guided path for new engineers to first commit",
     description: "Coming soon. Intended locus: hub-inline guide over ADO + GitHub.",
     category: "Enablement", icon: "UserPlus",
     guild: "cross-guild", provider: ["ado", "github"],
     execution: "hub-inline", source: "hub-a", credGate: "none",
-    estCredits: 0, estDuration: "—", status: "soon", fields: [],
+    estCredits: 0, estDuration: "—", status: "soon", targetRelease: "Q3 2027", fields: [],
   },
   {
-    id: "knowledge-copilot", name: "Engineering Knowledge Copilot", codename: "Imhotep",
-    codenameWho: "The deified engineer-sage, patron of knowledge and medicine.",
-    codenameWhy: "The wisdom copilot — the engineer who became a god of knowledge.",
+    id: "knowledge-copilot", name: "Engineering Knowledge Copilot", codename: "Enable",
+    codenameWho: PHASE.enable,
+    codenameWhy: "It answers engineering questions with grounded, source-backed answers across every phase.",
     tagline: "Ask engineering questions, get grounded answers",
     description: "Coming soon. Intended locus: hub-inline chat over internal knowledge + LLM.",
     category: "Enablement", icon: "BookMarked",
     guild: "cross-guild", provider: ["internal"],
     execution: "hub-inline", source: "hub-a", credGate: "none",
-    estCredits: 0, estDuration: "—", status: "soon", fields: [],
+    estCredits: 0, estDuration: "—", status: "soon", targetRelease: "Q1 2027", fields: [],
   },
   {
-    id: "story-extractor", name: "Story Extractor", codename: "Sia",
-    codenameWho: "The personification of perception and insight, the mind of Ra.",
-    codenameWhy: "Extracts meaning and structured stories from raw documents.",
+    id: "story-extractor", name: "Story Extractor", codename: "Plan",
+    codenameWho: PHASE.plan,
+    codenameWhy: "It turns raw documents into structured, ready-to-refine stories at the top of the backlog.",
     tagline: "Turn documents into structured, ready-to-refine stories",
     description:
       "Coming soon (real feature — full port scheduled in the Story Extractor dedicated plan, 4d). Intended locus: hub-inline / pipeline for work-item creation.",
     category: "Agile & Backlog", icon: "ScanText",
     guild: "product", provider: ["ado", "internal"],
     execution: "hub-inline", source: "hub-a", credGate: "none",
-    estCredits: 0, estDuration: "—", status: "soon", fields: [],
+    estCredits: 0, estDuration: "—", status: "soon", targetRelease: "Q3 2026", fields: [],
   },
 ];
 

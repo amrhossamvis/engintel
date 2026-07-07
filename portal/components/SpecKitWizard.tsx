@@ -344,7 +344,7 @@ export function SpecKitWizard() {
               href="/playground"
               className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-ink transition-colors"
             >
-              <ArrowLeft className="h-3.5 w-3.5" /> Playground
+              <ArrowLeft className="h-3.5 w-3.5" /> Personas
             </Link>
             <span className="text-faint">·</span>
             <span className="inline-flex items-center gap-2 text-[0.7rem] font-mono uppercase tracking-wider text-soon">

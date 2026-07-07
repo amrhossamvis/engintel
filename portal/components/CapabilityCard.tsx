@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
-import { ArrowRight, Clock, Info, Lock, Pyramid } from "lucide-react";
+import { ArrowRight, CalendarClock, Clock, Info, Lock, Workflow } from "lucide-react";
 import type { Capability } from "@/lib/capabilities";
 import { CapIcon } from "./icons";
 import { CapabilityBadges } from "./CapabilityBadges";
@@ -10,18 +10,15 @@ import { useApp } from "./AppProvider";
 export function CapabilityCard({
   cap,
   index,
-  total,
   onLaunchAction,
 }: {
   cap: Capability;
   index: number;
-  total: number;
   onLaunchAction: (cap: Capability) => void;
 }) {
   const { openDetail } = useApp();
   const live = cap.status === "live";
   const idx = String(index + 1).padStart(2, "0");
-  const tot = String(total).padStart(2, "0");
 
   function handleMove(e: React.MouseEvent<HTMLDivElement>) {
     const r = e.currentTarget.getBoundingClientRect();
@@ -72,9 +69,6 @@ export function CapabilityCard({
               Soon
             </span>
           )}
-          <span className="font-mono text-[0.65rem] text-faint tracking-widest">
-            {idx}/{tot}
-          </span>
         </div>
       </div>
 
@@ -82,7 +76,7 @@ export function CapabilityCard({
         <p className="kicker">{cap.category}</p>
         <h3 className="font-display text-xl font-semibold mt-1.5 leading-tight">{cap.name}</h3>
         <p className="inline-flex items-center gap-1.5 text-[0.7rem] font-mono uppercase tracking-wider text-muted mt-1.5">
-          <Pyramid className="h-3 w-3 shrink-0" strokeWidth={1.8} style={{ color: "var(--red)" }} />
+          <Workflow className="h-3 w-3 shrink-0" strokeWidth={1.8} style={{ color: "var(--red)" }} />
           {cap.codename}
         </p>
         <p className="text-sm text-[var(--ink-dim)] mt-2 leading-relaxed line-clamp-2">
@@ -96,8 +90,17 @@ export function CapabilityCard({
       <div className="mt-auto pt-5 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <span className="inline-flex items-center gap-1.5 text-xs font-mono text-muted">
-            <Clock className="h-3.5 w-3.5" strokeWidth={1.8} />
-            {cap.estDuration}
+            {!live && cap.targetRelease ? (
+              <>
+                <CalendarClock className="h-3.5 w-3.5" strokeWidth={1.8} />
+                {cap.targetRelease}
+              </>
+            ) : (
+              <>
+                <Clock className="h-3.5 w-3.5" strokeWidth={1.8} />
+                {cap.estDuration}
+              </>
+            )}
           </span>
           <button
             onClick={() => openDetail(cap)}

@@ -58,7 +58,7 @@ export function IdeasBoard() {
     <main className="relative z-10 mx-auto max-w-5xl px-6 pb-24">
       <section className="pt-10 pb-10">
         <p className="kicker flex items-center gap-2">
-          <Lightbulb className="h-3.5 w-3.5 text-red" /> Nun · Ideas
+          <Lightbulb className="h-3.5 w-3.5 text-red" /> Ideas
         </p>
         <h1 className="font-display font-extrabold tracking-tight mt-4 text-[clamp(2rem,5vw,3.25rem)] leading-[1]">
           Where ideas <span className="text-red">surface</span>.

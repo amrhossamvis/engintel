@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowRight, Clock, Lock, Pyramid, Sparkles, X } from "lucide-react";
+import { ArrowRight, CalendarClock, Clock, Lock, Sparkles, Workflow, X } from "lucide-react";
 import type { Capability } from "@/lib/capabilities";
 import { CapIcon } from "./icons";
 import { FeedbackButton } from "./FeedbackButton";
@@ -72,7 +72,7 @@ function Inner({ cap, onClose }: { cap: Capability; onClose: () => void }) {
                 <p className="kicker">{cap.category}</p>
                 <h2 className="font-display text-lg font-semibold leading-tight">{cap.name}</h2>
                 <p className="inline-flex items-center gap-1.5 text-[0.7rem] font-mono uppercase tracking-wider text-muted mt-1">
-                  <Pyramid className="h-3 w-3 shrink-0" strokeWidth={1.8} style={{ color: "var(--red)" }} />
+                  <Workflow className="h-3 w-3 shrink-0" strokeWidth={1.8} style={{ color: "var(--red)" }} />
                   {cap.codename}
                 </p>
               </div>
@@ -109,11 +109,11 @@ function Inner({ cap, onClose }: { cap: Capability; onClose: () => void }) {
                 className="font-mono text-[0.65rem] uppercase tracking-[0.2em] inline-flex items-center gap-1.5"
                 style={{ color: "var(--red)" }}
               >
-                <Pyramid className="h-3 w-3 shrink-0" strokeWidth={1.8} />
-                Why “{cap.codename}”?
+                <Workflow className="h-3 w-3 shrink-0" strokeWidth={1.8} />
+                {cap.codename} · SDLC phase
               </p>
               <p className="text-[0.82rem] text-[var(--ink-dim)] leading-relaxed mt-2">
-                <span className="text-ink font-medium">Who they were. </span>
+                <span className="text-ink font-medium">What it is. </span>
                 {cap.codenameWho}
               </p>
               <p className="text-[0.82rem] text-[var(--ink-dim)] leading-relaxed mt-2">
@@ -124,6 +124,9 @@ function Inner({ cap, onClose }: { cap: Capability; onClose: () => void }) {
 
             <div className="mt-5 flex flex-wrap gap-2 text-[0.7rem] font-mono text-muted">
               <Meta label={cap.estDuration} icon={<Clock className="h-3 w-3" />} />
+              {!live && cap.targetRelease && (
+                <Meta label={`Target ${cap.targetRelease}`} icon={<CalendarClock className="h-3 w-3" />} />
+              )}
               <Meta label={cap.category} icon={<Sparkles className="h-3 w-3" />} />
             </div>
           </div>
