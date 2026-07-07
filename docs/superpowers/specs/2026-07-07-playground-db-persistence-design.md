@@ -159,6 +159,18 @@ Backend behavior:
 - API: smoke over the `dbConfigured()` guard path (returns empty when unconfigured), mirroring existing smoke tests.
 - Manual acceptance: connect PAT → create persona → chat a few turns → navigate to `/ideas` → back to `/playground` → same thread open, same persona, full history; disconnect PAT → anonymous localStorage still works.
 
+## Security — accepted IDOR risk
+
+An automated security review flagged all six routes as Broken Authentication / IDOR: `userKey` arrives from the client (query string or body) and is trusted as the identity, so a caller who supplies another user's ADO identity string can read or write that user's personas, threads, and session.
+
+**Decision: accepted, no change.** Rationale:
+
+- The entire app already uses this model — `api/ideas` (`voter` / `authorKey`), `api/skills`, and `api/feedback` all take client-supplied identity with no server-side check. These routes are consistent with it, not a new class of hole.
+- There is no server-side session/auth infrastructure in the codebase (no NextAuth, session cookie, or JWT), so the reviewer's `getAuthenticatedUserKey(req)` does not exist to call.
+- Data sensitivity is low: AI Playground prompt history and persona configs, not credentials or PII.
+
+A real fix is feasible (require the ADO PAT in an `Authorization` header, derive identity server-side via `validateAdoPat()` in `lib/ado.ts`), but it belongs in an app-wide auth effort covering ideas/skills/feedback too, not a per-feature patch that would diverge from the rest of the app. **Revisit when app-wide authentication is introduced.**
+
 ## Acceptance criteria
 
 1. With an ADO identity: personas and threads persist to Postgres and reload after a full browser restart on the same identity.
