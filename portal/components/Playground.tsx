@@ -477,7 +477,7 @@ export function Playground() {
         >
           <p className="kicker flex items-center gap-2">
             <Sparkles className="h-3.5 w-3.5 text-red" />
-            AI Playground
+            Personas
           </p>
           <h1 className="font-display font-extrabold tracking-tight mt-4 text-[clamp(2rem,5vw,3.4rem)] leading-[0.98]">
             Pick a persona. <span className="text-red">Chat.</span>

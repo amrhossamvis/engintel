@@ -11,7 +11,7 @@ vi.mock("./AppProvider", () => ({
 describe("CapabilityCard badges", () => {
   it("shows where it runs (execution) + what it touches (providers)", () => {
     const cap = getCapability("pr-review")!; // pipeline, providers github + ado
-    render(<CapabilityCard cap={cap} index={0} total={8} onLaunchAction={() => {}} />);
+    render(<CapabilityCard cap={cap} index={0} onLaunchAction={() => {}} />);
     expect(screen.getByText("ADO Pipeline")).toBeInTheDocument();
     expect(screen.getByText("ADO")).toBeInTheDocument();
     expect(screen.getByText("Copilot")).toBeInTheDocument();
@@ -19,14 +19,14 @@ describe("CapabilityCard badges", () => {
 
   it("shows no run pill for hub-inline capabilities (only providers)", () => {
     const cap = getCapability("exec-dashboard")!; // hub-inline, provider ado
-    render(<CapabilityCard cap={cap} index={0} total={8} onLaunchAction={() => {}} />);
+    render(<CapabilityCard cap={cap} index={0} onLaunchAction={() => {}} />);
     expect(screen.queryByText("Hub")).not.toBeInTheDocument();
     expect(screen.getByText("ADO")).toBeInTheDocument();
   });
 
   it("never shows migration provenance (from Hub A)", () => {
     const cap = getCapability("exec-dashboard")!; // source: hub-a
-    render(<CapabilityCard cap={cap} index={0} total={8} onLaunchAction={() => {}} />);
+    render(<CapabilityCard cap={cap} index={0} onLaunchAction={() => {}} />);
     expect(screen.queryByText(/from hub a/i)).not.toBeInTheDocument();
   });
 });

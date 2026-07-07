@@ -72,8 +72,6 @@ export function Hub() {
             <Stat value={`${liveCount}`} label="live tools" accent />
             <span className="h-4 w-px bg-[var(--hairline-strong)]" />
             <Stat value={`${CAPABILITIES.length}`} label="capabilities" />
-            <span className="h-4 w-px bg-[var(--hairline-strong)]" />
-            <Stat value="Entra" label="secured" />
           </div>
         </motion.div>
       </section>
@@ -123,7 +121,6 @@ export function Hub() {
               key={cap.id}
               cap={cap}
               index={i}
-              total={CAPABILITIES.length}
               onLaunchAction={openLaunch}
             />
           ))}
