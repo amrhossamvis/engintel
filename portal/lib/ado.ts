@@ -31,12 +31,18 @@ const API = "api-version=7.1-preview.1";
 /** Branch the pipeline YAML is read from. Override until the YAML lands on main. */
 const PIPELINE_BRANCH = process.env.PIPELINE_BRANCH ?? "refs/heads/main";
 
-/** capabilityId → ADO pipeline definition id, from env (PIPELINE_<ID>) */
+/** Hardcoded pipeline definition IDs (fallback when env var is not set) */
+const PIPELINE_DEFAULTS: Record<string, number> = {
+  "testcase-ado": 13634,
+};
+
+/** capabilityId → ADO pipeline definition id, from env (PIPELINE_<ID>) or hardcoded default */
 export function pipelineIdFor(capabilityId: string): number | null {
   const key = "PIPELINE_" + capabilityId.toUpperCase().replace(/-/g, "_");
   const raw = process.env[key];
   const id = raw ? Number(raw) : NaN;
-  return Number.isFinite(id) ? id : null;
+  if (Number.isFinite(id)) return id;
+  return PIPELINE_DEFAULTS[capabilityId] ?? null;
 }
 
 export function adoConfigured(): boolean {
