@@ -49,6 +49,11 @@ export function adoConfigured(): boolean {
   return Boolean(process.env.AZDO_PAT);
 }
 
+/** Resolved ADO org + project this hub targets. */
+export function adoTarget(): { org: string; project: string } {
+  return { org: ORG, project: PROJECT };
+}
+
 /** Basic auth header from an ADO PAT (per-user PAT or the service fallback). */
 export function basicFromPat(pat: string): string {
   return "Basic " + Buffer.from(":" + pat).toString("base64");

@@ -25,6 +25,7 @@ import {
   Sparkles,
   Square,
   Terminal,
+  Ticket,
   Trash2,
   Upload,
   X,
@@ -43,6 +44,7 @@ import {
 import { CapIcon, ICON_KEYS } from "./icons";
 import { Markdown } from "./Markdown";
 import { useApp } from "./AppProvider";
+import { AdoWorkItemModal } from "./AdoWorkItemModal";
 import {
   loadState,
   saveThread as storeSaveThread,
@@ -89,6 +91,7 @@ export function Playground() {
   const [customPersonas, setCustomPersonas] = useState<CustomPersona[]>([]);
   const [editorInit, setEditorInit] = useState<CustomPersona | null>(null);
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
+  const [adoItemFor, setAdoItemFor] = useState<string | null>(null);
   const importRef = useRef<HTMLInputElement | null>(null);
 
   const allPersonas = useMemo<PgTemplate[]>(
@@ -829,17 +832,26 @@ export function Playground() {
                         ) : (
                           <div className="text-sm text-ink break-words">
                             <Markdown source={m.content} />
-                            <button
-                              onClick={() => copyMsg(m.id, m.content)}
-                              className="mt-2 inline-flex items-center gap-1.5 text-xs text-muted hover:text-ink transition-colors"
-                            >
-                              {copiedId === m.id ? (
-                                <Check className="h-3.5 w-3.5 text-live" />
-                              ) : (
-                                <Copy className="h-3.5 w-3.5" />
-                              )}
-                              {copiedId === m.id ? "Copied" : "Copy"}
-                            </button>
+                            <div className="mt-2 flex items-center gap-3">
+                              <button
+                                onClick={() => copyMsg(m.id, m.content)}
+                                className="inline-flex items-center gap-1.5 text-xs text-muted hover:text-ink transition-colors"
+                              >
+                                {copiedId === m.id ? (
+                                  <Check className="h-3.5 w-3.5 text-live" />
+                                ) : (
+                                  <Copy className="h-3.5 w-3.5" />
+                                )}
+                                {copiedId === m.id ? "Copied" : "Copy"}
+                              </button>
+                              <button
+                                onClick={() => setAdoItemFor(m.content)}
+                                className="inline-flex items-center gap-1.5 text-xs text-muted hover:text-ink transition-colors"
+                              >
+                                <Ticket className="h-3.5 w-3.5" />
+                                Create ADO item
+                              </button>
+                            </div>
                           </div>
                         )
                       ) : (
@@ -1087,6 +1099,10 @@ export function Playground() {
         </section>
         )}
       </div>
+
+      {adoItemFor !== null && (
+        <AdoWorkItemModal message={adoItemFor} onClose={() => setAdoItemFor(null)} />
+      )}
     </main>
   );
 }
