@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -13,7 +13,8 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { Download } from "lucide-react";
+import { Download, Loader2, Sparkles } from "lucide-react";
+import { Markdown } from "@/components/Markdown";
 import type { ExecDashboardOutput } from "@/lib/inline/exec-dashboard";
 import type { IterationMetrics, TeamDashboard } from "@/lib/ado-metrics";
 
@@ -34,7 +35,74 @@ function completionColor(rate: number): string {
   return rate >= 80 ? "var(--live)" : rate >= 60 ? "var(--soon)" : "var(--red)";
 }
 
-function TeamCard({ t }: { t: TeamDashboard }) {
+// ── AI Insights panel ────────────────────────────────────────────────────────
+
+type TokenUsage = { prompt: number; response: number; total: number };
+
+function AiInsightsPanel({
+  loading,
+  insight,
+  tokens,
+  label,
+}: {
+  loading: boolean;
+  insight: string | null;
+  tokens: TokenUsage | null;
+  label: string;
+}) {
+  if (!loading && !insight) return null;
+  return (
+    <div
+      className="rounded-xl border p-4 space-y-3"
+      style={{ borderColor: "var(--hairline)", background: "var(--panel-2)" }}
+    >
+      {loading && (
+        <div className="flex items-center gap-2 text-sm" style={{ color: "var(--muted)" }}>
+          <Loader2 className="w-4 h-4 animate-spin" />
+          <span>Generating {label}…</span>
+        </div>
+      )}
+      {insight && !loading && (
+        <>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4" style={{ color: "var(--soon)" }} />
+              <span className="text-sm font-semibold" style={{ color: "var(--ink)" }}>
+                {label}
+              </span>
+              <span
+                className="text-[0.6rem] font-medium px-1.5 py-0.5 rounded-full"
+                style={{ background: "var(--panel-2)", color: "var(--muted)", border: "1px solid var(--hairline)" }}
+              >
+                Copilot
+              </span>
+            </div>
+            {tokens && (
+              <span className="text-[0.6rem] font-mono" style={{ color: "var(--muted)" }}>
+                ~{tokens.total.toLocaleString()} tokens
+              </span>
+            )}
+          </div>
+          <Markdown source={insight} />
+        </>
+      )}
+    </div>
+  );
+}
+
+// ── Team card ────────────────────────────────────────────────────────────────
+
+function TeamCard({
+  t,
+  githubPat,
+}: {
+  t: TeamDashboard;
+  githubPat: string;
+}) {
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiInsight, setAiInsight] = useState<string | null>(null);
+  const [aiTokens, setAiTokens] = useState<TokenUsage | null>(null);
+
   const cur = t.currentIteration;
   const trend = t.iterations.map((i) => ({
     name: i.iterationName,
@@ -49,16 +117,64 @@ function TeamCard({ t }: { t: TeamDashboard }) {
     Resolved: i.resolvedBugs,
   }));
 
+  async function generateInsight() {
+    setAiLoading(true);
+    try {
+      const res = await fetch("/api/exec-dashboard/insights", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(githubPat ? { "x-github-pat": githubPat } : {}),
+        },
+        body: JSON.stringify({
+          teamName: t.team.team,
+          iterations: t.iterations,
+          healthScore: t.healthScore,
+          healthStatus: t.healthStatus,
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to generate insights");
+      const result = await res.json();
+      setAiInsight(result.insight);
+      if (result.tokens) setAiTokens(result.tokens);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      setAiInsight(`**Error:** ${msg}`);
+    } finally {
+      setAiLoading(false);
+    }
+  }
+
   return (
     <div className="card rounded-2xl p-5 space-y-4" data-exec-team={t.team.team}>
       <div className="flex items-center justify-between">
         <h3 className="font-display text-lg font-semibold">{t.team.team}</h3>
-        <span
-          className="rounded-full px-3 py-1 text-sm font-mono"
-          style={{ color: STATUS_COLOR[t.healthStatus], background: "var(--panel-2)" }}
-        >
-          {t.healthScore} · {t.healthStatus}
-        </span>
+        <div className="flex items-center gap-2">
+          <span
+            className="rounded-full px-3 py-1 text-sm font-mono"
+            style={{ color: STATUS_COLOR[t.healthStatus], background: "var(--panel-2)" }}
+          >
+            {t.healthScore} · {t.healthStatus}
+          </span>
+          <button
+            onClick={generateInsight}
+            disabled={aiLoading}
+            className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors disabled:opacity-50"
+            style={{
+              background: "var(--panel-2)",
+              color: "var(--soon)",
+              border: "1px solid var(--hairline)",
+            }}
+            title="Generate AI sprint analysis"
+          >
+            {aiLoading ? (
+              <Loader2 className="w-3 h-3 animate-spin" />
+            ) : (
+              <Sparkles className="w-3 h-3" />
+            )}
+            {aiInsight ? "Refresh" : "AI Analysis"}
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-2">
@@ -77,6 +193,14 @@ function TeamCard({ t }: { t: TeamDashboard }) {
           </div>
         </div>
       )}
+
+      {/* AI Insights panel */}
+      <AiInsightsPanel
+        loading={aiLoading}
+        insight={aiInsight}
+        tokens={aiTokens}
+        label="AI Sprint Analysis"
+      />
 
       <div>
         <p className="kicker mb-2">Delivery trend</p>
@@ -253,11 +377,55 @@ function downloadPDF(output: ExecDashboardOutput, root: HTMLElement | null) {
   setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
 
+// ── Root export ──────────────────────────────────────────────────────────────
+
 export function ExecDashboardResult({ output }: { output: ExecDashboardOutput }) {
   const s = output.summary;
   const rootRef = useRef<HTMLDivElement>(null);
+
+  // Org-level AI insight state
+  const [orgLoading, setOrgLoading] = useState(false);
+  const [orgInsight, setOrgInsight] = useState<string | null>(null);
+  const [orgTokens, setOrgTokens] = useState<TokenUsage | null>(null);
+
+  // Read GitHub PAT from localStorage (set via Settings page)
+  const githubPat =
+    typeof window !== "undefined" ? (localStorage.getItem("github_pat_token") ?? "") : "";
+
+  async function generateOrgInsight() {
+    setOrgLoading(true);
+    try {
+      const res = await fetch("/api/exec-dashboard/insights/org", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(githubPat ? { "x-github-pat": githubPat } : {}),
+        },
+        body: JSON.stringify({
+          teams: output.teams.map((t) => ({
+            teamName: t.team.team,
+            healthScore: t.healthScore,
+            healthStatus: t.healthStatus,
+            iterations: t.iterations,
+          })),
+          summary: output.summary,
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to generate org insights");
+      const result = await res.json();
+      setOrgInsight(result.insight);
+      if (result.tokens) setOrgTokens(result.tokens);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      setOrgInsight(`**Error:** ${msg}`);
+    } finally {
+      setOrgLoading(false);
+    }
+  }
+
   return (
     <div className="mt-6 space-y-5" ref={rootRef}>
+      {/* Org summary KPIs */}
       <div className="grid grid-cols-5 gap-2">
         <Tile value={`${s.avgHealthScore}`} label="Org health" color={STATUS_COLOR[s.orgHealthStatus]} />
         <Tile value={s.totalTeams} label="Teams" />
@@ -265,9 +433,47 @@ export function ExecDashboardResult({ output }: { output: ExecDashboardOutput })
         <Tile value={s.atRiskTeams} label="At risk" color="var(--soon)" />
         <Tile value={s.criticalTeams} label="Critical" color="var(--red)" />
       </div>
+
+      {/* Org-level AI insight */}
+      <div className="card rounded-2xl p-5 space-y-3">
+        <div className="flex items-center justify-between">
+          <p className="kicker">Organisation AI Analysis</p>
+          <button
+            onClick={generateOrgInsight}
+            disabled={orgLoading}
+            className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors disabled:opacity-50"
+            style={{
+              background: "var(--panel-2)",
+              color: "var(--soon)",
+              border: "1px solid var(--hairline)",
+            }}
+          >
+            {orgLoading ? (
+              <Loader2 className="w-3 h-3 animate-spin" />
+            ) : (
+              <Sparkles className="w-3 h-3" />
+            )}
+            {orgInsight ? "Refresh" : "Generate Org Insights"}
+          </button>
+        </div>
+        <AiInsightsPanel
+          loading={orgLoading}
+          insight={orgInsight}
+          tokens={orgTokens}
+          label="AI Organisation Analysis"
+        />
+        {!orgLoading && !orgInsight && (
+          <p className="text-xs" style={{ color: "var(--muted)" }}>
+            Click &ldquo;Generate Org Insights&rdquo; to get an AI-powered executive summary across all teams.
+          </p>
+        )}
+      </div>
+
+      {/* Per-team cards */}
       {output.teams.map((t) => (
-        <TeamCard key={t.team.team} t={t} />
+        <TeamCard key={t.team.team} t={t} githubPat={githubPat} />
       ))}
+
       <div className="flex justify-end">
         <button
           onClick={() => downloadPDF(output, rootRef.current)}
