@@ -6,7 +6,7 @@ import { useApp } from "@/components/AppProvider";
 import { Portal } from "@/components/Portal";
 import { splitMessage } from "@/lib/message-format";
 
-const STORY_TYPES = ["User Story", "Product Backlog Item", "Task", "Bug"];
+const STORY_TYPES = ["User Story", "Task", "Bug"];
 
 type Node = { name: string; path: string };
 type Parent = { id: number; title: string; type: string };
