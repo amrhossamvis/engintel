@@ -73,8 +73,9 @@ function escapeHtml(s: string): string {
  */
 function safeHref(url: string): string | null {
   const trimmed = url.trim();
+  if (/[\u0000-\u001F\u007F]/.test(trimmed)) return null;
   if (/^(https?:|mailto:)/i.test(trimmed)) return trimmed;
-  if (/^[/#?]/.test(trimmed) || !/^[a-z][a-z0-9+.-]*:/i.test(trimmed)) return trimmed;
+  if (/^[/#?]/.test(trimmed)) return trimmed;
   return null;
 }
 
