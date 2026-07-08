@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { azAdoBearer, getRunDetail, getRunStatus } from "@/lib/ado";
+import { azAdoBearer, basicFromPat, getRunDetail, getRunStatus } from "@/lib/ado";
 
 /** Map ADO run state/result → the UI's job status. */
 function normalize(state: string, result?: string): "running" | "done" | "failed" {
@@ -19,7 +19,10 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "bad_request" }, { status: 400 });
   }
 
-  const auth = (await azAdoBearer()) ?? undefined;
+  // ADO auth precedence, mirroring /api/run: the caller's own PAT (multi-user hub) →
+  // the host's `az login` user (local dev) → the server service PAT (env, via getRunStatus/getRunDetail).
+  const adoPat = req.headers.get("x-ado-pat")?.trim() || undefined;
+  const auth = adoPat ? basicFromPat(adoPat) : ((await azAdoBearer()) ?? undefined);
 
   try {
     const [run, detail] = await Promise.all([
@@ -78,6 +81,23 @@ export async function GET(req: Request) {
       }
     }
 
+    // Wiki Weaver emits a `WIKI SUMMARY:` marker on success (capability-agnostic; null otherwise).
+    let wikiDryRun = false;
+    const wikiMarker = logText.match(/WIKI SUMMARY:[^\n]*/i);
+    if (wikiMarker) wikiDryRun = /dryRun=1/i.test(wikiMarker[0]);
+
+    // `WIKI PAGES: [...]` is a compact one-line JSON of the published page(s).
+    type WikiPage = { title: string; url: string };
+    let wikiPages: WikiPage[] | null = null;
+    const wikiPagesMarker = logText.match(/WIKI PAGES:\s*(\[.*\])\s*$/im);
+    if (wikiPagesMarker) {
+      try {
+        wikiPages = JSON.parse(wikiPagesMarker[1]);
+      } catch {
+        wikiPages = null;
+      }
+    }
+
     return NextResponse.json({
       status,
       result: run.result,
@@ -92,6 +112,8 @@ export async function GET(req: Request) {
       linkedCount,
       dryRun,
       items,
+      wikiDryRun,
+      wikiPages,
     });
   } catch (e) {
     const message = e instanceof Error ? e.message : "ado_error";
