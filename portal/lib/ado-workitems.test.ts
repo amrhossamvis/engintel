@@ -37,4 +37,16 @@ describe("markdownToHtml", () => {
   it("joins wrapped paragraph lines with <br>", () => {
     expect(markdownToHtml("one\ntwo")).toBe("<p>one<br>two</p>");
   });
+
+  it("renders links for http/https/mailto/relative", () => {
+    expect(markdownToHtml("[x](https://a.com)")).toBe('<p><a href="https://a.com">x</a></p>');
+    expect(markdownToHtml("[x](mailto:a@b.com)")).toBe('<p><a href="mailto:a@b.com">x</a></p>');
+    expect(markdownToHtml("[x](/rel)")).toBe('<p><a href="/rel">x</a></p>');
+  });
+
+  it("drops the href for dangerous url schemes, keeping the text", () => {
+    expect(markdownToHtml("[x](javascript:alert1)")).toBe("<p>x</p>");
+    expect(markdownToHtml("[x](data:text/html;base64,abc)")).toBe("<p>x</p>");
+    expect(markdownToHtml("[x]( JavaScript:alert1)")).toBe("<p>x</p>");
+  });
 });
