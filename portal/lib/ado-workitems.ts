@@ -66,16 +66,28 @@ function escapeHtml(s: string): string {
     .replace(/>/g, "&gt;");
 }
 
+/**
+ * Only http/https/mailto may become a live href. Anything else (javascript:,
+ * data:, vbscript:, …) is a stored-XSS vector once ADO renders the field, so we
+ * drop the link and keep the visible text.
+ */
+function safeHref(url: string): string | null {
+  const trimmed = url.trim();
+  if (/^(https?:|mailto:)/i.test(trimmed)) return trimmed;
+  if (/^[/#?]/.test(trimmed) || !/^[a-z][a-z0-9+.-]*:/i.test(trimmed)) return trimmed;
+  return null;
+}
+
 /** Inline markdown → HTML on already-escaped text: code, bold, italic, links. */
 function inline(s: string): string {
   return escapeHtml(s)
     .replace(/`([^`]+)`/g, "<code>$1</code>")
     .replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>")
     .replace(/\*([^*]+)\*/g, "<i>$1</i>")
-    .replace(
-      /\[([^\]]+)\]\(([^)]+)\)/g,
-      (_m, txt: string, url: string) => `<a href="${url.replace(/"/g, "&quot;")}">${txt}</a>`,
-    );
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_m, txt: string, url: string) => {
+      const href = safeHref(url);
+      return href ? `<a href="${href.replace(/"/g, "&quot;")}">${txt}</a>` : txt;
+    });
 }
 
 /**
