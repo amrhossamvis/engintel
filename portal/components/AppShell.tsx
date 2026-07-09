@@ -22,7 +22,7 @@ export function AppShell() {
   const displayName = adoIdentity ?? "";
 
   return (
-    <header className="sticky top-0 z-40 bg-[var(--bg)]/70 backdrop-blur-xl">
+    <header className="relative z-40 bg-[var(--bg)]/70 backdrop-blur-xl">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 h-16 flex items-center gap-2 sm:gap-3">
         <Link href="/" className="flex items-center gap-3 shrink-0">
           <div
