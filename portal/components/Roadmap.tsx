@@ -6,8 +6,6 @@ import { motion } from "motion/react";
 import {
   BookOpen,
   Check,
-  Circle,
-  CircleDot,
   ExternalLink,
   GraduationCap,
   Map as MapIcon,
@@ -20,28 +18,23 @@ import {
   ROADMAP_TRACKS,
   type ResourceType,
   type RoadmapResource,
+  type RoadmapStage,
   type RoadmapTrack,
 } from "@/lib/roadmap-data";
 
-type Status = "none" | "in_progress" | "done";
-const KEY = "roadmap:progress";
+const KEY = "roadmap:done";
+const SHARED_STAGES = new Set(["access", "responsible-ai"]);
 
-function loadProgress(): Record<string, Status> {
+function loadDone(): Record<string, boolean> {
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) return {};
     const parsed = JSON.parse(raw);
-    return parsed && typeof parsed === "object" ? (parsed as Record<string, Status>) : {};
+    return parsed && typeof parsed === "object" ? (parsed as Record<string, boolean>) : {};
   } catch {
     return {};
   }
 }
-
-const NEXT_STATUS: Record<Status, Status> = {
-  none: "in_progress",
-  in_progress: "done",
-  done: "none",
-};
 
 const RES_META: Record<ResourceType, { label: string; tint: string }> = {
   internal: { label: "In hub", tint: "var(--red)" },
@@ -52,6 +45,12 @@ const RES_META: Record<ResourceType, { label: string; tint: string }> = {
   cert: { label: "Cert", tint: "var(--soon)" },
   blog: { label: "Blog", tint: "var(--muted)" },
 };
+
+/** "Stage 1 · Copilot Fundamentals" → "Copilot Fundamentals" (drops any parenthetical). */
+function shortStage(title: string): string {
+  const afterDot = title.includes("·") ? title.split("·").pop()!.trim() : title;
+  return afterDot.replace(/\s*\(.*\)\s*$/, "").trim();
+}
 
 function ResourceLink({ r }: { r: RoadmapResource }) {
   const meta = RES_META[r.type];
@@ -88,25 +87,21 @@ function ResourceLink({ r }: { r: RoadmapResource }) {
   );
 }
 
-function StatusPill({ status, onClick }: { status: Status; onClick: () => void }) {
-  const map = {
-    none: { Icon: Circle, tint: "var(--faint)", label: "Not started" },
-    in_progress: { Icon: CircleDot, tint: "var(--soon)", label: "In progress" },
-    done: { Icon: Check, tint: "var(--live)", label: "Done" },
-  }[status];
+function DoneCheck({ done, onClick }: { done: boolean; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      title={`${map.label} — click to change`}
-      aria-label={`Mark node: ${map.label}`}
-      className="inline-flex h-7 w-7 items-center justify-center rounded-full border transition-colors shrink-0"
+      role="checkbox"
+      aria-checked={done}
+      title={done ? "Done — click to unmark" : "Mark as done"}
+      className="inline-flex h-6 w-6 items-center justify-center rounded-md border transition-colors shrink-0"
       style={{
-        color: map.tint,
-        borderColor: status === "none" ? "var(--hairline)" : map.tint,
-        background: status === "done" ? "color-mix(in srgb, transparent 88%, var(--live))" : "transparent",
+        color: done ? "#fff" : "var(--faint)",
+        borderColor: done ? "var(--live)" : "var(--hairline-strong)",
+        background: done ? "var(--live)" : "transparent",
       }}
     >
-      <map.Icon className="h-3.5 w-3.5" strokeWidth={2.5} />
+      {done && <Check className="h-3.5 w-3.5" strokeWidth={3} />}
     </button>
   );
 }
@@ -115,22 +110,22 @@ const EASE = [0.16, 1, 0.3, 1] as const;
 
 export function Roadmap() {
   const [trackId, setTrackId] = useState<string>(ROADMAP_TRACKS[0].id);
-  const [progress, setProgress] = useState<Record<string, Status>>({});
+  const [done, setDone] = useState<Record<string, boolean>>({});
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    setProgress(loadProgress());
+    setDone(loadDone());
     setHydrated(true);
   }, []);
 
   useEffect(() => {
     if (!hydrated) return;
     try {
-      localStorage.setItem(KEY, JSON.stringify(progress));
+      localStorage.setItem(KEY, JSON.stringify(done));
     } catch {
       // storage blocked — progress just won't persist
     }
-  }, [progress, hydrated]);
+  }, [done, hydrated]);
 
   const track: RoadmapTrack = useMemo(
     () => ROADMAP_TRACKS.find((t) => t.id === trackId) ?? ROADMAP_TRACKS[0],
@@ -141,15 +136,15 @@ export function Roadmap() {
     () => track.stages.flatMap((s) => s.nodes.map((n) => n.id)),
     [track],
   );
-  const doneCount = allNodeIds.filter((id) => progress[id] === "done").length;
+  const doneCount = allNodeIds.filter((id) => done[id]).length;
   const pct = allNodeIds.length ? Math.round((doneCount / allNodeIds.length) * 100) : 0;
 
-  function cycle(id: string) {
-    setProgress((p) => ({ ...p, [id]: NEXT_STATUS[p[id] ?? "none"] }));
+  function toggle(id: string) {
+    setDone((d) => ({ ...d, [id]: !d[id] }));
   }
   function resetTrack() {
-    setProgress((p) => {
-      const next = { ...p };
+    setDone((d) => {
+      const next = { ...d };
       allNodeIds.forEach((id) => delete next[id]);
       return next;
     });
@@ -174,14 +169,14 @@ export function Roadmap() {
             AI-native engineer.
           </h1>
           <p className="text-[var(--ink-dim)] text-lg mt-5 max-w-xl leading-relaxed">
-            A guided path — from getting your Copilot licence to building AI into products.
-            Pick your track, tick off nodes, keep your own pace.
+            Two paths. <span className="text-ink">Use</span> Copilot like a pro, or <span className="text-ink">build</span> AI
+            into products. Pick a track, tick off nodes, keep your own pace.
           </p>
         </motion.div>
       </section>
 
       {/* track toggle + progress */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-5">
         <div className="inline-flex rounded-xl border border-[var(--hairline)] p-1 bg-[var(--canvas-2)]">
           {ROADMAP_TRACKS.map((t) => {
             const active = t.id === trackId;
@@ -230,65 +225,48 @@ export function Roadmap() {
         </div>
       </div>
 
-      {/* audience line */}
-      <p className="text-sm text-muted mb-8 flex flex-wrap items-center gap-x-2 gap-y-1">
-        <span className="text-ink-dim">{track.audience}</span>
-        <span className="text-faint">·</span>
-        <span className="font-mono text-xs">{track.effort}</span>
-      </p>
+      {/* what this track is + stage overview — changes per tab so the difference is obvious */}
+      <motion.div
+        key={track.id}
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: EASE }}
+        className="rounded-2xl border border-[var(--hairline)] bg-[var(--canvas-2)] p-5 mb-10"
+      >
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 mb-3">
+          <span className="font-display font-semibold text-ink">{track.title}</span>
+          <span className="text-sm text-ink-dim">{track.audience}</span>
+          <span className="font-mono text-xs text-faint">· {track.effort}</span>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {track.stages.map((s, i) => {
+            const shared = SHARED_STAGES.has(s.id);
+            return (
+              <span key={s.id} className="inline-flex items-center gap-2">
+                {i > 0 && <span className="text-faint">→</span>}
+                <span
+                  className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs"
+                  style={{
+                    borderColor: shared ? "var(--hairline)" : "color-mix(in srgb, transparent 70%, var(--red))",
+                    color: shared ? "var(--muted)" : "var(--ink-dim)",
+                    background: shared ? "transparent" : "color-mix(in srgb, transparent 92%, var(--red))",
+                  }}
+                >
+                  {shortStage(s.title)}
+                  {shared && <span className="text-[0.55rem] font-mono uppercase tracking-wider text-faint">shared</span>}
+                </span>
+              </span>
+            );
+          })}
+        </div>
+      </motion.div>
 
       {/* stages */}
       <div className="relative">
-        {/* spine */}
         <div className="absolute left-[15px] top-2 bottom-2 w-px bg-[var(--hairline)] hidden sm:block" />
         <div className="space-y-12">
           {track.stages.map((stage, si) => (
-            <motion.section
-              key={`${track.id}-${stage.id}`}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, ease: EASE, delay: Math.min(si * 0.05, 0.3) }}
-            >
-              <div className="flex items-center gap-3 mb-5">
-                <span className="relative z-10 inline-flex h-8 w-8 items-center justify-center rounded-full border border-[var(--hairline-strong)] bg-[var(--panel)] font-mono text-xs text-red shrink-0">
-                  {si}
-                </span>
-                <h2 className="font-display font-bold text-lg tracking-tight">{stage.title}</h2>
-              </div>
-
-              <div className="sm:pl-12 grid gap-4 md:grid-cols-2">
-                {stage.nodes.map((node) => {
-                  const status = progress[node.id] ?? "none";
-                  const done = status === "done";
-                  return (
-                    <div
-                      key={node.id}
-                      className="card rounded-2xl p-5"
-                      data-live="false"
-                      style={{ opacity: done ? 0.72 : 1 }}
-                    >
-                      <div className="flex items-start gap-3">
-                        <StatusPill status={status} onClick={() => cycle(node.id)} />
-                        <div className="min-w-0 flex-1">
-                          <h3
-                            className="font-display font-semibold text-[0.95rem] leading-snug"
-                            style={{ textDecoration: done ? "line-through" : "none" }}
-                          >
-                            {node.title}
-                          </h3>
-                          <p className="text-sm text-muted mt-1.5 leading-relaxed">{node.why}</p>
-                          <div className="mt-3 space-y-1.5">
-                            {node.resources.map((r) => (
-                              <ResourceLink key={r.url + r.label} r={r} />
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </motion.section>
+            <StageBlock key={`${track.id}-${stage.id}`} stage={stage} index={si} done={done} onToggle={toggle} />
           ))}
         </div>
       </div>
@@ -303,5 +281,72 @@ export function Roadmap() {
         <span>Progress saved on this device.</span>
       </div>
     </main>
+  );
+}
+
+function StageBlock({
+  stage,
+  index,
+  done,
+  onToggle,
+}: {
+  stage: RoadmapStage;
+  index: number;
+  done: Record<string, boolean>;
+  onToggle: (id: string) => void;
+}) {
+  const stageDone = stage.nodes.every((n) => done[n.id]);
+  return (
+    <motion.section
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: EASE, delay: Math.min(index * 0.05, 0.3) }}
+    >
+      <div className="flex items-center gap-3 mb-5">
+        <span
+          className="relative z-10 inline-flex h-8 w-8 items-center justify-center rounded-full border font-mono text-xs shrink-0 transition-colors"
+          style={{
+            borderColor: stageDone ? "var(--live)" : "var(--hairline-strong)",
+            background: stageDone ? "var(--live)" : "var(--panel)",
+            color: stageDone ? "#fff" : "var(--red)",
+          }}
+        >
+          {stageDone ? <Check className="h-4 w-4" strokeWidth={3} /> : index}
+        </span>
+        <h2 className="font-display font-bold text-lg tracking-tight">{stage.title}</h2>
+      </div>
+
+      <div className="sm:pl-12 grid gap-4 md:grid-cols-2">
+        {stage.nodes.map((node) => {
+          const isDone = !!done[node.id];
+          return (
+            <div
+              key={node.id}
+              className="card rounded-2xl p-5"
+              data-live="false"
+              style={{ opacity: isDone ? 0.72 : 1 }}
+            >
+              <div className="flex items-start gap-3">
+                <DoneCheck done={isDone} onClick={() => onToggle(node.id)} />
+                <div className="min-w-0 flex-1">
+                  <h3
+                    className="font-display font-semibold text-[0.95rem] leading-snug"
+                    style={{ textDecoration: isDone ? "line-through" : "none" }}
+                  >
+                    {node.title}
+                  </h3>
+                  <p className="text-sm text-muted mt-1.5 leading-relaxed">{node.why}</p>
+                  <div className="mt-3 space-y-1.5">
+                    {node.resources.map((r) => (
+                      <ResourceLink key={r.url + r.label} r={r} />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </motion.section>
   );
 }
