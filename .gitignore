@@ -38,3 +38,4 @@ next-env.d.ts
 
 # Runtime data directory — story-persistence, ideas, feedback (never commit, preserved by deploy script)
 portal/data/
+.idea/
