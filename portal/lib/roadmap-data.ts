@@ -205,8 +205,9 @@ const TRACK_POWER_USER: RoadmapTrack = {
         {
           id: "tests-debug",
           title: "Tests, debugging & refactoring",
-          why: "Use Copilot to write tests, explain failures and refactor safely.",
+          why: "Use Copilot to write tests, explain failures and refactor safely. The Chat Cookbook has copy-paste recipes for each.",
           resources: [
+            { label: "Copilot Chat Cookbook", url: "https://docs.github.com/en/copilot/tutorials/copilot-chat-cookbook", type: "docs" },
             { label: "MS Learn: Copilot Bootcamp", url: "https://learn.microsoft.com/en-us/shows/github-copilot-bootcamp/", type: "video", free: true },
           ],
         },
@@ -216,6 +217,14 @@ const TRACK_POWER_USER: RoadmapTrack = {
           why: "Copilot can review PRs and summarise changes (GitHub Cloud) — faster, more consistent reviews.",
           resources: [
             { label: "Copilot code review", url: "https://docs.github.com/en/copilot/using-github-copilot/code-review", type: "docs" },
+          ],
+        },
+        {
+          id: "copilot-cli",
+          title: "Copilot in the terminal (CLI)",
+          why: "Drive Copilot from the command line — explain commands, scaffold, run agentic tasks without leaving the shell.",
+          resources: [
+            { label: "About GitHub Copilot CLI", url: "https://docs.github.com/en/copilot/concepts/agents/about-copilot-cli", type: "docs" },
           ],
         },
       ],
@@ -229,7 +238,7 @@ const TRACK_POWER_USER: RoadmapTrack = {
           title: "Agent mode",
           why: "Let Copilot plan and make multi-file changes end-to-end, with you approving each step.",
           resources: [
-            { label: "Copilot agent mode", url: "https://docs.github.com/en/copilot/using-github-copilot/using-copilot-agent-mode", type: "docs" },
+            { label: "Copilot coding agent", url: "https://docs.github.com/en/copilot/concepts/agents/coding-agent/about-coding-agent", type: "docs" },
           ],
         },
         {
@@ -423,7 +432,7 @@ const TRACK_AI_ENGINEER: RoadmapTrack = {
     },
     {
       id: "eval-ops",
-      title: "Stage 7 · Eval, observability & deploy",
+      title: "Stage 7 · Evaluate & harden",
       nodes: [
         {
           id: "eval",
