@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, Boxes, FlaskConical, Home, Lightbulb, Moon, Settings, Sun } from "lucide-react";
+import { Activity, Boxes, FlaskConical, Home, Lightbulb, Map, Moon, Settings, Sun } from "lucide-react";
 import { useApp } from "./AppProvider";
 import { JobsTray } from "./JobsTray";
 import { initialsOf } from "./session";
@@ -10,6 +10,7 @@ import { initialsOf } from "./session";
 const NAV = [
   { href: "/", icon: Home, label: "Home" },
   { href: "/playground", icon: FlaskConical, label: "Personas" },
+  { href: "/roadmap", icon: Map, label: "Roadmap" },
   { href: "/pulse", icon: Activity, label: "Pulse" },
   { href: "/ideas", icon: Lightbulb, label: "Ideas" },
   { href: "/skills", icon: Boxes, label: "Skills" },
