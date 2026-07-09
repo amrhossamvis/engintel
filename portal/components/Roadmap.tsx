@@ -21,9 +21,18 @@ import {
   type RoadmapStage,
   type RoadmapTrack,
 } from "@/lib/roadmap-data";
+import { useApp } from "./AppProvider";
 
 const KEY = "roadmap:done";
 const SHARED_STAGES = new Set(["access", "responsible-ai"]);
+
+function postProgress(userKey: string, nodeId: string, trackId: string | null, done: boolean) {
+  return fetch("/api/roadmap/progress", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userKey, nodeId, trackId, done }),
+  }).catch(() => {});
+}
 
 function loadDone(): Record<string, boolean> {
   try {
@@ -109,6 +118,9 @@ function DoneCheck({ done, onClick }: { done: boolean; onClick: () => void }) {
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 export function Roadmap() {
+  const { adoIdentity, login } = useApp();
+  const userKey = adoIdentity || login || null;
+
   const [trackId, setTrackId] = useState<string>(ROADMAP_TRACKS[0].id);
   const [done, setDone] = useState<Record<string, boolean>>({});
   const [hydrated, setHydrated] = useState(false);
@@ -127,6 +139,32 @@ export function Roadmap() {
     }
   }, [done, hydrated]);
 
+  // When authenticated, the DB is the cross-device source of truth: pull the
+  // user's saved nodes and union them in, then back-fill any local-only ticks.
+  useEffect(() => {
+    if (!userKey) return;
+    let cancelled = false;
+    fetch(`/api/roadmap/progress?user=${encodeURIComponent(userKey)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { done?: string[] } | null) => {
+        if (cancelled || !data?.done) return;
+        const dbDone = new Set(data.done);
+        setDone((prev) => {
+          const merged = { ...prev };
+          dbDone.forEach((id) => (merged[id] = true));
+          return merged;
+        });
+        const local = loadDone();
+        Object.keys(local)
+          .filter((id) => local[id] && !dbDone.has(id))
+          .forEach((id) => void postProgress(userKey, id, null, true));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [userKey]);
+
   const track: RoadmapTrack = useMemo(
     () => ROADMAP_TRACKS.find((t) => t.id === trackId) ?? ROADMAP_TRACKS[0],
     [trackId],
@@ -140,7 +178,9 @@ export function Roadmap() {
   const pct = allNodeIds.length ? Math.round((doneCount / allNodeIds.length) * 100) : 0;
 
   function toggle(id: string) {
-    setDone((d) => ({ ...d, [id]: !d[id] }));
+    const next = !done[id];
+    setDone((d) => ({ ...d, [id]: next }));
+    if (userKey) void postProgress(userKey, id, trackId, next);
   }
   function resetTrack() {
     setDone((d) => {
@@ -148,6 +188,7 @@ export function Roadmap() {
       allNodeIds.forEach((id) => delete next[id]);
       return next;
     });
+    if (userKey) allNodeIds.forEach((id) => void postProgress(userKey, id, trackId, false));
   }
 
   return (
