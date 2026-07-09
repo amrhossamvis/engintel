@@ -377,6 +377,79 @@ Document:
     variables: [],
     prompt: "",
   },
+
+  // ── TMF Compliance ────────────────────────────────────────────────────
+  {
+    id: "tmf-reviewer",
+    name: "TMF Open API Reviewer",
+    category: "API Compliance",
+    icon: "ShieldCheck",
+    description: "Validate a PR against TM Forum Open API standards and get a structured compliance report.",
+    persona: "a senior API architect specializing in TM Forum (TMF) Open API standards with deep expertise in TMF620, TMF622, TMF629, TMF633, TMF641, TMF645, TMF688 and the TMF ODA component model",
+    variables: [
+      {
+        key: "prDiff",
+        label: "PR diff or API code",
+        type: "textarea",
+        placeholder: "Paste the pull request diff, OpenAPI spec, or API controller/route code here…",
+      },
+      {
+        key: "tmfSpec",
+        label: "TMF Spec (if known)",
+        type: "text",
+        placeholder: "e.g., TMF620 Product Catalog, TMF622 Product Ordering",
+      },
+    ],
+    prompt: `Review the attached pull request / API code and validate it against TM Forum (TMF) Open API compliance requirements. Provide a structured report covering ALL of the following areas:
+
+## 1. API Specification Compliance
+- Does the API conform to the relevant TMF Open API spec? Identify which TMF spec number applies.
+- Are resource names, field names, and data types aligned with the TMF standard schema?
+- Is the API version correctly reflected in the URI (e.g., /tmf-api/{resourceName}/v{version})?
+
+## 2. Resource Model & Schema
+- Are mandatory fields from the TMF standard resource model present (id, href, @type, @baseType, @schemaLocation)?
+- Are extensions to the base schema properly namespaced and documented, not breaking core compliance?
+- Do enumerations and reference data match TMF-defined values where applicable?
+
+## 3. HTTP Methods & Status Codes
+- Do CRUD operations map correctly to REST verbs (GET, POST, PATCH, DELETE) as per TMF guidelines?
+- Are correct HTTP status codes returned (200, 201, 202, 204, 400, 404, 409, 422, etc.)?
+- Is partial update behavior (PATCH) implemented per TMF JSON Merge Patch conventions?
+
+## 4. Filtering, Sorting & Pagination
+- Are query parameters like fields, offset, limit, and attribute filtering implemented per TMF API design guidelines?
+- Is pagination handled consistently with TMF's recommended headers/response structure?
+
+## 5. Error Handling
+- Do error responses follow the TMF standard error structure (code, reason, message, status, referenceError)?
+- Are error codes consistent across endpoints?
+
+## 6. Event Notification (if applicable)
+- If this PR touches event-driven behavior, does it comply with TMF688 Event Management API patterns (event structure, eventType, event payload wrapping)?
+
+## 7. Security & Authentication
+- Are authentication/authorization mechanisms aligned with TMF/ODA security guidelines (OAuth2, scopes)?
+- Is sensitive data properly excluded from logs/responses?
+
+## 8. Documentation & Versioning
+- Is the OpenAPI/Swagger definition updated and consistent with the code changes?
+- Are breaking changes flagged, with proper versioning applied?
+
+## Output Format
+For each section, mark: ✅ Compliant / ⚠️ Partial / ❌ Non-compliant, with a one-line justification and a suggested fix if non-compliant.
+
+End with:
+- **Overall Compliance Verdict**: (Compliant / Partially Compliant / Non-compliant)
+- **Blocking Issues** (prioritized list of items that must be fixed before merge)
+
+{{tmfSpec}}
+
+**PR / API Code:**
+\`\`\`
+{{prDiff}}
+\`\`\``,
+  },
 ];
 
 export const PG_CATEGORIES: string[] = Array.from(
