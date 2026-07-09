@@ -212,7 +212,8 @@ export type CreateWorkItemRecordInput = {
   title: string;
   descriptionHtml: string;
   acceptanceCriteriaHtml?: string;
-  areaPath: string;
+  /** Omit to let ADO apply the project default area. */
+  areaPath?: string;
   iterationPath?: string;
   tags?: string;
   extraFields?: Record<string, string>;
@@ -228,8 +229,8 @@ export async function createWorkItemRecord(input: CreateWorkItemRecordInput, aut
   const ops: JsonPatchOp[] = [
     { op: "add", path: "/fields/System.Title", value: input.title },
     { op: "add", path: "/fields/System.Description", value: input.descriptionHtml },
-    { op: "add", path: "/fields/System.AreaPath", value: input.areaPath },
   ];
+  if (input.areaPath) ops.push({ op: "add", path: "/fields/System.AreaPath", value: input.areaPath });
   if (input.acceptanceCriteriaHtml) {
     ops.push({ op: "add", path: "/fields/Microsoft.VSTS.Common.AcceptanceCriteria", value: input.acceptanceCriteriaHtml });
   }
@@ -254,6 +255,28 @@ export async function createWorkItemRecord(input: CreateWorkItemRecordInput, aut
     title: String(fields["System.Title"] ?? input.title),
     parentId: input.parentId ?? 0,
   };
+}
+
+/** Link two work items with a non-hierarchy relation (e.g. "System.LinkTypes.Related"). */
+export async function linkWorkItems(
+  sourceId: number,
+  targetId: number,
+  relType: string,
+  auth: string,
+  comment?: string,
+): Promise<void> {
+  const ops: JsonPatchOp[] = [
+    {
+      op: "add",
+      path: "/relations/-",
+      value: {
+        rel: relType,
+        url: `${witBase()}/workItems/${targetId}`,
+        ...(comment ? { attributes: { comment } } : {}),
+      },
+    },
+  ];
+  await adoPatch(`${witBase()}/workitems/${sourceId}?api-version=${API}`, auth, ops);
 }
 
 export async function patchWorkItemFields(id: number, fields: Record<string, string>, auth: string): Promise<void> {

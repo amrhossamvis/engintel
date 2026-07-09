@@ -59,11 +59,6 @@ function buildParams(
         },
       };
     }
-    case "testcase-ado": {
-      const workItemId = parseWorkItemId(String(inputs.workItemUrl ?? ""));
-      if (!workItemId) return { error: "bad_work_item_url" };
-      return { params: { workItemId } };
-    }
     case "workitem-wiki-doc": {
       const workItem = parseWorkItemId(String(inputs.workItemRef ?? ""));
       if (!workItem) return { error: "bad_work_item_ref" };

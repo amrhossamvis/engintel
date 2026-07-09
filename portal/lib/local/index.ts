@@ -12,6 +12,7 @@
 
 import { randomUUID } from "node:crypto";
 import { runBusinessIntent } from "./business-intent";
+import { runTestCaseGenerator } from "./testcase-ado";
 
 export type LocalJobStatus = "running" | "done" | "failed";
 
@@ -86,4 +87,5 @@ export function getLocalJob(jobId: string): LocalJobState | undefined {
 
 export const LOCAL_HANDLERS: Record<string, LocalHandler> = {
   "business-intent": runBusinessIntent,
+  "testcase-ado": runTestCaseGenerator,
 };
