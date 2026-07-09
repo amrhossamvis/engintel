@@ -283,6 +283,35 @@ export async function linkWorkItems(
   await adoPatch(`${witBase()}/workitems/${sourceId}?api-version=${API}`, auth, ops);
 }
 
+/**
+ * Re-parent a work item under a new hierarchy parent, optionally removing its
+ * existing parent relation(s) first and syncing area/iteration/extra fields —
+ * used by the User Story roll-up flow to move existing stories under a newly
+ * created Feature.
+ */
+export async function relinkWorkItemParent(
+  childId: number,
+  newParentId: number,
+  auth: string,
+  opts: { removeExistingParent?: boolean; areaPath?: string; iterationPath?: string; extraFields?: Record<string, string> } = {},
+): Promise<void> {
+  const ops: JsonPatchOp[] = [];
+  if (opts.removeExistingParent) {
+    const child = await adoGet(`${witBase()}/workitems/${childId}?$expand=relations&api-version=${API}`, auth);
+    const relations: WorkItemRelation[] = child?.relations ?? [];
+    for (let i = relations.length - 1; i >= 0; i--) {
+      if (relations[i].rel === HIERARCHY_REVERSE) ops.push({ op: "remove", path: `/relations/${i}` });
+    }
+  }
+  ops.push({ op: "add", path: "/relations/-", value: { rel: HIERARCHY_REVERSE, url: `${witBase()}/workItems/${newParentId}` } });
+  if (opts.areaPath) ops.push({ op: "add", path: "/fields/System.AreaPath", value: opts.areaPath });
+  if (opts.iterationPath) ops.push({ op: "add", path: "/fields/System.IterationPath", value: opts.iterationPath });
+  for (const [field, value] of Object.entries(opts.extraFields ?? {})) {
+    if (value) ops.push({ op: "add", path: `/fields/${field}`, value });
+  }
+  await adoPatch(`${witBase()}/workitems/${childId}?api-version=${API}`, auth, ops);
+}
+
 export async function patchWorkItemFields(id: number, fields: Record<string, string>, auth: string): Promise<void> {
   const ops: JsonPatchOp[] = Object.entries(fields)
     .filter(([, v]) => v !== undefined && v !== null && String(v).trim() !== "")

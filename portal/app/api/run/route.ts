@@ -22,25 +22,6 @@ function buildParams(
   inputs: Record<string, string | boolean>,
 ): { params: Record<string, string | boolean> } | { error: string } {
   switch (capabilityId) {
-    case "feature-breakdown": {
-      const workItemUrl = String(inputs.workItemUrl ?? "").trim();
-      if (!workItemUrl) return { error: "missing_work_item" };
-      const areaPath = String(inputs.areaPath ?? "").trim();
-      const additionalInstructions = String(inputs.additionalInstructions ?? "").trim();
-      return {
-        params: {
-          workItemUrl,
-          teamName: "generic",
-          isTechBreakdown: Boolean(inputs.isTechBreakdown),
-          createParentComment: Boolean(inputs.createParentComment),
-          dryRun: Boolean(inputs.dryRun),
-          // ADO rejects an empty string for an optional string templateParameter
-          // ("not a valid String") — omit so the pipeline's `default: ''` applies.
-          ...(areaPath ? { areaPath } : {}),
-          ...(additionalInstructions ? { poRecommendations: additionalInstructions } : {}),
-        },
-      };
-    }
     case "workitem-wiki-doc": {
       const workItem = parseWorkItemId(String(inputs.workItemRef ?? ""));
       if (!workItem) return { error: "bad_work_item_ref" };
