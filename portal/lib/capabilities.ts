@@ -268,13 +268,11 @@ export const CAPABILITIES: Capability[] = [
     icon: "Sparkles",
     tokenEnv: "COPILOT_GITHUB_TOKEN",
     estCredits: 350,
-    estDuration: "4–8 min",
-    pipeline: "cicd/pipelines/business-intent.yml",
-    script: "ado_copilot_business_intent_item_creation.py",
+    estDuration: "1–3 min",
     guild: "product",
     provider: ["ado"],
-    execution: "pipeline",
-    source: "native",
+    execution: "local",
+    source: "hub-a",
     credGate: "copilot",
     fields: [
       {

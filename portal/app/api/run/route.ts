@@ -59,31 +59,6 @@ function buildParams(
         },
       };
     }
-    case "business-intent": {
-      const businessIntent = String(inputs.businessIntent ?? "").trim();
-      if (!businessIntent) return { error: "missing_business_intent" };
-      const areaPath = String(inputs.areaPath ?? "").trim();
-      const iterationPath = String(inputs.iterationPath ?? "").trim();
-      if (!areaPath) return { error: "missing_area_path" };
-      if (!iterationPath) return { error: "missing_iteration_path" };
-      return {
-        params: {
-          businessIntent,
-          areaPath,
-          iterationPath,
-          teamName: String(inputs.teamName ?? "generic").trim() || "generic",
-          addGeneratedHierarchyComment: Boolean(inputs.addGeneratedHierarchyComment),
-          dryRun: Boolean(inputs.dryRun),
-        },
-      };
-    }
-    case "sprint-health": {
-      const backlogUrl = String(inputs.backlogUrl ?? "").trim();
-      if (!backlogUrl) return { error: "missing_backlog" };
-      return {
-        params: { backlogUrl, iterationNumber: String(inputs.iteration ?? "") },
-      };
-    }
     case "testcase-ado": {
       const workItemId = parseWorkItemId(String(inputs.workItemUrl ?? ""));
       if (!workItemId) return { error: "bad_work_item_url" };

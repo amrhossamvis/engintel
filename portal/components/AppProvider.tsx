@@ -352,11 +352,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }));
         if (data.status === "done" || data.status === "failed") {
           clearInterval(tick);
+          const result = data.result ?? {};
           patch(id, (j) => ({
             ...j,
             status: data.status,
-            webUrl: (data.result?.webUrl as string | undefined) ?? j.webUrl,
-            output: data.result ?? j.output,
+            webUrl: (result.webUrl as string | undefined) ?? j.webUrl,
+            output: result,
+            // Promote the well-known result fields the pipeline path already
+            // surfaces (BreakdownTree, wiki links, …) so local-execution
+            // results render with the same UI for free.
+            createdCount: typeof result.createdCount === "number" ? result.createdCount : j.createdCount,
+            linkedCount: typeof result.linkedCount === "number" ? result.linkedCount : j.linkedCount,
+            dryRun: typeof result.dryRun === "boolean" ? result.dryRun : j.dryRun,
+            items: Array.isArray(result.items) ? result.items : j.items,
+            wikiPages: Array.isArray(result.wikiPages) ? result.wikiPages : j.wikiPages,
+            wikiDryRun: typeof result.wikiDryRun === "boolean" ? result.wikiDryRun : j.wikiDryRun,
             log: data.error ? [...j.log, `[local] error: ${data.error}`] : j.log,
           }));
         }

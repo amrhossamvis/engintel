@@ -11,6 +11,7 @@
  */
 
 import { randomUUID } from "node:crypto";
+import { runBusinessIntent } from "./business-intent";
 
 export type LocalJobStatus = "running" | "done" | "failed";
 
@@ -83,4 +84,6 @@ export function getLocalJob(jobId: string): LocalJobState | undefined {
 // Handler registry — one entry per ported capability.
 // ---------------------------------------------------------------------------
 
-export const LOCAL_HANDLERS: Record<string, LocalHandler> = {};
+export const LOCAL_HANDLERS: Record<string, LocalHandler> = {
+  "business-intent": runBusinessIntent,
+};
