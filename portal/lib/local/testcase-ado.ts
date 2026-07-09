@@ -6,27 +6,13 @@
  */
 
 import { runCopilotPrompt } from "@/lib/copilot";
-import {
-  createWorkItemRecord,
-  getWorkItemRecord,
-  linkWorkItems,
-} from "@/lib/ado-workitem-client";
+import { getWorkItemRecord } from "@/lib/ado-workitem-client";
 import { adoTarget } from "@/lib/ado";
 import type { LocalCtx, LocalJobResult } from "@/lib/local";
 import { extractJsonObject, loadCopilotJson } from "@/lib/local/breakdown-shared";
+import { createTestCases, parseTestCasesFromJson } from "@/lib/local/testcase-shared";
 
 const MAX_TEST_CASES = 20;
-
-type TestCase = {
-  testId: string;
-  title: string;
-  description: string;
-  preconditions: string;
-  steps: string[];
-  expectedResult: string;
-  severity: string;
-  type: string;
-};
 
 function buildPrompt(workItemId: number, type: string, title: string, description: string, acceptanceCriteria: string): string {
   return `You are a QA expert. Generate ONLY CRITICAL/P1 severity test cases for the following user story.
@@ -86,37 +72,6 @@ Output format:
 Generate ${MAX_TEST_CASES} CRITICAL test cases only. Be thorough and practical.`;
 }
 
-function xmlEscape(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-}
-
-function buildStepsXml(tc: TestCase): string {
-  const steps = tc.steps
-    .map((step, i) => {
-      const isLast = i === tc.steps.length - 1;
-      return (
-        `<step id="${i + 1}" type="ActionStep">` +
-        `<parameterizedString isformatted="true">&lt;DIV&gt;&lt;P&gt;${xmlEscape(step)}&lt;/P&gt;&lt;/DIV&gt;</parameterizedString>` +
-        `<parameterizedString isformatted="true">&lt;DIV&gt;&lt;P&gt;${isLast ? xmlEscape(tc.expectedResult) : ""}&lt;/P&gt;&lt;/DIV&gt;</parameterizedString>` +
-        `<description/></step>`
-      );
-    })
-    .join("");
-  return `<steps id="0" last="${tc.steps.length}">${steps}</steps>`;
-}
-
-function buildDescriptionHtml(tc: TestCase): string {
-  let html =
-    `<div><strong>Test Type:</strong> ${xmlEscape(tc.type.replace(/_/g, " "))}</div>` +
-    `<div><strong>Severity:</strong> ${xmlEscape(tc.severity)}</div>` +
-    `<div><strong>Test ID:</strong> ${xmlEscape(tc.testId)}</div>` +
-    `<br/><div><strong>Description:</strong></div><div>${xmlEscape(tc.description)}</div>`;
-  if (tc.preconditions) {
-    html += `<br/><div><strong>Preconditions:</strong></div><div>${xmlEscape(tc.preconditions)}</div>`;
-  }
-  return html;
-}
-
 export async function runTestCaseGenerator(
   inputs: Record<string, string | boolean>,
   ctx: LocalCtx,
@@ -142,53 +97,17 @@ export async function runTestCaseGenerator(
 
   const jsonStr = extractJsonObject(raw);
   if (!jsonStr) throw new Error("Copilot response could not be parsed into the expected JSON object.");
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- parsing untrusted model output
-  const parsed = loadCopilotJson(jsonStr) as any;
-  const allCases: TestCase[] = (parsed.testCases ?? []).map((tc: Record<string, unknown>) => ({
-    testId: String(tc.testId ?? ""),
-    title: String(tc.title ?? ""),
-    description: String(tc.description ?? ""),
-    preconditions: String(tc.preconditions ?? ""),
-    steps: Array.isArray(tc.steps) ? tc.steps.map(String) : [],
-    expectedResult: String(tc.expectedResult ?? ""),
-    severity: String(tc.severity ?? "medium").toLowerCase(),
-    type: String(tc.type ?? "positive"),
-  }));
-
+  const parsed = loadCopilotJson(jsonStr) as { testCases?: Record<string, unknown>[] };
+  const allCases = parseTestCasesFromJson(parsed);
   const critical = allCases.filter((tc) => tc.severity === "critical");
   emit(`[copilot] generated ${allCases.length} test case(s), ${critical.length} P1/CRITICAL after filtering`);
 
-  const items: { type: string; id: number; title: string; parent: number; url: string }[] = [];
-  const { org, project } = adoTarget();
-  const workItemUrl = `https://dev.azure.com/${org}/${project}/_workitems/edit/${workItem.id}`;
-
-  for (const tc of critical) {
-    const created = await createWorkItemRecord(
-      {
-        type: "Test Case",
-        title: `${tc.testId}: ${tc.title}`,
-        descriptionHtml: buildDescriptionHtml(tc),
-        areaPath: workItem.areaPath || undefined,
-        iterationPath: workItem.iterationPath || undefined,
-        extraFields: { "Microsoft.VSTS.TCM.Steps": buildStepsXml(tc) },
-      },
-      adoAuth,
-    );
-    await linkWorkItems(created.id, workItem.id, "System.LinkTypes.Related", adoAuth, "Test case generated for this work item");
-    emit(`[ado] created Test Case #${created.id}: ${created.title}`);
-    items.push({
-      type: "Test Case",
-      id: created.id,
-      title: created.title,
-      parent: workItem.id,
-      url: `https://dev.azure.com/${org}/${project}/_workitems/edit/${created.id}`,
-    });
-  }
-
+  const items = await createTestCases(critical, workItem.id, adoAuth, emit);
   emit(`[done] created ${items.length} test case(s)`);
 
+  const { org, project } = adoTarget();
   return {
-    webUrl: workItemUrl,
+    webUrl: `https://dev.azure.com/${org}/${project}/_workitems/edit/${workItem.id}`,
     createdCount: items.length,
     items,
   };
