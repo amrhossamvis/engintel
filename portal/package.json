@@ -20,6 +20,7 @@
     "recharts": "^3.9.2"
   },
   "devDependencies": {
+    "@huggingface/transformers": "3.7.1",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
