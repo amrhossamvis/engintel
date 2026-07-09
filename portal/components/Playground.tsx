@@ -14,7 +14,11 @@ import {
   FolderGit2,
   GripVertical,
   Loader2,
+  Maximize2,
   MessageSquarePlus,
+  Mic,
+  MicOff,
+  Minimize2,
   PanelLeftClose,
   PanelLeftOpen,
   Pencil,
@@ -43,6 +47,7 @@ import {
   type PgVarType,
 } from "@/lib/playground-templates";
 import { CapIcon, ICON_KEYS } from "./icons";
+import { useSpeechInput } from "@/lib/use-speech-input";
 import { Markdown } from "./Markdown";
 import { useApp } from "./AppProvider";
 import { AdoWorkItemModal } from "./AdoWorkItemModal";
@@ -142,6 +147,7 @@ export function Playground() {
   const [runState, setRunState] = useState<RunState>("idle");
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [fullscreen, setFullscreen] = useState(false);
   const [setupOpen, setSetupOpen] = useState(false);
   const [promptOpen, setPromptOpen] = useState(false);
   const [threads, setThreads] = useState<Thread[]>([]);
@@ -155,6 +161,20 @@ export function Playground() {
 
   const running = runState === "running";
   const chatting = messages.length > 0;
+
+  useEffect(() => {
+    if (!fullscreen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setFullscreen(false);
+    };
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [fullscreen]);
 
   // Fetch Spec Kit artifacts when the toggle is enabled.
   useEffect(() => {
@@ -481,6 +501,15 @@ export function Playground() {
   }
   const firstReady = composerDraft.trim().length > 0;
 
+  const speech = useSpeechInput({
+    onFinal: (text) => {
+      if (!text) return;
+      if (chatting) setFollowup(followup ? `${followup} ${text}` : text);
+      else setComposerDraft(composerDraft ? `${composerDraft} ${text}` : text);
+    },
+  });
+  const activeDraft = chatting ? followup : composerDraft;
+
   // Exact text sent to Copilot for the first turn — shown read-only so users
   // can see what a persona actually does under the hood.
   const sentPreview = buildConversationPrompt(template.persona, [
@@ -488,7 +517,7 @@ export function Playground() {
   ]);
 
   return (
-    <main className="relative z-10 mx-auto max-w-6xl px-6 pb-20">
+    <main className={`relative mx-auto max-w-6xl px-6 pb-20 ${fullscreen ? "z-50" : "z-10"}`}>
       {/* contextual badge */}
       <div className="flex items-center justify-end gap-4 pt-6 pb-1">
         <Link
@@ -578,7 +607,10 @@ export function Playground() {
       )}
 
       <div
-        className={`grid gap-5 ${sidebarOpen ? "lg:grid-cols-[19rem_minmax(0,1fr)]" : "lg:grid-cols-1"}`}
+        className={`grid gap-5 ${sidebarOpen ? "lg:grid-cols-[19rem_minmax(0,1fr)]" : "lg:grid-cols-1"} ${
+          fullscreen ? "fixed inset-0 z-50 p-4 overflow-hidden" : ""
+        }`}
+        style={fullscreen ? { background: "var(--canvas)" } : undefined}
       >
         {/* library */}
         <AnimatePresence initial={false} mode="popLayout">
@@ -589,7 +621,9 @@ export function Playground() {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -12 }}
               transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-              className="panel rounded-2xl p-4 h-fit lg:sticky lg:top-5"
+              className={`panel rounded-2xl p-4 ${
+                fullscreen ? "h-full min-h-0 overflow-y-auto" : "h-fit lg:sticky lg:top-5"
+              }`}
             >
           <div className="flex items-center justify-between px-1.5 mb-3">
             <p className="kicker">Personas</p>
@@ -791,7 +825,11 @@ export function Playground() {
             onCancel={() => setEditorInit(null)}
           />
         ) : (
-        <section className="card rounded-2xl flex flex-col overflow-hidden min-h-[46rem]">
+        <section
+          className={`card rounded-2xl flex flex-col overflow-hidden ${
+            fullscreen ? "h-full min-h-0" : "min-h-[46rem]"
+          }`}
+        >
           {/* header */}
           <div
             className="flex items-center justify-between px-5 py-4 border-b"
@@ -822,32 +860,42 @@ export function Playground() {
                 </h2>
               </div>
             </div>
-            {chatting ? (
+            <div className="flex items-center gap-1.5 shrink-0">
+              {chatting ? (
+                <button
+                  onClick={newChat}
+                  disabled={running}
+                  className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium border text-muted hover:text-ink transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  style={{ borderColor: "var(--hairline)" }}
+                >
+                  <MessageSquarePlus className="h-3.5 w-3.5" /> New chat
+                </button>
+              ) : (
+                <button
+                  onClick={resetPrompt}
+                  className="grid place-items-center h-9 w-9 rounded-lg hover:bg-white/5 text-muted hover:text-ink transition-colors shrink-0"
+                  aria-label="Reset prompt to template default"
+                  title="Reset prompt"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                </button>
+              )}
               <button
-                onClick={newChat}
-                disabled={running}
-                className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium border text-muted hover:text-ink transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                style={{ borderColor: "var(--hairline)" }}
-              >
-                <MessageSquarePlus className="h-3.5 w-3.5" /> New chat
-              </button>
-            ) : (
-              <button
-                onClick={resetPrompt}
+                onClick={() => setFullscreen((v) => !v)}
+                aria-label={fullscreen ? "Exit full screen" : "Expand to full screen"}
+                title={fullscreen ? "Exit full screen (Esc)" : "Expand to full screen"}
                 className="grid place-items-center h-9 w-9 rounded-lg hover:bg-white/5 text-muted hover:text-ink transition-colors shrink-0"
-                aria-label="Reset prompt to template default"
-                title="Reset prompt"
               >
-                <RotateCcw className="h-4 w-4" />
+                {fullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
               </button>
-            )}
+            </div>
           </div>
 
           {/* transcript — always visible */}
           <div
             ref={scrollRef}
             className="flex-1 overflow-auto p-5 space-y-4"
-            style={{ maxHeight: "54rem" }}
+            style={fullscreen ? undefined : { maxHeight: "54rem" }}
           >
             {chatting ? (
               messages.map((m, i) => {
@@ -1085,8 +1133,9 @@ export function Playground() {
           <div className="border-t p-4" style={{ borderColor: "var(--hairline)" }}>
             <div className="flex items-end gap-2.5">
               <textarea
-                value={chatting ? followup : composerDraft}
+                value={activeDraft}
                 onChange={(e) => (chatting ? setFollowup(e.target.value) : setComposerDraft(e.target.value))}
+                onFocus={speech.preload}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
@@ -1107,6 +1156,41 @@ export function Playground() {
                 spellCheck={false}
                 className="flex-1 rounded-xl bg-[var(--canvas)] border border-[var(--hairline)] px-3.5 py-2.5 text-sm placeholder:text-faint focus:border-red transition-colors resize-none disabled:opacity-50"
               />
+              {speech.supported && (
+                <button
+                  onClick={speech.toggle}
+                  onMouseEnter={speech.preload}
+                  disabled={!ready || running || speech.loading}
+                  title={
+                    speech.loading
+                      ? "Loading voice model…"
+                      : speech.listening
+                        ? "Stop dictation"
+                        : "Dictate (voice input)"
+                  }
+                  aria-label={speech.listening ? "Stop dictation" : "Start dictation"}
+                  aria-pressed={speech.listening}
+                  className={`relative inline-flex h-11 w-11 items-center justify-center rounded-xl transition-all shrink-0 disabled:cursor-not-allowed ${
+                    speech.listening
+                      ? "text-white shadow-sm"
+                      : "text-muted hover:text-ink border border-[var(--hairline)] hover:border-[var(--hairline-strong)] bg-[var(--canvas-2)] disabled:opacity-40"
+                  }`}
+                  style={
+                    speech.listening
+                      ? { background: "linear-gradient(180deg, var(--red-bright), var(--red))" }
+                      : undefined
+                  }
+                >
+                  {speech.listening && !speech.loading && (
+                    <span className="absolute inset-0 rounded-xl animate-ping bg-red/40" />
+                  )}
+                  {speech.loading ? (
+                    <Loader2 className="relative h-4 w-4 animate-spin text-muted" />
+                  ) : (
+                    <Mic className="relative h-4 w-4" />
+                  )}
+                </button>
+              )}
               {running ? (
                 <button
                   onClick={stop}
@@ -1135,6 +1219,26 @@ export function Playground() {
                 </button>
               )}
             </div>
+            {(speech.loading || speech.status) && (
+              <p className="mt-2 inline-flex items-center gap-1.5 text-[0.7rem] font-mono text-red">
+                <span className="relative flex h-2 w-2">
+                  {speech.status === "listening" && (
+                    <span className="absolute inline-flex h-full w-full rounded-full bg-red/60 animate-ping" />
+                  )}
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-red" />
+                </span>
+                {speech.loading
+                  ? "Loading voice model…"
+                  : speech.status === "transcribing"
+                    ? "Transcribing…"
+                    : "Listening… speak, then pause"}
+              </p>
+            )}
+            {speech.micDenied && (
+              <p className="mt-2 inline-flex items-center gap-1.5 text-[0.7rem] font-mono text-red">
+                <MicOff className="h-3 w-3" /> Microphone blocked — allow mic access in your browser to dictate.
+              </p>
+            )}
             <p className="mt-2 inline-flex items-center gap-1.5 text-[0.7rem] font-mono text-muted">
               <Terminal className="h-3 w-3" /> copilot · {template.persona}
               {!chatting && contextDir.trim() && (
