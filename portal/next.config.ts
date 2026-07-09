@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  basePath: "/v2",
   allowedDevOrigins: ["10.236.32.226"],
   serverExternalPackages: ["pg"],
   // motion isn't in Next's default optimizePackageImports list (lucide-react and

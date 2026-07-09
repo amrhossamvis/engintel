@@ -1,4 +1,4 @@
-name: Build & Deploy to EC2
+name: Build & Deploy Portal v2 to EC2
 
 on:
   push:
@@ -42,7 +42,7 @@ jobs:
         with:
           switches: -avz --delete
           path: portal/.next/
-          remote_path: ~/engintel/portal/.next/
+          remote_path: ~/portal-v2/portal/.next/
           remote_host: ${{ secrets.EC2_HOST }}
           remote_user: ${{ secrets.EC2_USER }}
           remote_key: ${{ secrets.EC2_SSH_KEY }}
@@ -57,30 +57,43 @@ jobs:
           script: |
             set -e
 
-            cd ~/engintel
+            APP_DIR=~/portal-v2
+            PORTAL_DIR=$APP_DIR/portal
+
+            # Ensure the repo directory exists
+            mkdir -p $APP_DIR
 
             echo "==> Preserving runtime data (story-persistence, ideas, feedback)"
-            mkdir -p /tmp/engintel-data-backup
-            [ -f portal/data/story-persistence.json ] && cp portal/data/story-persistence.json /tmp/engintel-data-backup/ || true
-            [ -f portal/data/ideas.json ]             && cp portal/data/ideas.json             /tmp/engintel-data-backup/ || true
-            [ -f portal/data/feedback.json ]          && cp portal/data/feedback.json          /tmp/engintel-data-backup/ || true
+            mkdir -p /tmp/portal-v2-data-backup
+            [ -f $PORTAL_DIR/data/story-persistence.json ] && cp $PORTAL_DIR/data/story-persistence.json /tmp/portal-v2-data-backup/ || true
+            [ -f $PORTAL_DIR/data/ideas.json ]             && cp $PORTAL_DIR/data/ideas.json             /tmp/portal-v2-data-backup/ || true
+            [ -f $PORTAL_DIR/data/feedback.json ]          && cp $PORTAL_DIR/data/feedback.json          /tmp/portal-v2-data-backup/ || true
 
             echo "==> Pulling latest source code"
-            git fetch origin main
-            git reset --hard origin/main
+            cd $APP_DIR
+            if [ ! -d .git ]; then
+              cd ~
+              rm -rf portal-v2
+              git clone --branch main https://github.vodafone.com/VFGroup-VOISReusable-Assets/ai-delivery-capabilities.git portal-v2
+              cd portal-v2
+            else
+              git fetch origin main
+              git reset --hard origin/main
+            fi
 
             echo "==> Restoring runtime data"
-            mkdir -p portal/data
-            [ -f /tmp/engintel-data-backup/story-persistence.json ] && cp /tmp/engintel-data-backup/story-persistence.json portal/data/ || true
-            [ -f /tmp/engintel-data-backup/ideas.json ]             && cp /tmp/engintel-data-backup/ideas.json             portal/data/ || true
-            [ -f /tmp/engintel-data-backup/feedback.json ]          && cp /tmp/engintel-data-backup/feedback.json          portal/data/ || true
+            mkdir -p $PORTAL_DIR/data
+            [ -f /tmp/portal-v2-data-backup/story-persistence.json ] && cp /tmp/portal-v2-data-backup/story-persistence.json $PORTAL_DIR/data/ || true
+            [ -f /tmp/portal-v2-data-backup/ideas.json ]             && cp /tmp/portal-v2-data-backup/ideas.json             $PORTAL_DIR/data/ || true
+            [ -f /tmp/portal-v2-data-backup/feedback.json ]          && cp /tmp/portal-v2-data-backup/feedback.json          $PORTAL_DIR/data/ || true
 
             echo "==> Installing production dependencies"
-            cd portal
+            cd $PORTAL_DIR
             npm install --omit=dev
 
-            echo "==> Restarting pm2 (build already synced by rsync)"
-            pm2 restart portal || pm2 start npm --name portal -- start
+            echo "==> Restarting pm2 on port 3001 (build already synced by rsync)"
+            export PORT=3001
+            pm2 restart portal-v2 || pm2 start npm --name portal-v2 -- start
             pm2 save
 
-            echo "==> Deploy complete ✅"
+            echo "==> Deploy complete ✅ (serving at /v2 via port 3001)"
