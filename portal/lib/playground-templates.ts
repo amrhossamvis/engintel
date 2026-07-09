@@ -388,10 +388,10 @@ Document:
     persona: "a senior API architect specializing in TM Forum (TMF) Open API standards with deep expertise in TMF620, TMF622, TMF629, TMF633, TMF641, TMF645, TMF688 and the TMF ODA component model",
     variables: [
       {
-        key: "prDiff",
-        label: "PR diff or API code",
-        type: "textarea",
-        placeholder: "Paste the pull request diff, OpenAPI spec, or API controller/route code here…",
+        key: "prUrl",
+        label: "Pull Request URL (ADO or GitHub)",
+        type: "text",
+        placeholder: "https://dev.azure.com/org/project/_git/repo/pullrequest/12345 or https://github.com/org/repo/pull/123",
       },
       {
         key: "tmfSpec",
@@ -400,7 +400,12 @@ Document:
         placeholder: "e.g., TMF620 Product Catalog, TMF622 Product Ordering",
       },
     ],
-    prompt: `Review the attached pull request / API code and validate it against TM Forum (TMF) Open API compliance requirements. Provide a structured report covering ALL of the following areas:
+    prompt: `I need you to review the pull request at the following URL for TM Forum (TMF) Open API compliance.
+
+**PR URL:** {{prUrl}}
+**TMF Spec (if known):** {{tmfSpec}}
+
+Please fetch/read the PR diff from the link above. Then validate it against TMF Open API compliance requirements and provide a structured report covering ALL of the following areas:
 
 ## 1. API Specification Compliance
 - Does the API conform to the relevant TMF Open API spec? Identify which TMF spec number applies.
@@ -441,14 +446,7 @@ For each section, mark: ✅ Compliant / ⚠️ Partial / ❌ Non-compliant, with
 
 End with:
 - **Overall Compliance Verdict**: (Compliant / Partially Compliant / Non-compliant)
-- **Blocking Issues** (prioritized list of items that must be fixed before merge)
-
-{{tmfSpec}}
-
-**PR / API Code:**
-\`\`\`
-{{prDiff}}
-\`\`\``,
+- **Blocking Issues** (prioritized list of items that must be fixed before merge)`,
   },
 ];
 
