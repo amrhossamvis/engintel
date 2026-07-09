@@ -23,8 +23,7 @@ function buildParams(
   inputs: Record<string, string | boolean>,
 ): { params: Record<string, string | boolean> } | { error: string } {
   switch (capabilityId) {
-    case "pr-review":
-    case "ui-testdata": {
+    case "pr-review": {
       const parsed = parsePrUrl(String(inputs.prUrl ?? ""));
       if (!parsed) return { error: "bad_pr_url" };
       return {

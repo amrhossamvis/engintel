@@ -329,20 +329,24 @@ export async function getLatestPrIterationId(repoId: string, prId: string | numb
   return latest;
 }
 
+export type ChangedFile = { path: string; changeType: string; changeTrackingId: number };
+
 export async function getPrChangedFiles(
   repoId: string,
   prId: string | number,
   iterationId: number,
   auth: string,
-): Promise<{ path: string; changeType: string }[]> {
+): Promise<ChangedFile[]> {
   const root = await adoGet(
     `${gitRepoBase(repoId)}/pullRequests/${prId}/iterations/${iterationId}/changes?$top=500&api-version=${API}`,
     auth,
   );
-  const files: { path: string; changeType: string }[] = [];
+  const files: ChangedFile[] = [];
   for (const entry of root?.changeEntries ?? []) {
     const path = entry.item?.path;
-    if (path) files.push({ path, changeType: String(entry.changeType ?? "") });
+    if (path) {
+      files.push({ path, changeType: String(entry.changeType ?? ""), changeTrackingId: Number(entry.changeTrackingId ?? 0) });
+    }
   }
   return files;
 }
@@ -363,6 +367,7 @@ export async function getPrItemContent(repoId: string, path: string, commitId: s
 export type PrFileContext = {
   path: string;
   changeType: string;
+  changeTrackingId: number;
   oldContent: string;
   newContent: string;
 } & FileDiff;
@@ -375,7 +380,7 @@ export type PrFileContext = {
 export async function loadPrFileContexts(
   repoId: string,
   prId: string | number,
-  files: { path: string; changeType: string }[],
+  files: ChangedFile[],
   sourceCommit: string,
   targetCommit: string,
   auth: string,
@@ -389,12 +394,78 @@ export async function loadPrFileContexts(
       const oldContent = targetCommit ? await getPrItemContent(repoId, file.path, targetCommit, auth) : "";
       if (!newContent.trim() && !oldContent.trim()) continue;
       const diff = diffFile(file.path, oldContent, newContent);
-      results.push({ path: file.path, changeType: file.changeType, oldContent, newContent, ...diff });
+      results.push({ path: file.path, changeType: file.changeType, changeTrackingId: file.changeTrackingId, oldContent, newContent, ...diff });
     } catch {
       continue;
     }
   }
   return results;
+}
+
+// ---------------------------------------------------------------------------
+// PR comment threads — shared by PR Reviewer and UI TestData ID Reviewer.
+// ---------------------------------------------------------------------------
+
+export type PrThreadComment = { id: number; content: string; authorDisplayName: string };
+export type PrThread = { id: number; comments: PrThreadComment[] };
+
+export async function listPrThreads(repoId: string, prId: string | number, auth: string): Promise<PrThread[]> {
+  const root = await adoGet(`${gitRepoBase(repoId)}/pullRequests/${prId}/threads?api-version=${API}`, auth);
+  const threads: PrThread[] = [];
+  for (const t of root?.value ?? []) {
+    threads.push({
+      id: Number(t.id),
+      comments: (t.comments ?? []).map((c: Record<string, unknown>) => ({
+        id: Number(c.id ?? 0),
+        content: String(c.content ?? ""),
+        authorDisplayName: String((c.author as Record<string, unknown> | undefined)?.displayName ?? ""),
+      })),
+    });
+  }
+  return threads;
+}
+
+export async function deletePrComment(repoId: string, prId: string | number, threadId: number, commentId: number, auth: string): Promise<void> {
+  const url = `${gitRepoBase(repoId)}/pullRequests/${prId}/threads/${threadId}/comments/${commentId}?api-version=${API}`;
+  const res = await fetch(url, { method: "DELETE", headers: { Authorization: auth } });
+  if (![200, 202, 204].includes(res.status)) {
+    throw new Error(`DELETE PR comment failed ${res.status} for ${url}`);
+  }
+}
+
+export async function postPrGeneralComment(repoId: string, prId: string | number, content: string, auth: string): Promise<void> {
+  await adoPost(`${gitRepoBase(repoId)}/pullRequests/${prId}/threads?api-version=${API}`, auth, {
+    status: "active",
+    comments: [{ parentCommentId: 0, content, commentType: "text" }],
+  });
+}
+
+export async function postPrInlineComment(
+  repoId: string,
+  prId: string | number,
+  filePath: string,
+  line: number,
+  changeTrackingId: number,
+  iterationId: number,
+  content: string,
+  auth: string,
+): Promise<void> {
+  const body: Record<string, unknown> = {
+    status: "active",
+    comments: [{ parentCommentId: 0, content, commentType: "text" }],
+    threadContext: {
+      filePath,
+      rightFileStart: { line, offset: 1 },
+      rightFileEnd: { line, offset: 1 },
+    },
+  };
+  if (changeTrackingId > 0) {
+    body.pullRequestThreadContext = {
+      changeTrackingId,
+      iterationContext: { firstComparingIteration: Math.max(1, iterationId - 1), secondComparingIteration: iterationId },
+    };
+  }
+  await adoPost(`${gitRepoBase(repoId)}/pullRequests/${prId}/threads?api-version=${API}`, auth, body);
 }
 
 export { adoReadAuthHeader };

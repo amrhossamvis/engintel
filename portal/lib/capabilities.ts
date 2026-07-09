@@ -516,18 +516,15 @@ export const CAPABILITIES: Capability[] = [
     description:
       "Reviews UI changes for missing or inconsistent automation test-data identifiers and flags gaps before they reach the automation suite.",
     category: "Quality & Testing",
-    status: "soon",
-    targetRelease: "Q3 2026",
+    status: "live",
     icon: "ScanSearch",
     tokenEnv: "COPILOT_GITHUB_TOKEN",
     estCredits: 90,
     estDuration: "1–3 min",
-    pipeline: "cicd/pipelines/ui-testdata-review.yml",
-    script: "ado_copilot_ui_testdata_id_reviewer.py",
     guild: "testing",
     provider: ["ado"],
-    execution: "pipeline",
-    source: "native",
+    execution: "local",
+    source: "hub-a",
     credGate: "copilot",
     fields: [
       {

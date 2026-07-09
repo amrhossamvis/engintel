@@ -14,6 +14,7 @@ import { randomUUID } from "node:crypto";
 import { runBusinessIntent } from "./business-intent";
 import { runTestCaseGenerator } from "./testcase-ado";
 import { runFigmaTestCaseGenerator } from "./testcase-figma";
+import { runUiTestDataReviewer } from "./ui-testdata";
 
 export type LocalJobStatus = "running" | "done" | "failed";
 
@@ -90,4 +91,5 @@ export const LOCAL_HANDLERS: Record<string, LocalHandler> = {
   "business-intent": runBusinessIntent,
   "testcase-ado": runTestCaseGenerator,
   "testcase-figma": runFigmaTestCaseGenerator,
+  "ui-testdata": runUiTestDataReviewer,
 };
