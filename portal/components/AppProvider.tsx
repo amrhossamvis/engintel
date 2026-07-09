@@ -12,6 +12,8 @@ export type JobStep = { name: string; state: string; result?: string };
 
 export type BreakdownItem = { type: string; id: number; title: string; parent: number; url: string };
 
+export type WikiPage = { title: string; url: string };
+
 export type Job = {
   id: number;
   runId: number;
@@ -35,6 +37,9 @@ export type Job = {
   linkedCount?: number | null;
   dryRun?: boolean;
   items?: BreakdownItem[] | null;
+  /** Wiki Weaver result, parsed from the WIKI SUMMARY / WIKI PAGES markers */
+  wikiPages?: WikiPage[] | null;
+  wikiDryRun?: boolean;
   locus?: Execution;
   output?: unknown;
 };
@@ -295,7 +300,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         return;
       }
       try {
-        const r = await fetch(`/api/run/status?pipelineId=${pipelineId}&runId=${runId}`);
+        const r = await fetch(`/api/run/status?pipelineId=${pipelineId}&runId=${runId}`, {
+          headers: adoPat ? { "x-ado-pat": adoPat } : {},
+        });
         const data = await r.json();
         patch(id, (j) => ({
           ...j,
@@ -316,6 +323,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             linkedCount: data.linkedCount ?? null,
             dryRun: Boolean(data.dryRun),
             items: Array.isArray(data.items) ? data.items : null,
+            wikiPages: Array.isArray(data.wikiPages) ? data.wikiPages : null,
+            wikiDryRun: Boolean(data.wikiDryRun),
           }));
         }
       } catch {

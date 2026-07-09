@@ -5,6 +5,7 @@ import {
   basicFromPat,
   parsePrUrl,
   parseWorkItemId,
+  pipelineBranchFor,
   pipelineIdFor,
   runPipeline,
 } from "@/lib/ado";
@@ -88,6 +89,21 @@ function buildParams(
       if (!workItemId) return { error: "bad_work_item_url" };
       return { params: { workItemId } };
     }
+    case "workitem-wiki-doc": {
+      const workItem = parseWorkItemId(String(inputs.workItemRef ?? ""));
+      if (!workItem) return { error: "bad_work_item_ref" };
+      const wikiParentUrl = String(inputs.wikiParentUrl ?? "").trim();
+      return {
+        params: {
+          workItem,
+          docLevel: String(inputs.docLevel ?? "Feature").trim().toLowerCase() || "feature",
+          docType: String(inputs.docType ?? "Both").trim().toLowerCase() || "both",
+          postSummaryComment: Boolean(inputs.postSummaryComment),
+          dryRun: Boolean(inputs.dryRun),
+          ...(wikiParentUrl ? { wikiParentUrl } : {}),
+        },
+      };
+    }
     default:
       // e.g. testcase-figma has no live pipeline yet.
       return { error: "not_configured" };
@@ -140,6 +156,7 @@ export async function POST(req: Request) {
       built.params,
       secrets,
       adoAuth,
+      pipelineBranchFor(capabilityId),
     );
     return NextResponse.json({ ...run, pipelineId });
   } catch (e) {

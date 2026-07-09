@@ -45,6 +45,14 @@ export function pipelineIdFor(capabilityId: string): number | null {
   return PIPELINE_DEFAULTS[capabilityId] ?? null;
 }
 
+/** capabilityId → git ref the pipeline YAML is read from, from env (PIPELINE_<ID>_BRANCH) or PIPELINE_BRANCH. */
+export function pipelineBranchFor(capabilityId: string): string {
+  const key = "PIPELINE_" + capabilityId.toUpperCase().replace(/-/g, "_") + "_BRANCH";
+  const raw = process.env[key]?.trim();
+  if (!raw) return PIPELINE_BRANCH;
+  return raw.startsWith("refs/") ? raw : `refs/heads/${raw}`;
+}
+
 export function adoConfigured(): boolean {
   return Boolean(process.env.AZDO_PAT);
 }
@@ -234,10 +242,12 @@ export function parsePrUrl(url: string): ParsedPr | null {
   }
 }
 
-/** Extract a work-item id from any ADO work-item URL form. */
+/** Extract a work-item id from any ADO work-item URL form, or a bare id. */
 export function parseWorkItemId(url: string): string | null {
+  const trimmed = url.trim();
+  if (/^\d+$/.test(trimmed)) return trimmed;
   try {
-    const u = new URL(url);
+    const u = new URL(trimmed);
     const q = u.searchParams.get("workitem");
     if (q && /^\d+$/.test(q)) return q;
     const m = u.pathname.match(/(?:_workitems\/edit|workItems)\/(\d+)/i);
@@ -259,6 +269,7 @@ export async function runPipeline(
   templateParameters: Record<string, string | boolean>,
   secretVariables: Record<string, string>,
   auth?: string,
+  refName: string = PIPELINE_BRANCH,
 ): Promise<RunResult> {
   const variables: Record<string, { value: string; isSecret: true }> = {};
   for (const [k, v] of Object.entries(secretVariables)) {
@@ -268,7 +279,7 @@ export async function runPipeline(
   const body = {
     templateParameters,
     variables,
-    resources: { repositories: { self: { refName: PIPELINE_BRANCH } } },
+    resources: { repositories: { self: { refName } } },
   };
 
   const res = await fetch(`${base()}/${pipelineId}/runs?${API}`, {
