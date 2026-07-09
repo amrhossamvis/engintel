@@ -202,6 +202,10 @@ export async function addWorkItemComment(id: number, text: string, auth: string)
   await adoPost(`${witBase()}/workItems/${id}/comments?format=markdown&api-version=7.1-preview.4`, auth, { text });
 }
 
+export async function deleteWorkItemComment(id: number, commentId: number, auth: string): Promise<void> {
+  await adoFetchJson(`${witBase()}/workItems/${id}/comments/${commentId}?api-version=7.1-preview.4`, auth, { method: "DELETE" });
+}
+
 export async function queryWiql(wiql: string, auth: string): Promise<number[]> {
   const root = await adoPost(`${witBase()}/wiql?api-version=7.1-preview.2`, auth, { query: wiql });
   return (root?.workItems ?? []).map((w: { id: number }) => w.id);

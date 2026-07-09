@@ -22,11 +22,6 @@ function buildParams(
   inputs: Record<string, string | boolean>,
 ): { params: Record<string, string | boolean> } | { error: string } {
   switch (capabilityId) {
-    case "bug-triage": {
-      const bugId = parseWorkItemId(String(inputs.bugUrl ?? ""));
-      if (!bugId) return { error: "bad_work_item_url" };
-      return { params: { bugIds: bugId, dryRun: false } };
-    }
     case "feature-breakdown": {
       const workItemUrl = String(inputs.workItemUrl ?? "").trim();
       if (!workItemUrl) return { error: "missing_work_item" };

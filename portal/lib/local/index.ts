@@ -16,6 +16,7 @@ import { runTestCaseGenerator } from "./testcase-ado";
 import { runFigmaTestCaseGenerator } from "./testcase-figma";
 import { runUiTestDataReviewer } from "./ui-testdata";
 import { runPrReview } from "./pr-review";
+import { runBugTriage } from "./bug-triage";
 
 export type LocalJobStatus = "running" | "done" | "failed";
 
@@ -94,4 +95,5 @@ export const LOCAL_HANDLERS: Record<string, LocalHandler> = {
   "testcase-figma": runFigmaTestCaseGenerator,
   "ui-testdata": runUiTestDataReviewer,
   "pr-review": runPrReview,
+  "bug-triage": runBugTriage,
 };
