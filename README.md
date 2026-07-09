@@ -32,14 +32,14 @@ portal/                  Next.js 16 app (App Router)
 **Execution models**
 
 - **Local** — the capability runs entirely in-process on the Next.js server, calling the GitHub Copilot chat-completions API directly (no CLI, no external pipeline) and writing results back to ADO itself.
-- **Pipeline** — the capability triggers an Azure DevOps pipeline that runs a Copilot CLI script and writes results back to the work item / PR.
+- **Pipeline** — the capability triggers an Azure DevOps pipeline that runs a Copilot CLI script and writes results back to the work item / PR. No live capability uses this anymore (the last one, Wiki Weaver, moved to `local`); kept as a supported model for a future capability that needs it.
 - **Hub-inline** — read-only analytics computed inside the app directly from ADO (no pipeline, no credits).
 
 ---
 
 ## Capabilities
 
-Each capability is tagged with the SDLC phase it belongs to (Plan, Design, Development, Testing, Release, Monitoring). **11 live · 24 total.**
+Each capability is tagged with the SDLC phase it belongs to (Plan, Design, Development, Testing, Release, Monitoring). **10 live · 24 total.**
 
 ### Live
 
@@ -49,17 +49,16 @@ Each capability is tagged with the SDLC phase it belongs to (Plan, Design, Devel
 | **Bug Triage** | Monitoring | Quality & Review | Local | Pulls bug context, discussion history and linked PRs, correlates DataDog logs, then diagnoses the affected service + owning team and posts the triage back to the work item. |
 | **Feature Breakdown** | Plan | Agile & Backlog | Local | Reverse-engineers an epic or feature into a structured backlog with acceptance criteria, applying team-specific rules; given a User Story instead, rolls it up (with its linked stories) into a new parent Epic and Feature. Creates/links work items in ADO. |
 | **Business Intent Builder** | Plan | Agile & Backlog | Local | Turns a plain-language business intent into a complete Epic → Feature → Story hierarchy in ADO, applying team breakdown rulebooks. |
-| **Wiki Weaver** | Development | Enablement | Pipeline | Climbs a User Story/Feature/Epic link (or bare id) to its top parent, reads its description/acceptance criteria/comments/attached design docs plus every child item on the same area path (and linked PRs for stories), then publishes one business + tech wiki page. |
+| **Wiki Weaver** | Development | Enablement | Local | Climbs a User Story/Feature/Epic link (or bare id) to its top parent, reads its description/acceptance criteria/comments/attached design docs plus every item in the real hierarchy beneath it (falling back to same-area-path items if no hierarchy children exist), including linked PRs for stories, then publishes one business + tech wiki page. |
 | **Executive Dashboard** | Monitoring | Delivery Intelligence | Hub-inline | Reads a team's last 6 ADO sprints and computes a RAG health score from completion, velocity stability and bug resolution, with trend charts. Read-only. |
 | **AI Productivity Index** | Monitoring | Delivery Intelligence | Hub-inline | Scores a team's last 6 sprints into one 0–100 index across delivery, quality, velocity, PR speed and Copilot adoption, plus a £ ROI estimate. Read-only. |
-| **Sprint Health Coach** | Monitoring | Delivery Intelligence | Hub-inline | Scans the team backlog and iteration for WIP overload, stale items, blocked work and PR wait times, then coaches the squad with prioritised actions. Read-only — no AI call, no ADO writes. |
 | **Test Case & Automation Generator** | Testing | Quality & Testing | Local | Generates structured P1/Critical test cases from a user story's description and acceptance criteria, then creates them as Test Case work items linked back to the source item. |
 | **Figma Test Cases** | Testing | Quality & Testing | Local | Reads a Figma frame's screens/components/comments, plus an optional linked work item, and generates P1/Critical UI/UX test cases as ADO Test Case work items. |
 | **UI Test Data Reviewer** | Testing | Quality & Testing | Local | Reviews UI changes for missing or inconsistent automation test-data identifiers and flags gaps before they reach the automation suite. |
 
 ### Coming soon
 
-Story Extractor · Mobile Crash Intelligence · App Store Release Risk Scorer · Mobile CI/CD Intelligence · Mobile Code Review Assistant · Mobile Test Gap Analyzer · Mobile Onboarding Accelerator · Delivery Intelligence Platform · Release Risk Scorer · Dependency & Blocker Radar · Test Gap Analyzer · Developer Onboarding Accelerator · Engineering Knowledge Copilot
+Sprint Health Coach · Story Extractor · Mobile Crash Intelligence · App Store Release Risk Scorer · Mobile CI/CD Intelligence · Mobile Code Review Assistant · Mobile Test Gap Analyzer · Mobile Onboarding Accelerator · Delivery Intelligence Platform · Release Risk Scorer · Dependency & Blocker Radar · Test Gap Analyzer · Developer Onboarding Accelerator · Engineering Knowledge Copilot
 
 The full catalog (fields, credits, pipelines, status) lives in [`portal/lib/capabilities.ts`](portal/lib/capabilities.ts).
 
@@ -111,7 +110,7 @@ Key variables (`.env.local` is git-ignored):
 |----------|-----------|-------|
 | `ADO_ORG`, `ADO_PROJECT` | ADO data | Default to `vfuk-digital` / `Digital`. |
 | `AZDO_PAT` | ADO fallback | Shared service token — only used when no per-user PAT and `az` is signed out. Per-user identity is set in the app (**Settings → Azure DevOps access**), not here. |
-| `PIPELINE_*` | Wiki Weaver (the only remaining pipeline capability) | Pipeline definition id. Find the id in the pipeline URL (`…/_build?definitionId=<ID>`). Every other capability runs `local` — no pipeline id needed. |
+| `PIPELINE_*` | Not currently needed | No live capability runs `execution: "pipeline"` anymore — every one runs `local` or `hub-inline`. Kept for a future pipeline-executed capability, if ever needed. |
 | `COPILOT_GITHUB_TOKEN` | Local/hub-inline capabilities | Optional server-side fallback; normally each user pastes their own GitHub Copilot token in **Settings**, sent per request. |
 | `DD_APP_KEY`, `DD_API_KEY`, `DD_SITE` | Bug Triage | Optional DataDog Logs Search correlation — skipped gracefully when `DD_APP_KEY` is unset. |
 | `DATABASE_URL` | Idea Box + Skills | Postgres connection string. Leave empty to run without those boards. |
@@ -200,4 +199,4 @@ Open **<http://localhost:3000>**. Compose wires `DATABASE_URL` to the bundled Po
 
 ## Status
 
-**11 capabilities live** (PR Reviewer, Bug Triage, Feature Breakdown, Business Intent Builder, Wiki Weaver, Executive Dashboard, AI Productivity Index, Sprint Health Coach, Test Case & Automation Generator, Figma Test Cases, UI Test Data Reviewer) · **13 more on the roadmap** across Quality, Agile & Backlog, Delivery Intelligence, Mobile, Testing, and Enablement.
+**10 capabilities live** (PR Reviewer, Bug Triage, Feature Breakdown, Business Intent Builder, Wiki Weaver, Executive Dashboard, AI Productivity Index, Test Case & Automation Generator, Figma Test Cases, UI Test Data Reviewer) · **14 more on the roadmap** across Quality, Agile & Backlog, Delivery Intelligence, Mobile, Testing, and Enablement.

@@ -399,7 +399,7 @@ export const CAPABILITIES: Capability[] = [
     description:
       "Scans the team backlog and iteration for WIP overload, stale items, blocked work and PR wait times, then coaches the squad with prioritised actions. Read-only — no AI call, no ADO writes.",
     category: "Delivery Intelligence",
-    status: "live",
+    status: "soon",
     icon: "Activity",
     estCredits: 0,
     estDuration: "5–15 sec",
