@@ -21,6 +21,8 @@ export type PgTemplate = {
   variables: PgVariable[];
   /** first-message body; {{key}} placeholders are filled from variable values */
   prompt: string;
+  /** When true, the Playground auto-fetches the PR diff from the prUrl variable and injects it as {{prDiff}}. */
+  fetchPrDiff?: boolean;
 };
 
 /**
@@ -386,6 +388,7 @@ Document:
     icon: "ShieldCheck",
     description: "Validate a PR against TM Forum Open API standards and get a structured compliance report.",
     persona: "a senior API architect specializing in TM Forum (TMF) Open API standards with deep expertise in TMF620, TMF622, TMF629, TMF633, TMF641, TMF645, TMF688 and the TMF ODA component model",
+    fetchPrDiff: true,
     variables: [
       {
         key: "prUrl",
@@ -400,12 +403,17 @@ Document:
         placeholder: "e.g., TMF620 Product Catalog, TMF622 Product Ordering",
       },
     ],
-    prompt: `I need you to review the pull request at the following URL for TM Forum (TMF) Open API compliance.
+    prompt: `I need you to review the following pull request changes for TM Forum (TMF) Open API compliance.
 
-**PR URL:** {{prUrl}}
 **TMF Spec (if known):** {{tmfSpec}}
 
-Please fetch/read the PR diff from the link above. Then validate it against TMF Open API compliance requirements and provide a structured report covering ALL of the following areas:
+---
+
+{{prDiff}}
+
+---
+
+Based on the PR changes above, validate against TMF Open API compliance requirements and provide a structured report covering ALL of the following areas:
 
 ## 1. API Specification Compliance
 - Does the API conform to the relevant TMF Open API spec? Identify which TMF spec number applies.
