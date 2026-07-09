@@ -162,7 +162,8 @@ export function useSpeechInput({ onFinal }: Options): SpeechInput {
       const ctx = new Ctx({ sampleRate: SAMPLE_RATE, latencyHint: "interactive" });
       ctxRef.current = ctx;
 
-      await ctx.audioWorklet.addModule("/vad-processor.js");
+      const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
+      await ctx.audioWorklet.addModule(`${basePath}/vad-processor.js`);
       // A concurrent stop() may have torn things down while we awaited.
       if (ctxRef.current !== ctx) return;
 
