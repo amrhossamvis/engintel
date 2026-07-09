@@ -63,6 +63,10 @@ function Inner({ job, onClose }: { job: Job; onClose: () => void }) {
   const errored = job.status === "failed" && job.outcome !== "blocked";
   const failed = job.status === "failed";
   const isInline = getCapability(job.capId)?.execution === "hub-inline";
+  const isLocalRun = getCapability(job.capId)?.execution === "local";
+  // Local runs happen in-process on this server (no ADO pipeline), so the
+  // 5-step ADO agent-pool progress list doesn't apply — same as hub-inline.
+  const skipStepList = isInline || isLocalRun;
 
   useEffect(() => {
     logRef.current?.scrollTo({ top: logRef.current.scrollHeight });
@@ -97,7 +101,7 @@ function Inner({ job, onClose }: { job: Job; onClose: () => void }) {
               <CapIcon name={job.icon} className="h-5 w-5" style={{ color: "var(--red)" }} />
             </div>
             <div>
-              <p className="kicker">{isInline ? "Hub · in-app run" : `ADO Run #${job.runId}`}</p>
+              <p className="kicker">{skipStepList ? "Hub · in-app run" : `ADO Run #${job.runId}`}</p>
               <h2 className="font-display text-lg font-semibold leading-tight">{job.capName}</h2>
             </div>
           </div>
@@ -112,7 +116,7 @@ function Inner({ job, onClose }: { job: Job; onClose: () => void }) {
 
         <div className="px-7 py-6">
           <div className="flex items-center justify-between mb-5">
-            <span className="kicker">{isInline ? "Status" : "Pipeline progress"}</span>
+            <span className="kicker">{skipStepList ? "Status" : "Pipeline progress"}</span>
             <span
               className="inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-wider"
               style={{ color: done ? "var(--live)" : blocked ? "var(--soon)" : errored ? "var(--red)" : "var(--soon)" }}
@@ -134,7 +138,7 @@ function Inner({ job, onClose }: { job: Job; onClose: () => void }) {
             </span>
           </div>
 
-          {!isInline && (
+          {!skipStepList && (
             <ol className="space-y-2.5 mb-6 max-h-56 overflow-y-auto pr-1">
               {job.steps.length > 0
                 ? job.steps.map((s) => {

@@ -333,6 +333,39 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }, 4000);
   }
 
+  /** Poll a "local"-execution job (in-process on this server, no ADO pipeline). */
+  function pollLocal(id: number, jobId: string) {
+    let polls = 0;
+    const tick = setInterval(async () => {
+      polls += 1;
+      if (polls > 300) {
+        clearInterval(tick);
+        appendLog(id, "[warn] stopped polling after 15 min");
+        return;
+      }
+      try {
+        const r = await fetch(`/api/local/status?jobId=${jobId}`);
+        const data = await r.json();
+        patch(id, (j) => ({
+          ...j,
+          log: Array.isArray(data.logTail) && data.logTail.length ? data.logTail : j.log,
+        }));
+        if (data.status === "done" || data.status === "failed") {
+          clearInterval(tick);
+          patch(id, (j) => ({
+            ...j,
+            status: data.status,
+            webUrl: (data.result?.webUrl as string | undefined) ?? j.webUrl,
+            output: data.result ?? j.output,
+            log: data.error ? [...j.log, `[local] error: ${data.error}`] : j.log,
+          }));
+        }
+      } catch {
+        // transient — keep polling
+      }
+    }, 3000);
+  }
+
   function queueJob(cap: Capability, values: Record<string, string | boolean>) {
     seq.current += 1;
     const id = seq.current;
@@ -386,6 +419,43 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             ...j,
             status: "failed",
             log: [...j.log, `[inline] ${e instanceof Error ? e.message : "error"}`],
+          }));
+        }
+      })();
+      return id;
+    }
+
+    if (cap.execution === "local") {
+      void (async () => {
+        try {
+          const res = await fetch(`/api/local/${cap.id}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ inputs: values, githubToken, adoPat }),
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            const detail = data.message ? `${data.error}: ${data.message}` : (data.error ?? res.status);
+            patch(id, (j) => ({
+              ...j,
+              status: "failed",
+              log: [...j.log, `[local] error: ${detail}`],
+            }));
+            return;
+          }
+          patch(id, (j) => ({
+            ...j,
+            live: true,
+            locus: "local",
+            status: "running",
+            log: [...j.log, `[local] job started`],
+          }));
+          pollLocal(id, data.jobId);
+        } catch (e) {
+          patch(id, (j) => ({
+            ...j,
+            status: "failed",
+            log: [...j.log, `[local] ${e instanceof Error ? e.message : "error"}`],
           }));
         }
       })();
