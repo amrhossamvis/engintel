@@ -38,7 +38,8 @@ function buildParams(
       };
     }
     default:
-      // e.g. testcase-figma has no live pipeline yet.
+      // Every other capability runs "local" or "hub-inline" now — this route
+      // only serves the one remaining pipeline-executed capability above.
       return { error: "not_configured" };
   }
 }
