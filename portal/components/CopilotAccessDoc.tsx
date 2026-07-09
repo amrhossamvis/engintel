@@ -10,6 +10,7 @@ import {
   GitBranch,
   Info,
   Mail,
+  MonitorPlay,
   ScrollText,
   ShieldCheck,
 } from "lucide-react";
@@ -21,6 +22,9 @@ const LINKS = {
   standalone: "https://github.com/enterprises/vodafone-copilot/",
   standaloneSSO: "https://github.com/enterprises/vodafone-copilot/sso",
   copilot: "https://github.com/copilot",
+  vcircle: "https://vodafone.sharepoint.com/sites/TheVCircleRoundtable/SitePages/GitHub-%26-GitHub-Copilot.aspx",
+  community:
+    "https://vodafone.sharepoint.com/sites/vodafonegithubcopilotcommunity/Shared%20Documents/Forms/AllItems.aspx?id=/sites/vodafonegithubcopilotcommunity/Shared%20Documents/Apps/Viva%20Engage/GitHub%20Copilot%20Drop-in%20Recordings&p=true&ga=1",
   oneRcOnboarding: null as string | null, // "2.2 Onboarding Using OneRC Portal" (Confluence)
   copilotAccessRequest: null as string | null, // "GitHub Copilot Access Request"
   newRequirement: null as string | null, // MyIT "New Requirement"
@@ -311,6 +315,12 @@ export function CopilotAccessDoc() {
             </a>
             <a href={LINKS.copilot} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-ink-dim hover:text-ink">
               <ExternalLink className="h-3.5 w-3.5 text-red shrink-0" /> github.com/copilot
+            </a>
+            <a href={LINKS.vcircle} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-ink-dim hover:text-ink">
+              <ExternalLink className="h-3.5 w-3.5 text-red shrink-0" /> VCircle: GitHub &amp; Copilot
+            </a>
+            <a href={LINKS.community} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-ink-dim hover:text-ink">
+              <MonitorPlay className="h-3.5 w-3.5 text-red shrink-0" /> Copilot community recordings
             </a>
           </div>
         </div>

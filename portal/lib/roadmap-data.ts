@@ -41,6 +41,12 @@ export interface RoadmapTrack {
   stages: RoadmapStage[];
 }
 
+// Vodafone-internal references (SharePoint).
+const VF_VCIRCLE_GITHUB_COPILOT =
+  "https://vodafone.sharepoint.com/sites/TheVCircleRoundtable/SitePages/GitHub-%26-GitHub-Copilot.aspx";
+const VF_COPILOT_COMMUNITY_RECORDINGS =
+  "https://vodafone.sharepoint.com/sites/vodafonegithubcopilotcommunity/Shared%20Documents/Forms/AllItems.aspx?id=/sites/vodafonegithubcopilotcommunity/Shared%20Documents/Apps/Viva%20Engage/GitHub%20Copilot%20Drop-in%20Recordings&p=true&ga=1";
+
 // ── Shared nodes (referenced by both tracks) ────────────────────────────────
 const ACCESS_STAGE: RoadmapStage = {
   id: "access",
@@ -52,6 +58,7 @@ const ACCESS_STAGE: RoadmapStage = {
       why: "Nothing else matters until you have a seat. Pick your path — GitHub Cloud vs Standalone — and raise the UAM request.",
       resources: [
         { label: "VOIS Copilot Access guide", url: "/docs/copilot-access", type: "internal" },
+        { label: "VCircle: GitHub & Copilot at Vodafone", url: VF_VCIRCLE_GITHUB_COPILOT, type: "docs" },
       ],
     },
     {
@@ -147,6 +154,15 @@ const TRACK_POWER_USER: RoadmapTrack = {
           why: "Generate clear commit messages from your diff — small win, every commit.",
           resources: [
             { label: "Copilot in your editor", url: "https://docs.github.com/en/copilot", type: "docs" },
+          ],
+        },
+        {
+          id: "vodafone-community",
+          title: "Learn from the Vodafone community",
+          why: "See how Vodafone teams actually use Copilot — drop-in recordings, tips and the internal hub.",
+          resources: [
+            { label: "Copilot Community drop-in recordings", url: VF_COPILOT_COMMUNITY_RECORDINGS, type: "video" },
+            { label: "VCircle: GitHub & Copilot", url: VF_VCIRCLE_GITHUB_COPILOT, type: "docs" },
           ],
         },
       ],
