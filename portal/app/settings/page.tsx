@@ -8,6 +8,7 @@ import {
   CircleAlert,
   CircleCheck,
   Copy,
+  ExternalLink,
   Eye,
   EyeOff,
   GitFork,
@@ -219,6 +220,8 @@ function Credentials() {
           </div>
         )}
 
+        <HowToAz />
+
         {/* Per-user PAT — for a shared/hosted hub where the server has no az login */}
         <div className="mt-5 pt-5 border-t border-[var(--hairline)]">
           <div className="flex items-center gap-2 mb-1">
@@ -248,6 +251,8 @@ function Credentials() {
           >
             Create a PAT in Azure DevOps →
           </a>
+
+          <HowToPat />
         </div>
       </section>
 
@@ -341,6 +346,7 @@ function HowTo() {
               </p>
               <p className="text-xs text-muted mt-1.5">Install the GitHub CLI, then run:</p>
               <div className="mt-3 space-y-2">
+                <Cmd text="brew install gh" />
                 <Cmd text="gh auth login --hostname github.com --git-protocol https --web" />
                 <Cmd text="gh auth token" />
               </div>
@@ -392,6 +398,109 @@ function Cmd({ text }: { text: string }) {
       >
         {copied ? <Check className="h-3.5 w-3.5 text-live" /> : <Copy className="h-3.5 w-3.5" />}
       </button>
+    </div>
+  );
+}
+
+function CollapseToggle({
+  open,
+  onClick,
+  label,
+}: {
+  open: boolean;
+  onClick: () => void;
+  label: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="inline-flex items-center gap-1.5 text-sm text-info hover:underline"
+    >
+      <ChevronDown
+        className="h-4 w-4 transition-transform"
+        style={{ transform: open ? "rotate(180deg)" : "none" }}
+      />
+      {label}
+    </button>
+  );
+}
+
+function Numbered({ n, children }: { n: number; children: React.ReactNode }) {
+  return (
+    <li className="flex gap-3">
+      <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[var(--hairline-strong)] bg-[var(--panel)] font-mono text-[0.7rem] text-red">
+        {n}
+      </span>
+      <div className="min-w-0 flex-1 pt-0.5">{children}</div>
+    </li>
+  );
+}
+
+function HowToAz() {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="mt-4">
+      <CollapseToggle open={open} onClick={() => setOpen((o) => !o)} label="How to install the Azure CLI" />
+      {open && (
+        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="overflow-hidden">
+          <ol className="mt-4 space-y-4">
+            <Numbered n={1}>
+              <p className="text-sm font-medium">Install Homebrew</p>
+              <p className="text-xs text-muted mt-0.5 mb-2">macOS package manager. Skip if <span className="font-mono text-ink">brew --version</span> already works.</p>
+              <Cmd text={'/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'} />
+            </Numbered>
+            <Numbered n={2}>
+              <p className="text-sm font-medium">Install the Azure CLI</p>
+              <div className="mt-2">
+                <Cmd text="brew install azure-cli" />
+              </div>
+              <p className="text-xs text-muted mt-2">Windows: <span className="font-mono text-ink">winget install -e --id Microsoft.AzureCLI</span></p>
+            </Numbered>
+            <Numbered n={3}>
+              <p className="text-sm font-medium">Sign in</p>
+              <p className="text-xs text-muted mt-0.5">Click <span className="text-ink">Sign in with Azure CLI</span> above, or run <span className="font-mono text-ink">az login</span> — a browser opens to authenticate.</p>
+            </Numbered>
+          </ol>
+        </motion.div>
+      )}
+    </div>
+  );
+}
+
+function HowToPat() {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="mt-4">
+      <CollapseToggle open={open} onClick={() => setOpen((o) => !o)} label="How to create a PAT" />
+      {open && (
+        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="overflow-hidden">
+          <ol className="mt-4 space-y-4">
+            <Numbered n={1}>
+              <p className="text-sm font-medium">Open Azure DevOps tokens</p>
+              <a
+                href="https://dev.azure.com/vfuk-digital/_usersSettings/tokens"
+                target="_blank"
+                rel="noreferrer"
+                className="mt-1 inline-flex items-center gap-1 text-xs text-info hover:underline"
+              >
+                dev.azure.com · User settings · Personal access tokens <ExternalLink className="h-3 w-3" />
+              </a>
+            </Numbered>
+            <Numbered n={2}>
+              <p className="text-sm font-medium">New Token</p>
+              <p className="text-xs text-muted mt-0.5">Name it (e.g. <span className="font-mono text-ink">hub</span>) and set an expiry.</p>
+            </Numbered>
+            <Numbered n={3}>
+              <p className="text-sm font-medium">Set scopes</p>
+              <p className="text-xs text-muted mt-0.5"><span className="font-mono text-ink">Work Items (Read)</span> and <span className="font-mono text-ink">Code (Read)</span>. Nothing more.</p>
+            </Numbered>
+            <Numbered n={4}>
+              <p className="text-sm font-medium">Create, copy, paste</p>
+              <p className="text-xs text-muted mt-0.5">Copy the token (shown once) and paste it in the field above.</p>
+            </Numbered>
+          </ol>
+        </motion.div>
+      )}
     </div>
   );
 }

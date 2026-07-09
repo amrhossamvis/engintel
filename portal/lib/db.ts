@@ -156,6 +156,16 @@ CREATE TABLE IF NOT EXISTS pg_template_analytics (
 CREATE INDEX IF NOT EXISTS idx_pg_analytics_template ON pg_template_analytics(template_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_pg_analytics_user ON pg_template_analytics(user_key, created_at DESC);
 
+-- One row per completed roadmap node, per user. Absence of a row = not done.
+CREATE TABLE IF NOT EXISTS roadmap_progress (
+  user_key   text NOT NULL,
+  node_id    text NOT NULL,
+  track_id   text,
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_key, node_id)
+);
+CREATE INDEX IF NOT EXISTS idx_roadmap_progress_user ON roadmap_progress(user_key);
+
 CREATE TABLE IF NOT EXISTS schema_migrations (
   id         text PRIMARY KEY,
   applied_at timestamptz NOT NULL DEFAULT now()
