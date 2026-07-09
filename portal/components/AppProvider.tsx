@@ -14,6 +14,17 @@ export type BreakdownItem = { type: string; id: number; title: string; parent: n
 
 export type WikiPage = { title: string; url: string };
 
+/** A generated-but-not-yet-published Wiki Weaver page, awaiting the user's publish/export decision. */
+export type WikiDraft = {
+  content: string;
+  rootType: string;
+  rootId: number;
+  rootTitle: string;
+  wikiParentUrl: string;
+  postSummaryComment: boolean;
+  targetUrl: string;
+};
+
 export type Job = {
   id: number;
   runId: number;
@@ -37,9 +48,11 @@ export type Job = {
   linkedCount?: number | null;
   dryRun?: boolean;
   items?: BreakdownItem[] | null;
-  /** Wiki Weaver result, parsed from the WIKI SUMMARY / WIKI PAGES markers */
+  /** Wiki Weaver: pipeline-execution result, parsed from the WIKI SUMMARY / WIKI PAGES markers */
   wikiPages?: WikiPage[] | null;
   wikiDryRun?: boolean;
+  /** Wiki Weaver: local-execution result — generated content awaiting the user's publish/export decision */
+  wikiDraft?: WikiDraft | null;
   locus?: Execution;
   output?: unknown;
 };
@@ -373,6 +386,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             items: Array.isArray(result.items) ? result.items : j.items,
             wikiPages: Array.isArray(result.wikiPages) ? result.wikiPages : j.wikiPages,
             wikiDryRun: typeof result.wikiDryRun === "boolean" ? result.wikiDryRun : j.wikiDryRun,
+            wikiDraft:
+              result.awaitingPublish && typeof result.content === "string"
+                ? {
+                    content: result.content,
+                    rootType: String(result.rootType ?? ""),
+                    rootId: Number(result.rootId ?? 0),
+                    rootTitle: String(result.rootTitle ?? ""),
+                    wikiParentUrl: String(result.wikiParentUrl ?? ""),
+                    postSummaryComment: Boolean(result.postSummaryComment),
+                    targetUrl: String(result.targetUrl ?? ""),
+                  }
+                : j.wikiDraft,
             log: data.error ? [...j.log, `[local] error: ${data.error}`] : j.log,
           }));
         }

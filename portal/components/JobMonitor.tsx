@@ -21,6 +21,7 @@ import { SprintHealthResult } from "./SprintHealthResult";
 import type { SprintHealthOutput } from "@/lib/sprint-health";
 import { getCapability } from "@/lib/capabilities";
 import { Portal } from "./Portal";
+import { WikiWeaverReview } from "./WikiWeaverReview";
 
 type StepVisual = "done" | "active" | "failed" | "idle";
 
@@ -207,7 +208,9 @@ function Inner({ job, onClose }: { job: Job; onClose: () => void }) {
               )}
               <div className="text-sm">
                 <p className="font-medium text-ink">
-                  {done && job.wikiPages && job.wikiPages.length > 0
+                  {done && job.wikiDraft
+                    ? "Wiki page generated — review it below before publishing."
+                    : done && job.wikiPages && job.wikiPages.length > 0
                     ? `${job.wikiDryRun ? "Dry run — wiki page would be published." : "Wiki page published to Azure DevOps."}`
                     : done && typeof job.createdCount === "number"
                     ? `${job.dryRun ? "Dry run — " : "Breakdown complete — "}${job.createdCount} work item(s) ${job.dryRun ? "would be created" : "created"} in Azure DevOps.${typeof job.linkedCount === "number" ? ` · ${job.linkedCount} story(ies) re-linked.` : ""}`
@@ -253,6 +256,8 @@ function Inner({ job, onClose }: { job: Job; onClose: () => void }) {
           )}
 
           {done && job.items && job.items.length > 0 && <BreakdownTree items={job.items} />}
+
+          {done && job.wikiDraft && <WikiWeaverReview draft={job.wikiDraft} />}
 
           {done && job.wikiPages && job.wikiPages.length > 1 && <WikiPageList pages={job.wikiPages} />}
 

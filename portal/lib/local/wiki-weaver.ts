@@ -490,7 +490,6 @@ export async function runWikiWeaver(inputs: Record<string, string | boolean>, ct
   const docType = (typeof inputs.docType === "string" ? inputs.docType.trim().toLowerCase() : "") || "both";
   const wikiParentUrl = typeof inputs.wikiParentUrl === "string" ? inputs.wikiParentUrl.trim() : "";
   const postSummaryComment = inputs.postSummaryComment !== false;
-  const dryRun = Boolean(inputs.dryRun);
 
   emit(`[input] resolved work item id: ${workItemId}`);
   const originalRaw = await getWorkItemRecord(workItemId, adoAuth, true);
@@ -509,19 +508,57 @@ export async function runWikiWeaver(inputs: Record<string, string | boolean>, ct
   const content = (await runCopilotChat(systemPrompt, userMessage, githubToken)).trim();
   if (!content) throw new Error("GitHub Copilot returned empty content for the wiki page.");
 
-  const page = await publishWikiPage(org, project, rootWi.type, rootWi.id, rootWi.title, content, wikiParentUrl, dryRun, adoAuth);
-  emit(`[wiki] target page: ${page.url}`);
+  // Generation stops here — publishing is a separate, explicit user action
+  // (see publishGeneratedWikiPage / app/api/wiki-weaver/publish) so the user
+  // can review the page and choose to publish it or export it as a Word doc
+  // instead, rather than it landing on the wiki unreviewed.
+  const { wikiIdentifier, parentPath } = parseWikiParentReference(wikiParentUrl);
+  const targetPath = buildGeneratedWikiChildPath(parentPath, rootWi.type, rootWi.id, rootWi.title);
+  const targetUrl = buildWikiPageUrl(org, project, wikiIdentifier, targetPath);
 
-  if (postSummaryComment && !dryRun) {
-    await addWorkItemComment(rootWi.id, `Wiki Weaver published documentation for this item: ${page.url}`, adoAuth);
-    emit("[ado] posted summary comment");
-  }
-
-  emit(`[done] dryRun=${dryRun ? 1 : 0}`);
+  emit(`[done] generated — review before publishing to ${targetUrl}`);
   return {
-    webUrl: page.url,
-    dryRun,
-    wikiPages: [page],
-    wikiDryRun: dryRun,
+    awaitingPublish: true,
+    content,
+    rootType: rootWi.type,
+    rootId: rootWi.id,
+    rootTitle: rootWi.title,
+    wikiParentUrl,
+    postSummaryComment,
+    targetUrl,
   };
+}
+
+/**
+ * Publish an already-generated wiki page — the explicit second step of the
+ * review-before-publish flow, called from app/api/wiki-weaver/publish once
+ * the user approves the content rendered by runWikiWeaver's job result.
+ */
+export async function publishGeneratedWikiPage(
+  input: {
+    content: string;
+    rootType: string;
+    rootId: number;
+    rootTitle: string;
+    wikiParentUrl: string;
+    postSummaryComment: boolean;
+  },
+  adoAuth: string,
+): Promise<{ title: string; url: string }> {
+  const { org, project } = adoTarget();
+  const page = await publishWikiPage(
+    org,
+    project,
+    input.rootType,
+    input.rootId,
+    input.rootTitle,
+    input.content,
+    input.wikiParentUrl,
+    false,
+    adoAuth,
+  );
+  if (input.postSummaryComment) {
+    await addWorkItemComment(input.rootId, `Wiki Weaver published documentation for this item: ${page.url}`, adoAuth);
+  }
+  return page;
 }

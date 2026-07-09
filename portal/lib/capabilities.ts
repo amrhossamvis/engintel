@@ -330,7 +330,7 @@ export const CAPABILITIES: Capability[] = [
       "It turns a delivery hierarchy already in ADO into living, readable documentation — the documentation/knowledge-generation half of the Development phase.",
     tagline: "Epic/Feature/Story hierarchy → one wiki page, business + tech",
     description:
-      "Takes a User Story, Feature or Epic link (or just the id), climbs to the top-level parent, reads its description/acceptance criteria/comments/attached design docs, then reads every child item sharing the same area path — including linked PRs for stories — and publishes one fully detailed wiki page covering business and technical documentation.",
+      "Takes a User Story, Feature or Epic link (or just the id), climbs to the top-level parent, reads its description/acceptance criteria/comments/attached design docs, then reads every item in its real hierarchy — including linked PRs for stories — and drafts one fully detailed business + technical documentation page for your review before you publish it to the wiki or export it as a Word doc.",
     category: "Enablement",
     status: "live",
     icon: "BookOpen",
@@ -376,15 +376,9 @@ export const CAPABILITIES: Capability[] = [
       },
       {
         key: "postSummaryComment",
-        label: "Post link-back comment on the parent item",
+        label: "Post link-back comment on the parent item once published",
         type: "toggle",
         default: true,
-      },
-      {
-        key: "dryRun",
-        label: "Dry run (preview, no wiki page published)",
-        type: "toggle",
-        default: false,
       },
     ],
   },
