@@ -874,27 +874,28 @@ export function Playground() {
                         ) : (
                           <div className="text-sm text-ink break-words">
                             <Markdown source={m.content} />
-                            <div className="flex items-center gap-3 mt-2">
-                              <button
-                                onClick={() => copyMsg(m.id, m.content)}
-                                className="inline-flex items-center gap-1.5 text-xs text-muted hover:text-ink transition-colors"
-                              >
-                                {copiedId === m.id ? (
-                                  <Check className="h-3.5 w-3.5 text-live" />
-                                ) : (
-                                  <Copy className="h-3.5 w-3.5" />
-                                )}
-                                {copiedId === m.id ? "Copied" : "Copy"}
-                              </button>
-                              <span className="h-3 w-px bg-[var(--hairline)]" />
-                              <button
-                                onClick={() => setAdoItemFor(m.content)}
-                                className="inline-flex items-center gap-1.5 text-xs text-muted hover:text-ink transition-colors"
-                              >
-                                <Ticket className="h-3.5 w-3.5" />
-                                Create ADO item
-                              </button>
-                              <span className="h-3 w-px bg-[var(--hairline)]" />
+                            <div className="mt-2 flex flex-col gap-2">
+                              <div className="flex items-center gap-3">
+                                <button
+                                  onClick={() => copyMsg(m.id, m.content)}
+                                  className="inline-flex items-center gap-1.5 text-xs text-muted hover:text-ink transition-colors"
+                                >
+                                  {copiedId === m.id ? (
+                                    <Check className="h-3.5 w-3.5 text-live" />
+                                  ) : (
+                                    <Copy className="h-3.5 w-3.5" />
+                                  )}
+                                  {copiedId === m.id ? "Copied" : "Copy"}
+                                </button>
+                                <span className="h-3 w-px bg-[var(--hairline)]" />
+                                <button
+                                  onClick={() => setAdoItemFor(m.content)}
+                                  className="inline-flex items-center gap-1.5 text-xs text-muted hover:text-ink transition-colors"
+                                >
+                                  <Ticket className="h-3.5 w-3.5" />
+                                  Create ADO item
+                                </button>
+                              </div>
                               <TemplateRating
                                 submitted={ratedMsgIds.has(m.id)}
                                 onSubmit={(rating, feedback) => submitRating(m.id, rating, feedback)}

@@ -36,18 +36,18 @@ export function TemplateRating({ onSubmit, submitted }: Props) {
 
   if (!choice) {
     return (
-      <span className="inline-flex items-center gap-3 text-xs text-muted select-none">
-        <span>Was this helpful?</span>
+      <span className="inline-flex items-center gap-2.5 text-xs text-muted select-none">
+        <span>Helpful?</span>
         <button
           onClick={() => setChoice("up")}
-          className="inline-flex items-center gap-1 hover:text-live transition-colors"
+          className="inline-flex h-6 w-6 items-center justify-center rounded-md hover:bg-[var(--panel)] hover:text-live transition-colors"
           aria-label="Helpful"
         >
           <ThumbsUp className="h-3.5 w-3.5" />
         </button>
         <button
           onClick={() => setChoice("down")}
-          className="inline-flex items-center gap-1 hover:text-red transition-colors"
+          className="inline-flex h-6 w-6 items-center justify-center rounded-md hover:bg-[var(--panel)] hover:text-red transition-colors"
           aria-label="Not helpful"
         >
           <ThumbsDown className="h-3.5 w-3.5" />
@@ -59,32 +59,34 @@ export function TemplateRating({ onSubmit, submitted }: Props) {
   const ratingVal: RatingValue = choice === "up" ? 5 : 2;
 
   return (
-    <div className="mt-2 space-y-2">
-      <div className="flex items-center gap-2">
+    <div className="flex max-w-md flex-col gap-1.5">
+      <div className="flex items-center justify-between gap-2">
         <span className="text-xs text-muted">
-          {choice === "up" ? "👍 Great!" : "👎 Sorry about that."}
-          {" "}Any details? (optional)
+          {choice === "up" ? "👍 Glad it helped." : "👎 Sorry about that."}{" "}
+          <span className="text-faint">Any details? (optional)</span>
         </span>
         <button
           onClick={() => submit(ratingVal)}
-          className="text-xs text-muted hover:text-ink transition-colors"
+          className="inline-flex h-5 w-5 items-center justify-center rounded text-faint hover:text-ink transition-colors"
           aria-label="Skip feedback"
         >
           <X className="h-3.5 w-3.5" />
         </button>
       </div>
-      <div className="flex items-end gap-2">
-        <textarea
+      <div className="flex items-center gap-1.5 rounded-xl border border-[var(--hairline)] bg-[var(--canvas)] px-3 py-1.5 transition-colors focus-within:border-red">
+        <input
           value={feedback}
           onChange={(e) => setFeedback(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") submit(ratingVal, feedback);
+          }}
           placeholder={choice === "up" ? "What did you like?" : "What could be better?"}
-          rows={2}
-          className="flex-1 rounded-lg bg-[var(--canvas)] border border-[var(--hairline)] px-3 py-2 text-xs resize-none focus:border-red transition-colors placeholder:text-faint"
+          className="flex-1 bg-transparent text-xs outline-none placeholder:text-faint"
           maxLength={500}
         />
         <button
           onClick={() => submit(ratingVal, feedback)}
-          className="grid place-items-center h-8 w-8 rounded-lg bg-red text-white hover:opacity-90 transition-opacity shrink-0"
+          className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-muted hover:text-red transition-colors"
           aria-label="Submit feedback"
         >
           <Send className="h-3.5 w-3.5" />
