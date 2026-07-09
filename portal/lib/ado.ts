@@ -221,20 +221,45 @@ export async function getRunDetail(buildId: number, auth?: string): Promise<RunD
 
 export type ParsedPr = { org: string; project: string; repo: string; prId: string };
 
-/** dev.azure.com/{org}/{project}/_git/{repo}/pullrequest/{prId} */
+/**
+ * Parse an ADO pull request URL. Supports both formats:
+ *  - https://dev.azure.com/{org}/{project}/_git/{repo}/pullrequest/{prId}
+ *  - https://{org}.visualstudio.com/{project}/_git/{repo}/pullrequest/{prId}
+ */
 export function parsePrUrl(url: string): ParsedPr | null {
   try {
     const u = new URL(url);
-    const m = u.pathname.match(
-      /\/([^/]+)\/([^/]+)\/_git\/([^/]+)\/pullrequest\/(\d+)/i,
-    );
-    if (!m) return null;
-    return {
-      org: decodeURIComponent(m[1]),
-      project: decodeURIComponent(m[2]),
-      repo: decodeURIComponent(m[3]),
-      prId: m[4],
-    };
+
+    // Format 1: dev.azure.com/{org}/{project}/_git/{repo}/pullrequest/{id}
+    if (u.hostname === "dev.azure.com") {
+      const m = u.pathname.match(
+        /\/([^/]+)\/([^/]+)\/_git\/([^/]+)\/pullrequest\/(\d+)/i,
+      );
+      if (!m) return null;
+      return {
+        org: decodeURIComponent(m[1]),
+        project: decodeURIComponent(m[2]),
+        repo: decodeURIComponent(m[3]),
+        prId: m[4],
+      };
+    }
+
+    // Format 2: {org}.visualstudio.com/{project}/_git/{repo}/pullrequest/{id}
+    if (u.hostname.endsWith(".visualstudio.com")) {
+      const org = u.hostname.replace(".visualstudio.com", "");
+      const m = u.pathname.match(
+        /\/([^/]+)\/_git\/([^/]+)\/pullrequest\/(\d+)/i,
+      );
+      if (!m) return null;
+      return {
+        org,
+        project: decodeURIComponent(m[1]),
+        repo: decodeURIComponent(m[2]),
+        prId: m[3],
+      };
+    }
+
+    return null;
   } catch {
     return null;
   }

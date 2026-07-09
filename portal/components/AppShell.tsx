@@ -2,17 +2,18 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, Boxes, FlaskConical, Home, Lightbulb, Moon, Settings, Sun } from "lucide-react";
+import { Activity, Boxes, FlaskConical, Home, Lightbulb, Map, Moon, Settings, Sun } from "lucide-react";
 import { useApp } from "./AppProvider";
 import { JobsTray } from "./JobsTray";
 import { initialsOf } from "./session";
 
 const NAV = [
-  { href: "/", icon: Home, label: "Home" },
-  { href: "/playground", icon: FlaskConical, label: "Personas" },
-  { href: "/pulse", icon: Activity, label: "Pulse" },
-  { href: "/ideas", icon: Lightbulb, label: "Ideas" },
-  { href: "/skills", icon: Boxes, label: "Skills" },
+  { href: "/", icon: Home, label: "Home", compact: false },
+  { href: "/playground", icon: FlaskConical, label: "Personas", compact: false },
+  { href: "/roadmap", icon: Map, label: "Roadmap", compact: false },
+  { href: "/pulse", icon: Activity, label: "Pulse", compact: true },
+  { href: "/ideas", icon: Lightbulb, label: "Ideas", compact: true },
+  { href: "/skills", icon: Boxes, label: "Skills", compact: true },
 ] as const;
 
 export function AppShell() {
@@ -46,22 +47,29 @@ export function AppShell() {
         <span className="flex-1" />
 
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          <nav className="flex items-center rounded-xl border border-[var(--hairline)] overflow-hidden">
-            {NAV.map(({ href, icon: Icon, label }, i) => {
+          <nav className="flex items-center gap-0.5 rounded-xl border border-[var(--hairline)] p-1">
+            {NAV.map(({ href, icon: Icon, label, compact }, i) => {
               const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
+              // Divider only where the text group meets the icon group.
+              const showDivider = i > 0 && compact && !NAV[i - 1].compact;
               return (
                 <div key={href} className="flex items-center">
-                  {i > 0 && <span className="w-px h-5 bg-[var(--hairline)]" />}
+                  {showDivider && <span className="w-px h-5 bg-[var(--hairline)] mx-1" />}
                   <Link
                     href={href}
-                    title={label}
+                    aria-label={label}
                     aria-current={active ? "page" : undefined}
-                    className={`inline-flex items-center gap-2 h-10 px-2.5 md:px-3.5 transition-colors ${
+                    className={`group relative inline-flex items-center gap-2 h-8 rounded-lg px-2.5 transition-colors ${
                       active ? "text-red bg-[rgba(230,0,0,0.1)]" : "text-muted hover:text-red hover:bg-white/5"
                     }`}
                   >
                     <Icon className="h-[1.05rem] w-[1.05rem]" />
-                    <span className="text-sm font-medium hidden md:inline">{label}</span>
+                    {!compact && <span className="text-sm font-medium hidden md:inline">{label}</span>}
+                    {compact && (
+                      <span className="pointer-events-none absolute top-full left-1/2 -translate-x-1/2 mt-2 -translate-y-1 whitespace-nowrap rounded-md border border-[var(--hairline)] bg-[var(--panel)] px-2 py-1 text-xs font-medium text-ink-dim opacity-0 shadow-lg transition-all duration-150 group-hover:translate-y-0 group-hover:opacity-100 z-50">
+                        {label}
+                      </span>
+                    )}
                   </Link>
                 </div>
               );
