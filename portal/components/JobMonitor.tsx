@@ -17,6 +17,8 @@ import { ExecDashboardResult } from "./ExecDashboardResult";
 import type { ExecDashboardOutput } from "@/lib/inline/exec-dashboard";
 import { ProductivityResult } from "./ProductivityResult";
 import type { ProductivityOutput } from "@/lib/productivity";
+import { SprintHealthResult } from "./SprintHealthResult";
+import type { SprintHealthOutput } from "@/lib/sprint-health";
 import { getCapability } from "@/lib/capabilities";
 import { Portal } from "./Portal";
 
@@ -255,6 +257,10 @@ function Inner({ job, onClose }: { job: Job; onClose: () => void }) {
 
           {job.locus === "hub-inline" && job.status === "done" && job.output && job.capId === "ai-productivity" ? (
             <ProductivityResult output={job.output as ProductivityOutput} />
+          ) : null}
+
+          {job.locus === "hub-inline" && job.status === "done" && job.output && job.capId === "sprint-health" ? (
+            <SprintHealthResult output={job.output as SprintHealthOutput} />
           ) : null}
         </div>
       </motion.aside>

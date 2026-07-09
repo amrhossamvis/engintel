@@ -15,6 +15,7 @@
  */
 
 import { adoReadAuthHeader, adoTarget } from "@/lib/ado";
+import { adoFetchJson, adoPatchJson, adoPostJson } from "@/lib/ado-http";
 import { diffFile, type FileDiff } from "@/lib/diff";
 
 const API = "7.1";
@@ -34,40 +35,19 @@ function gitRepoBase(repoIdOrName: string): string {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- ADO REST responses are untyped at this boundary
 async function adoGet(url: string, auth: string): Promise<any> {
-  const res = await fetch(url, { headers: { Authorization: auth, Accept: "application/json" }, cache: "no-store" });
-  if (res.status === 404) return null;
-  if (!res.ok) throw new Error(`ADO GET failed ${res.status} for ${url}: ${(await res.text()).slice(0, 300)}`);
-  return res.json();
+  return adoFetchJson(url, auth);
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- ADO REST responses are untyped at this boundary
 async function adoPost(url: string, auth: string, body: unknown): Promise<any> {
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { Authorization: auth, "Content-Type": "application/json", Accept: "application/json" },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) throw new Error(`ADO POST failed ${res.status} for ${url}: ${(await res.text()).slice(0, 300)}`);
-  const text = await res.text();
-  return text.trim() ? JSON.parse(text) : {};
+  return adoPostJson(url, auth, body);
 }
 
 export type JsonPatchOp = { op: "add" | "remove" | "replace"; path: string; value?: unknown };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- ADO REST responses are untyped at this boundary
 async function adoPatch(url: string, auth: string, operations: JsonPatchOp[]): Promise<any> {
-  const res = await fetch(url, {
-    method: "PATCH",
-    headers: {
-      Authorization: auth,
-      "Content-Type": "application/json-patch+json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify(operations),
-  });
-  if (!res.ok) throw new Error(`ADO PATCH failed ${res.status} for ${url}: ${(await res.text()).slice(0, 300)}`);
-  const text = await res.text();
-  return text.trim() ? JSON.parse(text) : {};
+  return adoPatchJson(url, auth, operations);
 }
 
 /** Strip ADO's rich-text HTML fields down to readable plain text. */
@@ -287,6 +267,9 @@ export async function patchWorkItemFields(id: number, fields: Record<string, str
 export async function downloadAttachment(url: string, auth: string): Promise<Buffer> {
   const res = await fetch(url, { headers: { Authorization: auth }, cache: "no-store" });
   if (!res.ok) throw new Error(`Attachment download failed ${res.status} for ${url}`);
+  if (res.url.includes("visualstudio.com/_signin")) {
+    throw new Error(`Azure DevOps rejected the request's credentials (redirected to sign-in) downloading ${url}.`);
+  }
   return Buffer.from(await res.arrayBuffer());
 }
 
@@ -346,10 +329,9 @@ export async function getPrItemContent(repoId: string, path: string, commitId: s
   const url =
     `${gitRepoBase(repoId)}/items?path=${encodeURIComponent(path)}&includeContent=true` +
     `&versionDescriptor.versionType=commit&versionDescriptor.version=${encodeURIComponent(commitId)}&api-version=${API}`;
-  const res = await fetch(url, { headers: { Authorization: auth }, cache: "no-store" });
-  if (res.status === 404) return "";
-  if (!res.ok) throw new Error(`GET item content failed ${res.status} for ${url}`);
-  const root = await res.json();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- ADO REST responses are untyped at this boundary
+  const root = (await adoGet(url, auth)) as any;
+  if (!root) return "";
   if (root.content) return String(root.content);
   if (Array.isArray(root.value) && root.value[0]?.content) return String(root.value[0].content);
   return "";
