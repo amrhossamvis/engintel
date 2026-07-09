@@ -329,6 +329,16 @@ export async function getLatestPrIterationId(repoId: string, prId: string | numb
   return latest;
 }
 
+export async function getPrLinkedWorkItemIds(repoId: string, prId: string | number, auth: string): Promise<number[]> {
+  const root = await adoGet(`${gitRepoBase(repoId)}/pullRequests/${prId}/workitems?api-version=${API}`, auth);
+  const ids: number[] = [];
+  for (const ref of root?.value ?? []) {
+    const id = Number(ref.id ?? 0);
+    if (id) ids.push(id);
+  }
+  return ids;
+}
+
 export type ChangedFile = { path: string; changeType: string; changeTrackingId: number };
 
 export async function getPrChangedFiles(

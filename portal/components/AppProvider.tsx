@@ -364,6 +364,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             createdCount: typeof result.createdCount === "number" ? result.createdCount : j.createdCount,
             linkedCount: typeof result.linkedCount === "number" ? result.linkedCount : j.linkedCount,
             dryRun: typeof result.dryRun === "boolean" ? result.dryRun : j.dryRun,
+            // "blocked" is a successful review that found blocking findings —
+            // status stays "done", but outcome/blockingCount/mergeConfidence
+            // carry the same shape a pipeline-blocked run already surfaces.
+            outcome: (result.outcome as "blocked" | "error" | null | undefined) ?? j.outcome ?? null,
+            blockingCount: typeof result.blockingCount === "number" ? result.blockingCount : j.blockingCount,
+            mergeConfidence: typeof result.mergeConfidence === "number" ? result.mergeConfidence : j.mergeConfidence,
             items: Array.isArray(result.items) ? result.items : j.items,
             wikiPages: Array.isArray(result.wikiPages) ? result.wikiPages : j.wikiPages,
             wikiDryRun: typeof result.wikiDryRun === "boolean" ? result.wikiDryRun : j.wikiDryRun,

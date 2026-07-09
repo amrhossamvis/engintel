@@ -164,13 +164,11 @@ export const CAPABILITIES: Capability[] = [
     icon: "GitPullRequest",
     tokenEnv: "COPILOT_GITHUB_TOKEN",
     estCredits: 120,
-    estDuration: "2–4 min",
-    pipeline: "cicd/pipelines/pr-reviewer.yml",
-    script: "ado_copilot_pr_preview_application_claude.py",
+    estDuration: "1–3 min",
     guild: "cross-guild",
     provider: ["github", "ado"],
-    execution: "pipeline",
-    source: "native",
+    execution: "local",
+    source: "hub-a",
     credGate: "copilot",
     fields: [
       {

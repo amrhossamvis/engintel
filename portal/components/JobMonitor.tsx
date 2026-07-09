@@ -61,7 +61,11 @@ export function JobMonitor() {
 function Inner({ job, onClose }: { job: Job; onClose: () => void }) {
   const logRef = useRef<HTMLDivElement>(null);
   const done = job.status === "done";
-  const blocked = job.status === "failed" && job.outcome === "blocked";
+  // Pipeline-blocked runs report status "failed" (ADO exit code convention);
+  // local-execution blocked runs report status "done" with outcome "blocked"
+  // (a local job only fails on a thrown exception, and a blocked review is a
+  // successful review, not an exception) — outcome alone covers both.
+  const blocked = job.outcome === "blocked";
   const errored = job.status === "failed" && job.outcome !== "blocked";
   const failed = job.status === "failed";
   const isInline = getCapability(job.capId)?.execution === "hub-inline";
@@ -121,9 +125,11 @@ function Inner({ job, onClose }: { job: Job; onClose: () => void }) {
             <span className="kicker">{skipStepList ? "Status" : "Pipeline progress"}</span>
             <span
               className="inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-wider"
-              style={{ color: done ? "var(--live)" : blocked ? "var(--soon)" : errored ? "var(--red)" : "var(--soon)" }}
+              style={{ color: blocked ? "var(--soon)" : done ? "var(--live)" : errored ? "var(--red)" : "var(--soon)" }}
             >
-              {done ? (
+              {blocked ? (
+                <CircleAlert className="h-3.5 w-3.5" />
+              ) : done ? (
                 <CircleCheck className="h-3.5 w-3.5" />
               ) : failed ? (
                 <CircleAlert className="h-3.5 w-3.5" />
@@ -188,17 +194,16 @@ function Inner({ job, onClose }: { job: Job; onClose: () => void }) {
             <div
               className="mt-6 rounded-xl border p-4 flex items-start gap-3"
               style={{
-                borderColor: `color-mix(in srgb, ${done ? "var(--live)" : blocked ? "var(--soon)" : "var(--red)"} 30%, transparent)`,
-                background: `color-mix(in srgb, ${done ? "var(--live)" : blocked ? "var(--soon)" : "var(--red)"} 7%, transparent)`,
+                borderColor: `color-mix(in srgb, ${blocked ? "var(--soon)" : done ? "var(--live)" : "var(--red)"} 30%, transparent)`,
+                background: `color-mix(in srgb, ${blocked ? "var(--soon)" : done ? "var(--live)" : "var(--red)"} 7%, transparent)`,
               }}
             >
-              {done ? (
+              {blocked ? (
+                <CircleAlert className="h-5 w-5 shrink-0 mt-0.5" style={{ color: "var(--soon)" }} />
+              ) : done ? (
                 <CircleCheck className="h-5 w-5 text-live shrink-0 mt-0.5" />
               ) : (
-                <CircleAlert
-                  className="h-5 w-5 shrink-0 mt-0.5"
-                  style={{ color: blocked ? "var(--soon)" : "var(--red)" }}
-                />
+                <CircleAlert className="h-5 w-5 shrink-0 mt-0.5" style={{ color: "var(--red)" }} />
               )}
               <div className="text-sm">
                 <p className="font-medium text-ink">
@@ -206,12 +211,12 @@ function Inner({ job, onClose }: { job: Job; onClose: () => void }) {
                     ? `${job.wikiDryRun ? "Dry run — wiki page would be published." : "Wiki page published to Azure DevOps."}`
                     : done && typeof job.createdCount === "number"
                     ? `${job.dryRun ? "Dry run — " : "Breakdown complete — "}${job.createdCount} work item(s) ${job.dryRun ? "would be created" : "created"} in Azure DevOps.${typeof job.linkedCount === "number" ? ` · ${job.linkedCount} story(ies) re-linked.` : ""}`
-                    : done && isInline
-                      ? "Analysis complete."
-                      : done
-                        ? "Review complete — results posted to Azure DevOps."
-                        : blocked
-                          ? "Review complete · changes requested — not ready to merge."
+                    : blocked
+                      ? "Review complete · changes requested — not ready to merge."
+                      : done && isInline
+                        ? "Analysis complete."
+                        : done
+                          ? "Review complete — results posted to Azure DevOps."
                           : "Run failed — see the log above for the failing step."}
                 </p>
                 {blocked && (
@@ -238,7 +243,7 @@ function Inner({ job, onClose }: { job: Job; onClose: () => void }) {
                     target="_blank"
                     rel="noreferrer"
                     className="inline-flex items-center gap-1.5 hover:underline mt-1.5 text-xs font-mono"
-                    style={{ color: done ? "var(--live)" : blocked ? "var(--soon)" : "var(--red)" }}
+                    style={{ color: blocked ? "var(--soon)" : done ? "var(--live)" : "var(--red)" }}
                   >
                     View in Azure DevOps <ExternalLink className="h-3 w-3" />
                   </a>

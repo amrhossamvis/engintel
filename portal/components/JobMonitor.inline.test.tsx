@@ -38,12 +38,15 @@ const INLINE_JOB: Job = {
   },
 };
 
+// A capability that's still ADO-pipeline-executed (not "hub-inline"/"local")
+// after the direct-REST capability migration — used here purely as a
+// pipeline-chrome regression fixture, unrelated to what it actually does.
 const PIPELINE_JOB: Job = {
   id: 2,
   runId: 555,
-  capId: "pr-review",
-  capName: "PR Reviewer",
-  icon: "GitPullRequest",
+  capId: "workitem-wiki-doc",
+  capName: "Wiki Weaver",
+  icon: "BookOpen",
   status: "done",
   stage: 0,
   steps: [],

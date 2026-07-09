@@ -3,7 +3,6 @@ import {
   adoConfigured,
   azAdoBearer,
   basicFromPat,
-  parsePrUrl,
   parseWorkItemId,
   pipelineBranchFor,
   pipelineIdFor,
@@ -23,17 +22,6 @@ function buildParams(
   inputs: Record<string, string | boolean>,
 ): { params: Record<string, string | boolean> } | { error: string } {
   switch (capabilityId) {
-    case "pr-review": {
-      const parsed = parsePrUrl(String(inputs.prUrl ?? ""));
-      if (!parsed) return { error: "bad_pr_url" };
-      return {
-        params: {
-          adoRepo: parsed.repo,
-          adoPrId: parsed.prId,
-          dryRun: Boolean(inputs.dryRun),
-        },
-      };
-    }
     case "bug-triage": {
       const bugId = parseWorkItemId(String(inputs.bugUrl ?? ""));
       if (!bugId) return { error: "bad_work_item_url" };
