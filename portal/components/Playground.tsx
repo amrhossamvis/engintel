@@ -117,7 +117,7 @@ const ERROR_MESSAGES: Record<string, string> = {
 };
 
 export function Playground() {
-  const { ready, githubToken, login, adoIdentity } = useApp();
+  const { ready, githubToken, login, adoIdentity, adoPat } = useApp();
 
   const [customPersonas, setCustomPersonas] = useState<CustomPersona[]>([]);
   const [editorInit, setEditorInit] = useState<CustomPersona | null>(null);
@@ -448,8 +448,45 @@ export function Playground() {
     }
   }
 
-  function startChat() {
-    send(fillPrompt(prompt, values));
+  async function startChat() {
+    // If the template requires PR diff fetching, do it before filling the prompt
+    let prDiffContent = "";
+    if (template.fetchPrDiff && values.prUrl?.trim()) {
+      setRunState("running");
+      try {
+        const res = await fetch("/api/playground/pr-diff", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            prUrl: values.prUrl.trim(),
+            githubToken,
+            adoPat,
+          }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          prDiffContent = data.diff ?? "";
+        } else {
+          const err = await res.json().catch(() => ({}));
+          prDiffContent = `[⚠️ Could not fetch PR diff: ${err.error ?? res.status}. Please paste the diff manually below.]`;
+        }
+      } catch (e) {
+        prDiffContent = `[⚠️ Network error fetching PR diff: ${(e as Error).message}. Please paste the diff manually below.]`;
+      }
+      setRunState("idle");
+    }
+
+    // Fill template variables, including the fetched PR diff
+    const allValues = { ...values, prDiff: prDiffContent };
+    let filledPrompt = fillPrompt(prompt, allValues);
+
+    // Append any extra instructions from the composer (for built-in prompt templates)
+    const extra = (values["_extra"] ?? "").trim();
+    if (extra) {
+      filledPrompt += `\n\n**Additional Instructions:** ${extra}`;
+    }
+
+    send(filledPrompt);
   }
 
   function sendFollowup() {
@@ -494,12 +531,20 @@ export function Playground() {
   const secondaryVars = template.variables.filter((v) => v !== primaryVar);
   const freePrompt = template.variables.length === 0;
 
-  const composerDraft = freePrompt ? prompt : primaryVar ? values[primaryVar.key] ?? "" : prompt;
+  // Templates with only text/select fields (no textarea) already have a full prompt
+  // baked in — the composer is just for optional extra instructions, not the prompt itself.
+  const hasBuiltInPrompt = !freePrompt && !primaryVar && template.prompt.trim().length > 0;
+
+  const composerDraft = freePrompt ? prompt : primaryVar ? values[primaryVar.key] ?? "" : hasBuiltInPrompt ? values["_extra"] ?? "" : prompt;
   function setComposerDraft(val: string) {
-    if (freePrompt || !primaryVar) setPrompt(val);
-    else setValues((s) => ({ ...s, [primaryVar.key]: val }));
+    if (freePrompt || (!primaryVar && !hasBuiltInPrompt)) setPrompt(val);
+    else if (primaryVar) setValues((s) => ({ ...s, [primaryVar.key]: val }));
+    else setValues((s) => ({ ...s, _extra: val }));
   }
-  const firstReady = composerDraft.trim().length > 0;
+  // For templates with a built-in prompt, the Run button is ready as soon as required fields are filled
+  const firstReady = hasBuiltInPrompt
+    ? template.variables.some((v) => (values[v.key] ?? "").trim().length > 0)
+    : composerDraft.trim().length > 0;
 
   const speech = useSpeechInput({
     onFinal: (text) => {
@@ -512,9 +557,10 @@ export function Playground() {
 
   // Exact text sent to Copilot for the first turn — shown read-only so users
   // can see what a persona actually does under the hood.
+  // Strip the trailing "Assistant:" cue — it's a technical detail not useful in the preview.
   const sentPreview = buildConversationPrompt(template.persona, [
     { role: "user", content: fillPrompt(prompt, values).trim() || "…" },
-  ]);
+  ]).replace(/\n\nAssistant:\s*$/, "");
 
   return (
     <main className={`relative mx-auto max-w-6xl px-6 pb-20 ${fullscreen ? "z-50" : "z-10"}`}>
@@ -1116,7 +1162,7 @@ export function Playground() {
                       )}
                       {copiedId === -1 ? "Copied" : "Copy"}
                     </button>
-                    <pre className="overflow-x-auto p-3.5 pr-16 text-[0.72rem] font-mono leading-relaxed text-ink whitespace-pre-wrap break-words max-h-72">
+                    <pre className="overflow-auto p-3.5 pr-16 text-[0.72rem] font-mono leading-relaxed text-ink whitespace-pre-wrap break-words max-h-[32rem]">
                       {sentPreview}
                     </pre>
                   </div>
@@ -1151,7 +1197,9 @@ export function Playground() {
                     ? `Reply to ${template.persona}…  (Enter to send, Shift+Enter for newline)`
                     : freePrompt
                       ? "Ask anything…  (Enter to send)"
-                      : `${primaryVar?.placeholder ?? primaryVar?.label ?? "Type your input"}  (Enter to send)`
+                      : hasBuiltInPrompt
+                        ? "Optional: additional instructions or focus areas…  (Enter to run)"
+                        : `${primaryVar?.placeholder ?? primaryVar?.label ?? "Type your input"}  (Enter to send)`
                 }
                 spellCheck={false}
                 className="flex-1 rounded-xl bg-[var(--canvas)] border border-[var(--hairline)] px-3.5 py-2.5 text-sm placeholder:text-faint focus:border-red transition-colors resize-none disabled:opacity-50"
