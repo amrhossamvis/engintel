@@ -273,7 +273,7 @@ const TRACK_POWER_USER: RoadmapTrack = {
 const TRACK_AI_ENGINEER: RoadmapTrack = {
   id: "ai-engineer",
   title: "AI Engineer",
-  audience: "Engineers building AI features into products",
+  audience: "Engineers building AI features with GitHub Copilot & GitHub Models",
   effort: "~6–10 weeks, part-time",
   stages: [
     ACCESS_STAGE,
@@ -287,7 +287,7 @@ const TRACK_AI_ENGINEER: RoadmapTrack = {
           why: "Tokens, context window, temperature, embeddings — the mental model behind every AI feature.",
           resources: [
             { label: "roadmap.sh: AI Engineer", url: "https://roadmap.sh/ai-engineer", type: "interactive", free: true },
-            { label: "Anthropic: Intro to Claude", url: "https://docs.anthropic.com/en/docs/intro-to-claude", type: "docs" },
+            { label: "Try models in GitHub Models playground", url: "https://github.com/marketplace/models", type: "interactive", free: true },
           ],
         },
         {
@@ -302,14 +302,15 @@ const TRACK_AI_ENGINEER: RoadmapTrack = {
     },
     {
       id: "using-models",
-      title: "Stage 2 · Using models (APIs & SDKs)",
+      title: "Stage 2 · Building with GitHub Models",
       nodes: [
         {
-          id: "provider-apis",
-          title: "Provider APIs",
-          why: "Call Anthropic/OpenAI models: messages, streaming, structured output, tokens & cost.",
+          id: "github-models-api",
+          title: "Call models with the GitHub Models API",
+          why: "Vodafone's platform: hit hosted models through GitHub with your token — messages, streaming, structured output, cost.",
           resources: [
-            { label: "Anthropic API docs", url: "https://docs.anthropic.com/en/api/overview", type: "docs" },
+            { label: "GitHub Models docs", url: "https://docs.github.com/en/github-models", type: "docs" },
+            { label: "GitHub Models marketplace", url: "https://github.com/marketplace/models", type: "interactive", free: true },
           ],
         },
         {
@@ -317,13 +318,13 @@ const TRACK_AI_ENGINEER: RoadmapTrack = {
           title: "Tool / function calling",
           why: "Let the model call your functions — the primitive behind agents and integrations.",
           resources: [
-            { label: "Anthropic: tool use", url: "https://docs.anthropic.com/en/docs/build-with-claude/tool-use", type: "docs" },
+            { label: "GitHub Models: prototyping with AI", url: "https://docs.github.com/en/github-models/use-github-models/prototyping-with-ai-models", type: "docs" },
           ],
         },
         {
           id: "ai-sdk",
           title: "An AI SDK",
-          why: "A framework (Vercel AI SDK / LangChain) speeds up building — streaming, tools, providers.",
+          why: "A framework (Vercel AI SDK / LangChain) speeds up building — streaming, tools, providers. Both support GitHub Models as a provider.",
           resources: [
             { label: "Vercel AI SDK", url: "https://ai-sdk.dev/docs", type: "docs" },
           ],
@@ -340,7 +341,7 @@ const TRACK_AI_ENGINEER: RoadmapTrack = {
           why: "The context window is a token budget — spend it well: system prompt, examples, retrieved data.",
           resources: [
             { label: "roadmap.sh: Prompt Engineering", url: "https://roadmap.sh/prompt-engineering", type: "interactive", free: true },
-            { label: "Anthropic: prompt engineering", url: "https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/overview", type: "docs" },
+            { label: "MS Learn: Prompt engineering with Copilot", url: "https://learn.microsoft.com/en-us/training/modules/introduction-prompt-engineering-with-github-copilot/", type: "course", free: true },
           ],
         },
       ],
@@ -377,22 +378,31 @@ const TRACK_AI_ENGINEER: RoadmapTrack = {
     },
     {
       id: "agents",
-      title: "Stage 5 · AI agents & MCP",
+      title: "Stage 5 · Agents, Copilot Extensions & MCP",
       nodes: [
+        {
+          id: "copilot-extensions",
+          title: "Build a Copilot Extension",
+          why: "Ship your own capability inside Copilot — the Vodafone-native way to put an agent in front of every engineer.",
+          resources: [
+            { label: "Building Copilot Extensions", url: "https://docs.github.com/en/copilot/building-copilot-extensions/about-building-copilot-extensions", type: "docs" },
+          ],
+        },
         {
           id: "agent-loops",
           title: "Agent loops & tools",
           why: "Give a model tools + a goal and let it act in a loop. The core of agentic apps.",
           resources: [
-            { label: "Anthropic: building agents", url: "https://docs.anthropic.com/en/docs/agents-and-tools/overview", type: "docs" },
+            { label: "roadmap.sh: AI agents", url: "https://roadmap.sh/ai-engineer", type: "interactive", free: true },
           ],
         },
         {
           id: "mcp",
           title: "Model Context Protocol (MCP)",
-          why: "The standard for connecting agents to tools/data — the same protocol Copilot uses.",
+          why: "The open standard for connecting agents to tools/data — and how Copilot itself extends. Learn once, use in Copilot and your own agents.",
           resources: [
             { label: "modelcontextprotocol.io", url: "https://modelcontextprotocol.io", type: "docs" },
+            { label: "Extend Copilot Chat with MCP", url: "https://docs.github.com/en/copilot/customizing-copilot/extending-copilot-chat-with-mcp", type: "docs" },
           ],
         },
       ],
@@ -404,9 +414,9 @@ const TRACK_AI_ENGINEER: RoadmapTrack = {
         {
           id: "vision-audio",
           title: "Vision & audio",
-          why: "Work with images and speech. (The hub's in-browser voice dictation is a live example.)",
+          why: "Work with images and speech — multimodal models are available in GitHub Models. (The hub's in-browser voice dictation is a live example.)",
           resources: [
-            { label: "Anthropic: vision", url: "https://docs.anthropic.com/en/docs/build-with-claude/vision", type: "docs" },
+            { label: "GitHub Models marketplace", url: "https://github.com/marketplace/models", type: "interactive", free: true },
           ],
         },
       ],
@@ -420,6 +430,7 @@ const TRACK_AI_ENGINEER: RoadmapTrack = {
           title: "Evaluate & trace",
           why: "You can't improve what you don't measure — test prompts, trace calls, watch cost/latency.",
           resources: [
+            { label: "GitHub Models: evaluators & prompt eval", url: "https://docs.github.com/en/github-models/use-github-models/evaluating-ai-models", type: "docs" },
             { label: "roadmap.sh: AI Engineer (eval)", url: "https://roadmap.sh/ai-engineer", type: "interactive", free: true },
           ],
         },
@@ -428,7 +439,8 @@ const TRACK_AI_ENGINEER: RoadmapTrack = {
           title: "Guardrails & safety in production",
           why: "Input/output validation, PII handling, injection defense before you ship to users.",
           resources: [
-            { label: "Anthropic: safety best practices", url: "https://docs.anthropic.com/en/docs/test-and-evaluate/strengthen-guardrails/reduce-prompt-leak", type: "docs" },
+            { label: "GitHub Copilot Trust Center", url: "https://resources.github.com/copilot-trust-center/", type: "docs" },
+            { label: "Microsoft: Responsible AI", url: "https://learn.microsoft.com/en-us/ai/", type: "docs" },
           ],
         },
       ],
