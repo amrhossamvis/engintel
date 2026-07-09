@@ -26,6 +26,7 @@ import {
   Sparkles,
   Square,
   Terminal,
+  Ticket,
   Trash2,
   Upload,
   X,
@@ -44,6 +45,7 @@ import {
 import { CapIcon, ICON_KEYS } from "./icons";
 import { Markdown } from "./Markdown";
 import { useApp } from "./AppProvider";
+import { AdoWorkItemModal } from "./AdoWorkItemModal";
 import { TemplateRating, type RatingValue } from "./TemplateRating";
 import { recordAnalytics } from "@/lib/playground-analytics";
 
@@ -115,6 +117,7 @@ export function Playground() {
   const [customPersonas, setCustomPersonas] = useState<CustomPersona[]>([]);
   const [editorInit, setEditorInit] = useState<CustomPersona | null>(null);
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
+  const [adoItemFor, setAdoItemFor] = useState<string | null>(null);
   const importRef = useRef<HTMLInputElement | null>(null);
 
   const allPersonas = useMemo<PgTemplate[]>(
@@ -884,6 +887,14 @@ export function Playground() {
                                 {copiedId === m.id ? "Copied" : "Copy"}
                               </button>
                               <span className="h-3 w-px bg-[var(--hairline)]" />
+                              <button
+                                onClick={() => setAdoItemFor(m.content)}
+                                className="inline-flex items-center gap-1.5 text-xs text-muted hover:text-ink transition-colors"
+                              >
+                                <Ticket className="h-3.5 w-3.5" />
+                                Create ADO item
+                              </button>
+                              <span className="h-3 w-px bg-[var(--hairline)]" />
                               <TemplateRating
                                 submitted={ratedMsgIds.has(m.id)}
                                 onSubmit={(rating, feedback) => submitRating(m.id, rating, feedback)}
@@ -1136,6 +1147,10 @@ export function Playground() {
         </section>
         )}
       </div>
+
+      {adoItemFor !== null && (
+        <AdoWorkItemModal message={adoItemFor} onClose={() => setAdoItemFor(null)} />
+      )}
     </main>
   );
 }
