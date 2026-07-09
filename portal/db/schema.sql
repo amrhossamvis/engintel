@@ -86,3 +86,18 @@ CREATE TABLE IF NOT EXISTS pg_session (
   persona_id text,
   updated_at timestamptz NOT NULL DEFAULT now()
 );
+
+CREATE TABLE IF NOT EXISTS pg_template_analytics (
+  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  template_id   text NOT NULL,
+  user_key      text NOT NULL,
+  thread_id     text,
+  turns         integer NOT NULL DEFAULT 1,
+  rating        smallint,
+  feedback_text text,
+  duration_ms   integer,
+  created_at    timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_pg_analytics_template ON pg_template_analytics(template_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_pg_analytics_user ON pg_template_analytics(user_key, created_at DESC);
+
