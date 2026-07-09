@@ -3,7 +3,7 @@ name: Build & Deploy Portal v2 to EC2
 on:
   push:
     branches:
-      - main
+      - v2-deploy
   workflow_dispatch:
 
 jobs:
@@ -48,7 +48,7 @@ jobs:
           remote_user: ${{ secrets.EC2_USER }}
           remote_key: ${{ secrets.EC2_SSH_KEY }}
 
-      # ── 6. Pull source + install prod deps + restart pm2 on EC2 ─────────────
+      # ── 6. Sync source + install prod deps + restart pm2 on EC2 ─────────────
       - name: Deploy on EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -60,26 +60,28 @@ jobs:
 
             APP_DIR=~/portal-v2
             PORTAL_DIR=$APP_DIR/portal
+            REPO_URL=https://github.com/amrhossamvis/engintel.git
+            BRANCH=v2-deploy
 
             # Ensure the repo directory exists
             mkdir -p $APP_DIR
 
-            echo "==> Preserving runtime data (story-persistence, ideas, feedback)"
+            echo "==> Preserving runtime data"
             mkdir -p /tmp/portal-v2-data-backup
             [ -f $PORTAL_DIR/data/story-persistence.json ] && cp $PORTAL_DIR/data/story-persistence.json /tmp/portal-v2-data-backup/ || true
             [ -f $PORTAL_DIR/data/ideas.json ]             && cp $PORTAL_DIR/data/ideas.json             /tmp/portal-v2-data-backup/ || true
             [ -f $PORTAL_DIR/data/feedback.json ]          && cp $PORTAL_DIR/data/feedback.json          /tmp/portal-v2-data-backup/ || true
 
-            echo "==> Pulling latest source code"
+            echo "==> Pulling latest source code from $REPO_URL ($BRANCH)"
             cd $APP_DIR
             if [ ! -d .git ]; then
               cd ~
               rm -rf portal-v2
-              git clone --branch main https://github.vodafone.com/VFGroup-VOISReusable-Assets/ai-delivery-capabilities.git portal-v2
+              git clone --branch $BRANCH $REPO_URL portal-v2
               cd portal-v2
             else
-              git fetch origin main
-              git reset --hard origin/main
+              git fetch origin $BRANCH
+              git reset --hard origin/$BRANCH
             fi
 
             echo "==> Restoring runtime data"
