@@ -38,7 +38,7 @@ portal/                  Next.js 16 app (App Router)
 
 ## Capabilities
 
-Each capability carries an Egyptian-pantheon codename that nods to what it does. **6 live · 23 total.**
+Each capability carries an Egyptian-pantheon codename that nods to what it does. **7 live · 24 total.**
 
 ### Live
 
@@ -48,6 +48,7 @@ Each capability carries an Egyptian-pantheon codename that nods to what it does.
 | **Bug Triage** | Anubis | Quality & Review | Pipeline | Pulls bug context, screenshots, history and linked PRs, correlates DataDog logs, then diagnoses the affected service + owning team and posts the triage back to the work item. |
 | **Feature Breakdown** | Ptah | Agile & Backlog | Pipeline | Reverse-engineers an epic or feature into a structured backlog with acceptance criteria, applying team-specific rules. Creates child work items in ADO. |
 | **Business Intent Builder** | Atum | Agile & Backlog | Pipeline | Turns a plain-language business intent into a complete Epic → Feature → Story hierarchy in ADO, applying team breakdown rulebooks. |
+| **Wiki Weaver** | Development | Enablement | Pipeline | Climbs a User Story/Feature/Epic link (or bare id) to its top parent, reads its description/acceptance criteria/comments/attached design docs plus every child item on the same area path (and linked PRs for stories), then publishes one business + tech wiki page. |
 | **Executive Dashboard** | Ra | Delivery Intelligence | Hub-inline | Reads a team's last 6 ADO sprints and computes a RAG health score from completion, velocity stability and bug resolution, with trend charts. Read-only. |
 | **AI Productivity Index** | Hapi | Delivery Intelligence | Hub-inline | Scores a team's last 6 sprints into one 0–100 index across delivery, quality, velocity, PR speed and Copilot adoption, plus a £ ROI estimate. Read-only. |
 
@@ -192,4 +193,4 @@ Open **<http://localhost:3000>**. Compose wires `DATABASE_URL` to the bundled Po
 
 ## Status
 
-**6 capabilities live** (PR Reviewer, Bug Triage, Feature Breakdown, Business Intent Builder, Executive Dashboard, AI Productivity Index) · **17 more on the roadmap** across Quality, Agile & Backlog, Delivery Intelligence, Mobile, Testing, and Enablement.
+**7 capabilities live** (PR Reviewer, Bug Triage, Feature Breakdown, Business Intent Builder, Wiki Weaver, Executive Dashboard, AI Productivity Index) · **17 more on the roadmap** across Quality, Agile & Backlog, Delivery Intelligence, Mobile, Testing, and Enablement.

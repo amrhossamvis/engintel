@@ -11,7 +11,7 @@ import {
   Terminal,
   X,
 } from "lucide-react";
-import { STAGES, useApp, type BreakdownItem, type Job } from "./AppProvider";
+import { STAGES, useApp, type BreakdownItem, type Job, type WikiPage } from "./AppProvider";
 import { CapIcon } from "./icons";
 import { ExecDashboardResult } from "./ExecDashboardResult";
 import type { ExecDashboardOutput } from "@/lib/inline/exec-dashboard";
@@ -196,7 +196,9 @@ function Inner({ job, onClose }: { job: Job; onClose: () => void }) {
               )}
               <div className="text-sm">
                 <p className="font-medium text-ink">
-                  {done && typeof job.createdCount === "number"
+                  {done && job.wikiPages && job.wikiPages.length > 0
+                    ? `${job.wikiDryRun ? "Dry run — wiki page would be published." : "Wiki page published to Azure DevOps."}`
+                    : done && typeof job.createdCount === "number"
                     ? `${job.dryRun ? "Dry run — " : "Breakdown complete — "}${job.createdCount} work item(s) ${job.dryRun ? "would be created" : "created"} in Azure DevOps.${typeof job.linkedCount === "number" ? ` · ${job.linkedCount} story(ies) re-linked.` : ""}`
                     : done && isInline
                       ? "Analysis complete."
@@ -212,6 +214,17 @@ function Inner({ job, onClose }: { job: Job; onClose: () => void }) {
                     {typeof job.blockingCount === "number" && ` ${job.blockingCount} blocking high-severity finding(s).`}
                     {typeof job.mergeConfidence === "number" && ` Merge confidence ${job.mergeConfidence}%.`}
                   </p>
+                )}
+                {done && job.wikiPages && job.wikiPages.length > 0 && (
+                  <a
+                    href={job.wikiPages[0].url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 hover:underline mt-1.5 text-xs font-mono"
+                    style={{ color: "var(--live)" }}
+                  >
+                    Open wiki page <ExternalLink className="h-3 w-3" />
+                  </a>
                 )}
                 {job.webUrl && (
                   <a
@@ -230,6 +243,8 @@ function Inner({ job, onClose }: { job: Job; onClose: () => void }) {
 
           {done && job.items && job.items.length > 0 && <BreakdownTree items={job.items} />}
 
+          {done && job.wikiPages && job.wikiPages.length > 1 && <WikiPageList pages={job.wikiPages} />}
+
           {job.locus === "hub-inline" && job.status === "done" && job.output && job.capId === "exec-dashboard" ? (
             <ExecDashboardResult output={job.output as ExecDashboardOutput} />
           ) : null}
@@ -240,6 +255,30 @@ function Inner({ job, onClose }: { job: Job; onClose: () => void }) {
         </div>
       </motion.aside>
     </>
+  );
+}
+
+/** Renders the published wiki page(s) as a simple clickable list. */
+function WikiPageList({ pages }: { pages: WikiPage[] }) {
+  return (
+    <div className="mt-5">
+      <p className="kicker mb-2">Wiki pages published</p>
+      <ul className="rounded-xl border border-[var(--hairline)] p-3 max-h-56 overflow-y-auto">
+        {pages.map((p) => (
+          <li key={p.url} className="flex items-center gap-2.5 py-1">
+            <a
+              href={p.url}
+              target="_blank"
+              rel="noreferrer"
+              className="text-xs text-ink hover:underline inline-flex items-center gap-1 min-w-0"
+            >
+              <span className="truncate">{p.title}</span>
+              <ExternalLink className="h-3 w-3 shrink-0 text-muted" />
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
