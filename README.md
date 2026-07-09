@@ -32,7 +32,7 @@ portal/                  Next.js 16 app (App Router)
 **Execution models**
 
 - **Local** — the capability runs entirely in-process on the Next.js server, calling the GitHub Copilot chat-completions API directly (no CLI, no external pipeline) and writing results back to ADO itself.
-- **Pipeline** — the capability triggers an Azure DevOps pipeline that runs a Copilot CLI script and writes results back to the work item / PR. No live capability uses this anymore (the last one, Wiki Weaver, moved to `local`); kept as a supported model for a future capability that needs it.
+- **Pipeline** — the capability triggers an Azure DevOps pipeline that runs a Copilot CLI script and writes results back to the work item / PR. No live capability uses this anymore (the last one, Documentation Weaver, moved to `local`); kept as a supported model for a future capability that needs it.
 - **Hub-inline** — read-only analytics computed inside the app directly from ADO (no pipeline, no credits).
 
 ---
@@ -47,9 +47,9 @@ Each capability is tagged with the SDLC phase it belongs to (Plan, Design, Devel
 |-----------|----------|----------|-----------|--------------|
 | **PR Reviewer** | Development | Quality & Review | Local | Reads the PR diff, linked work items and repo coding guidelines, then posts inline + summary review comments. Blocks merge only on high-severity, high-confidence findings. |
 | **Bug Triage** | Monitoring | Quality & Review | Local | Pulls bug context, discussion history and linked PRs, correlates DataDog logs, then diagnoses the affected service + owning team and posts the triage back to the work item. |
-| **Feature Breakdown** | Plan | Agile & Backlog | Local | Reverse-engineers an epic or feature into a structured backlog with acceptance criteria, applying team-specific rules; given a User Story instead, rolls it up (with its linked stories) into a new parent Epic and Feature. Creates/links work items in ADO. |
+| **Backlog Breakdown & Roll-up** | Plan | Agile & Backlog | Local | Reverse-engineers an epic or feature into a structured backlog with acceptance criteria, applying team-specific rules; given a User Story instead, rolls it up (with its linked stories) into a new parent Epic and Feature. Creates/links work items in ADO. |
 | **Business Intent Builder** | Plan | Agile & Backlog | Local | Turns a plain-language business intent into a complete Epic → Feature → Story hierarchy in ADO, applying team breakdown rulebooks. |
-| **Wiki Weaver** | Development | Enablement | Local | Climbs a User Story/Feature/Epic link (or bare id) to its top parent, reads its description/acceptance criteria/comments/attached design docs plus every item in the real hierarchy beneath it (falling back to same-area-path items if no hierarchy children exist), including linked PRs for stories, then publishes one business + tech wiki page. |
+| **Documentation Weaver** | Development | Enablement | Local | Climbs a User Story/Feature/Epic link (or bare id) to its top parent, reads its description/acceptance criteria/comments/attached design docs plus every item in the real hierarchy beneath it (falling back to same-area-path items if no hierarchy children exist), including linked PRs for stories, then drafts one business + tech page for review before you publish it to the wiki or export it as a Word doc. |
 | **Executive Dashboard** | Monitoring | Delivery Intelligence | Hub-inline | Reads a team's last 6 ADO sprints and computes a RAG health score from completion, velocity stability and bug resolution, with trend charts. Read-only. |
 | **AI Productivity Index** | Monitoring | Delivery Intelligence | Hub-inline | Scores a team's last 6 sprints into one 0–100 index across delivery, quality, velocity, PR speed and Copilot adoption, plus a £ ROI estimate. Read-only. |
 | **Test Case & Automation Generator** | Testing | Quality & Testing | Local | Generates structured P1/Critical test cases from a user story's description and acceptance criteria, then creates them as Test Case work items linked back to the source item. |
@@ -199,4 +199,4 @@ Open **<http://localhost:3000>**. Compose wires `DATABASE_URL` to the bundled Po
 
 ## Status
 
-**10 capabilities live** (PR Reviewer, Bug Triage, Feature Breakdown, Business Intent Builder, Wiki Weaver, Executive Dashboard, AI Productivity Index, Test Case & Automation Generator, Figma Test Cases, UI Test Data Reviewer) · **14 more on the roadmap** across Quality, Agile & Backlog, Delivery Intelligence, Mobile, Testing, and Enablement.
+**10 capabilities live** (PR Reviewer, Bug Triage, Backlog Breakdown & Roll-up, Business Intent Builder, Documentation Weaver, Executive Dashboard, AI Productivity Index, Test Case & Automation Generator, Figma Test Cases, UI Test Data Reviewer) · **14 more on the roadmap** across Quality, Agile & Backlog, Delivery Intelligence, Mobile, Testing, and Enablement.

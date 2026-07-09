@@ -193,12 +193,12 @@ export const CAPABILITIES: Capability[] = [
   },
   {
     id: "feature-breakdown",
-    name: "Feature Breakdown",
+    name: "Backlog Breakdown & Roll-up",
     codename: "Plan",
     codenameWho: PHASE.plan,
     codenameWhy:
       "It decomposes an epic or feature into implementable stories and tasks with acceptance criteria — backlog readiness before build begins.",
-    tagline: "Epic → Feature → Story decomposition",
+    tagline: "Epic/Feature decomposition, or User Story roll-up in reverse",
     description:
       "Reverse-engineers an epic or feature into a structured backlog with acceptance criteria, applying team-specific breakdown instructions. Given a User Story instead, rolls it up (with its linked stories) into a new parent Epic and Feature. Creates/links work items in ADO.",
     category: "Agile & Backlog",
@@ -323,12 +323,12 @@ export const CAPABILITIES: Capability[] = [
   },
   {
     id: "workitem-wiki-doc",
-    name: "Wiki Weaver",
+    name: "Documentation Weaver",
     codename: "Development",
     codenameWho: PHASE.development,
     codenameWhy:
       "It turns a delivery hierarchy already in ADO into living, readable documentation — the documentation/knowledge-generation half of the Development phase.",
-    tagline: "Epic/Feature/Story hierarchy → one wiki page, business + tech",
+    tagline: "Epic/Feature/Story hierarchy → one page, wiki or Word",
     description:
       "Takes a User Story, Feature or Epic link (or just the id), climbs to the top-level parent, reads its description/acceptance criteria/comments/attached design docs, then reads every item in its real hierarchy — including linked PRs for stories — and drafts one fully detailed business + technical documentation page for your review before you publish it to the wiki or export it as a Word doc.",
     category: "Enablement",
