@@ -15,7 +15,7 @@
  *   stories under the new Feature ("roll-up").
  */
 
-import { runCopilotChat, runCopilotPrompt } from "@/lib/copilot";
+import { runCopilotChat } from "@/lib/copilot";
 import { extractDocxText } from "@/lib/docx";
 import { adoTarget, parseWorkItemId } from "@/lib/ado";
 import {
@@ -569,6 +569,7 @@ function parseStoryRollupPlan(raw: string, emit: EmitFn): StoryRollupPlan {
 
 async function parseBreakdownPlanWithRepair(
   raw: string,
+  systemPrompt: string,
   githubToken: string,
   emit: EmitFn,
   allowEmptyUserStories: boolean,
@@ -578,12 +579,17 @@ async function parseBreakdownPlanWithRepair(
     return parseBreakdownPlan(raw, allowEmptyUserStories, poNotes, emit);
   } catch (firstError) {
     emit("[copilot] plan failed validation — asking Copilot to repair it once");
-    const repairPrompt =
+    // Reuse the full original system prompt (team guidelines included) and the
+    // larger runCopilotChat token budget — a single truncated repairPrompt
+    // message previously cut the previous response at 8000 chars, which could
+    // silently drop the exact story/feature that needed fixing, causing the
+    // repair attempt to fail with the identical validation error.
+    const repairMessage =
       `The following response was supposed to be a breakdown JSON plan but failed validation: ${
         firstError instanceof Error ? firstError.message : firstError
-      }\n\nRepair or regenerate it. Return valid JSON only using the same schema, starting with { and ending with }. ` +
-      `Do not add markdown fences or prose. Escape newlines inside JSON strings.\n\nPrevious response:\n${raw.slice(0, 8000)}`;
-    const repaired = await runCopilotPrompt(repairPrompt, githubToken);
+      }\n\nRepair or regenerate the complete plan. Return valid JSON only using the same schema, starting with { and ending with }. ` +
+      `Do not add markdown fences or prose. Escape newlines inside JSON strings.\n\nPrevious response:\n${raw}`;
+    const repaired = await runCopilotChat(systemPrompt, repairMessage, githubToken);
     try {
       return parseBreakdownPlan(repaired, allowEmptyUserStories, poNotes, emit);
     } catch (secondError) {
@@ -596,17 +602,22 @@ async function parseBreakdownPlanWithRepair(
   }
 }
 
-async function parseStoryRollupPlanWithRepair(raw: string, githubToken: string, emit: EmitFn): Promise<StoryRollupPlan> {
+async function parseStoryRollupPlanWithRepair(
+  raw: string,
+  systemPrompt: string,
+  githubToken: string,
+  emit: EmitFn,
+): Promise<StoryRollupPlan> {
   try {
     return parseStoryRollupPlan(raw, emit);
   } catch (firstError) {
     emit("[copilot] roll-up plan failed validation — asking Copilot to repair it once");
-    const repairPrompt =
+    const repairMessage =
       `The following response was supposed to be a User Story roll-up JSON plan but failed validation: ${
         firstError instanceof Error ? firstError.message : firstError
-      }\n\nRepair or regenerate it. Return valid JSON only using the same schema, starting with { and ending with }. ` +
-      `Do not add markdown fences or prose. Escape newlines inside JSON strings.\n\nPrevious response:\n${raw.slice(0, 8000)}`;
-    const repaired = await runCopilotPrompt(repairPrompt, githubToken);
+      }\n\nRepair or regenerate the complete plan. Return valid JSON only using the same schema, starting with { and ending with }. ` +
+      `Do not add markdown fences or prose. Escape newlines inside JSON strings.\n\nPrevious response:\n${raw}`;
+    const repaired = await runCopilotChat(systemPrompt, repairMessage, githubToken);
     try {
       return parseStoryRollupPlan(repaired, emit);
     } catch (secondError) {
@@ -1007,7 +1018,7 @@ export async function runFeatureBreakdown(inputs: Record<string, string | boolea
 
     emit("[copilot] streaming model response …");
     const raw = await runCopilotChat(systemPrompt, userMessage, githubToken);
-    const plan = await parseStoryRollupPlanWithRepair(raw, githubToken, emit);
+    const plan = await parseStoryRollupPlanWithRepair(raw, systemPrompt, githubToken, emit);
     emit(`[copilot] roll-up plan: Epic '${plan.epic.title}', Feature '${plan.feature.title}'`);
 
     if (dryRun) {
@@ -1087,7 +1098,7 @@ export async function runFeatureBreakdown(inputs: Record<string, string | boolea
   emit("[copilot] streaming model response …");
   const raw = await runCopilotChat(systemPrompt, userMessage, githubToken);
   const allowEmptyUserStories = parentType === "Feature" && existingChildren.length > 0;
-  const plan = await parseBreakdownPlanWithRepair(raw, githubToken, emit, allowEmptyUserStories, poNotes);
+  const plan = await parseBreakdownPlanWithRepair(raw, systemPrompt, githubToken, emit, allowEmptyUserStories, poNotes);
   const storyCount = plan.userStories.length + plan.features.reduce((n, f) => n + f.userStories.length, 0);
   emit(`[copilot] plan: ${plan.features.length} Feature(s), ${storyCount} User Story(ies)`);
 

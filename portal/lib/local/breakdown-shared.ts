@@ -230,8 +230,31 @@ export function loadCopilotJson(jsonStr: string): unknown {
  * requester lookup (BUILD_REQUESTEDFOR/EMAIL), which doesn't exist outside a
  * pipeline. Since local runs execute under the caller's own ADO auth, the
  * "requester" is simply whoever that auth resolves to.
+ *
+ * ADO's System.AssignedTo field needs a qualified identity ("Display
+ * Name<email>", or an email/UPN alone) to resolve unambiguously — a bare
+ * display name is rejected with "unknown identity". The Profile API
+ * reliably returns both displayName and emailAddress; connectionData is a
+ * fallback for orgs where that call fails, and its account/email property is
+ * still preferred over the bare display name for the same reason. If no
+ * qualified identifier can be resolved, return null (skip assignment)
+ * rather than gambling on a bare name that's likely to be rejected.
  */
 export async function resolveCallerIdentity(org: string, auth: string): Promise<string | null> {
+  try {
+    const profile = (await adoFetchJson(
+      `https://vssps.dev.azure.com/${encodeURIComponent(org)}/_apis/profile/profiles/me?api-version=7.1`,
+      auth,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- ADO REST responses are untyped at this boundary
+    )) as any;
+    const displayName = profile?.displayName ? String(profile.displayName) : "";
+    const email = profile?.emailAddress ? String(profile.emailAddress) : "";
+    if (email && displayName) return `${displayName}<${email}>`;
+    if (email) return email;
+  } catch {
+    // fall through to connectionData
+  }
+
   try {
     const data = (await adoFetchJson(
       `https://dev.azure.com/${encodeURIComponent(org)}/_apis/connectionData?api-version=7.1-preview`,
@@ -239,8 +262,10 @@ export async function resolveCallerIdentity(org: string, auth: string): Promise<
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- ADO REST responses are untyped at this boundary
     )) as any;
     const name = data?.authenticatedUser?.providerDisplayName ?? data?.authenticatedUser?.customDisplayName;
-    if (!name || name === "Anonymous") return null;
-    return String(name);
+    const account = data?.authenticatedUser?.properties?.Account?.$value;
+    if (account && name) return `${name}<${account}>`;
+    if (account) return String(account);
+    return null;
   } catch {
     return null;
   }

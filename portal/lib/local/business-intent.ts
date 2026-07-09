@@ -6,7 +6,7 @@
  * creates the whole hierarchy in Azure DevOps.
  */
 
-import { runCopilotChat, runCopilotPrompt } from "@/lib/copilot";
+import { runCopilotChat } from "@/lib/copilot";
 import {
   addWorkItemComment,
   createWorkItemRecord,
@@ -142,17 +142,27 @@ function validateBusinessIntentPlan(plan: BusinessIntentPlan): void {
   if (total > MAX_CHILDREN) throw new Error(`Generated hierarchy contains ${total} child items. Max is ${MAX_CHILDREN}.`);
 }
 
-async function parsePlanWithRepair(raw: string, githubToken: string, emit: (line: string) => void): Promise<BusinessIntentPlan> {
+async function parsePlanWithRepair(
+  raw: string,
+  systemPrompt: string,
+  githubToken: string,
+  emit: (line: string) => void,
+): Promise<BusinessIntentPlan> {
   try {
     return parseBusinessIntentPlan(raw);
   } catch (firstError) {
     emit("[copilot] plan failed validation — asking Copilot to repair it once");
-    const repairPrompt =
+    // Reuse the full original system prompt (team guidelines included) and the
+    // larger runCopilotChat token budget — a single truncated repairPrompt
+    // message previously cut the previous response at 8000 chars, which could
+    // silently drop the exact story/feature that needed fixing, causing the
+    // repair attempt to fail with the identical validation error.
+    const repairMessage =
       `The following response was supposed to be a Business Intent JSON plan but failed validation: ${
         firstError instanceof Error ? firstError.message : firstError
-      }\n\nRepair or regenerate it. Return valid JSON only using the same schema, starting with { and ending with }. ` +
-      `Do not add markdown fences or prose. Escape newlines inside JSON strings.\n\nPrevious response:\n${raw.slice(0, 8000)}`;
-    const repaired = await runCopilotPrompt(repairPrompt, githubToken);
+      }\n\nRepair or regenerate the complete plan. Return valid JSON only using the same schema, starting with { and ending with }. ` +
+      `Do not add markdown fences or prose. Escape newlines inside JSON strings.\n\nPrevious response:\n${raw}`;
+    const repaired = await runCopilotChat(systemPrompt, repairMessage, githubToken);
     try {
       return parseBusinessIntentPlan(repaired);
     } catch (secondError) {
@@ -287,7 +297,7 @@ export async function runBusinessIntent(
   emit("[copilot] streaming model response …");
   const raw = await runCopilotChat(systemPrompt, userMessage, githubToken);
 
-  const plan = await parsePlanWithRepair(raw, githubToken, emit);
+  const plan = await parsePlanWithRepair(raw, systemPrompt, githubToken, emit);
   emit(`[copilot] plan: 1 Epic, ${plan.features.length} Feature(s), ${plan.features.reduce((n, f) => n + f.userStories.length, 0)} User Story(ies)`);
 
   if (dryRun) {

@@ -15,7 +15,7 @@
  */
 
 import { adoReadAuthHeader, adoTarget } from "@/lib/ado";
-import { adoFetchJson, adoPatchJson, adoPostJson } from "@/lib/ado-http";
+import { AdoHttpError, adoFetchJson, adoPatchJson, adoPostJson } from "@/lib/ado-http";
 import { diffFile, type FileDiff } from "@/lib/diff";
 
 const API = "7.1";
@@ -228,8 +228,7 @@ export type CreatedWorkItemRecord = { id: number; type: string; title: string; p
 
 const HIERARCHY_REVERSE = "System.LinkTypes.Hierarchy-Reverse";
 
-export async function createWorkItemRecord(input: CreateWorkItemRecordInput, auth: string): Promise<CreatedWorkItemRecord> {
-  const url = `${projectBase()}/_apis/wit/workitems/$${encodeURIComponent(input.type)}?api-version=${API}`;
+function buildCreateOps(input: CreateWorkItemRecordInput, skipAssignedTo: boolean): JsonPatchOp[] {
   const ops: JsonPatchOp[] = [
     { op: "add", path: "/fields/System.Title", value: input.title },
     { op: "add", path: "/fields/System.Description", value: input.descriptionHtml },
@@ -241,6 +240,7 @@ export async function createWorkItemRecord(input: CreateWorkItemRecordInput, aut
   if (input.iterationPath) ops.push({ op: "add", path: "/fields/System.IterationPath", value: input.iterationPath });
   if (input.tags) ops.push({ op: "add", path: "/fields/System.Tags", value: input.tags });
   for (const [field, value] of Object.entries(input.extraFields ?? {})) {
+    if (skipAssignedTo && field === "System.AssignedTo") continue;
     ops.push({ op: "add", path: `/fields/${field}`, value });
   }
   if (input.parentId !== undefined) {
@@ -250,8 +250,27 @@ export async function createWorkItemRecord(input: CreateWorkItemRecordInput, aut
       value: { rel: HIERARCHY_REVERSE, url: `${witBase()}/workItems/${input.parentId}` },
     });
   }
+  return ops;
+}
 
-  const root = await adoPatch(url, auth, ops);
+/** ADO rejects System.AssignedTo when it can't uniquely resolve the identity string. */
+function isUnresolvedIdentityError(ex: unknown): boolean {
+  return ex instanceof AdoHttpError && /assigned to|unknown identity/i.test(ex.message);
+}
+
+export async function createWorkItemRecord(input: CreateWorkItemRecordInput, auth: string): Promise<CreatedWorkItemRecord> {
+  const url = `${projectBase()}/_apis/wit/workitems/$${encodeURIComponent(input.type)}?api-version=${API}`;
+
+  let root: { id: number; fields?: Record<string, unknown> };
+  try {
+    root = await adoPatch(url, auth, buildCreateOps(input, false));
+  } catch (ex) {
+    // A bad/ambiguous assignee shouldn't sink an otherwise-valid work item —
+    // retry once without System.AssignedTo rather than losing the whole run.
+    if (!isUnresolvedIdentityError(ex) || !input.extraFields?.["System.AssignedTo"]) throw ex;
+    root = await adoPatch(url, auth, buildCreateOps(input, true));
+  }
+
   const fields = root.fields ?? {};
   return {
     id: Number(root.id),
