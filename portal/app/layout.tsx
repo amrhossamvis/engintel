@@ -8,6 +8,9 @@ import { NunDrawer } from "@/components/ideas/NunDrawer";
 
 const themeScript = `(function(){try{var t=localStorage.getItem('theme')||'dark';document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme='dark';}})();`;
 
+// Patch fetch to auto-prefix basePath for relative /api calls
+const fetchPatchScript = `(function(){var bp="${process.env.NEXT_PUBLIC_BASE_PATH||""}";if(!bp)return;var _f=window.fetch;window.fetch=function(u,o){if(typeof u==='string'&&u.startsWith('/')&&!u.startsWith(bp+'/')){u=bp+u;}return _f.call(this,u,o);};})();`;
+
 const display = Bricolage_Grotesque({
   subsets: ["latin"],
   variable: "--font-display-src",
@@ -39,6 +42,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <script dangerouslySetInnerHTML={{ __html: fetchPatchScript }} />
       </head>
       <body className={`${display.variable} ${body.variable} ${mono.variable}`}>
         <AppProvider>
