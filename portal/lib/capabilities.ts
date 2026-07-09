@@ -336,13 +336,11 @@ export const CAPABILITIES: Capability[] = [
     icon: "BookOpen",
     tokenEnv: "COPILOT_GITHUB_TOKEN",
     estCredits: 400,
-    estDuration: "5–10 min",
-    pipeline: "cicd/pipelines/workitem-doc-generator.yml",
-    script: "ado_copilot_workitem_doc_generator.py",
+    estDuration: "3–7 min",
     guild: "cross-guild",
-    provider: ["ado"],
-    execution: "pipeline",
-    source: "native",
+    provider: ["github", "ado"],
+    execution: "local",
+    source: "hub-a",
     credGate: "copilot",
     fields: [
       {

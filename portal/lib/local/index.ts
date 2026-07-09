@@ -18,6 +18,7 @@ import { runUiTestDataReviewer } from "./ui-testdata";
 import { runPrReview } from "./pr-review";
 import { runBugTriage } from "./bug-triage";
 import { runFeatureBreakdown } from "./feature-breakdown";
+import { runWikiWeaver } from "./wiki-weaver";
 
 export type LocalJobStatus = "running" | "done" | "failed";
 
@@ -98,4 +99,5 @@ export const LOCAL_HANDLERS: Record<string, LocalHandler> = {
   "pr-review": runPrReview,
   "bug-triage": runBugTriage,
   "feature-breakdown": runFeatureBreakdown,
+  "workitem-wiki-doc": runWikiWeaver,
 };

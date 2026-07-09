@@ -38,14 +38,16 @@ const INLINE_JOB: Job = {
   },
 };
 
-// A capability that's still ADO-pipeline-executed (not "hub-inline"/"local")
-// after the direct-REST capability migration — used here purely as a
-// pipeline-chrome regression fixture, unrelated to what it actually does.
+// No catalog capability is pipeline-executed anymore (the direct-REST
+// migration covers all 8 + Wiki Weaver) — use a capId that doesn't match any
+// catalog entry so getCapability() returns undefined and JobMonitor falls
+// through to its default (pipeline-chrome) rendering path, which is the
+// behavior this regression test actually exercises.
 const PIPELINE_JOB: Job = {
   id: 2,
   runId: 555,
-  capId: "workitem-wiki-doc",
-  capName: "Wiki Weaver",
+  capId: "unknown-legacy-pipeline-capability",
+  capName: "Legacy Pipeline Capability",
   icon: "BookOpen",
   status: "done",
   stage: 0,

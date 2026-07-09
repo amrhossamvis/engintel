@@ -3,7 +3,6 @@ import {
   adoConfigured,
   azAdoBearer,
   basicFromPat,
-  parseWorkItemId,
   pipelineBranchFor,
   pipelineIdFor,
   runPipeline,
@@ -16,32 +15,15 @@ type Body = {
   adoPat?: string;
 };
 
-/** Build the templateParameters for each capability from its form inputs. */
-function buildParams(
-  capabilityId: string,
-  inputs: Record<string, string | boolean>,
-): { params: Record<string, string | boolean> } | { error: string } {
-  switch (capabilityId) {
-    case "workitem-wiki-doc": {
-      const workItem = parseWorkItemId(String(inputs.workItemRef ?? ""));
-      if (!workItem) return { error: "bad_work_item_ref" };
-      const wikiParentUrl = String(inputs.wikiParentUrl ?? "").trim();
-      return {
-        params: {
-          workItem,
-          docLevel: String(inputs.docLevel ?? "Feature").trim().toLowerCase() || "feature",
-          docType: String(inputs.docType ?? "Both").trim().toLowerCase() || "both",
-          postSummaryComment: Boolean(inputs.postSummaryComment),
-          dryRun: Boolean(inputs.dryRun),
-          ...(wikiParentUrl ? { wikiParentUrl } : {}),
-        },
-      };
-    }
-    default:
-      // Every other capability runs "local" or "hub-inline" now — this route
-      // only serves the one remaining pipeline-executed capability above.
-      return { error: "not_configured" };
-  }
+/**
+ * Build the templateParameters for each capability from its form inputs.
+ * Every capability now runs "local" or "hub-inline" — no catalog entry has
+ * execution: "pipeline" anymore. This route (and the ADO Pipeline
+ * trigger/status infrastructure it calls into) is currently unreachable dead
+ * code, kept only in case a future capability needs it again.
+ */
+function buildParams(): { params: Record<string, string | boolean> } | { error: string } {
+  return { error: "not_configured" };
 }
 
 export async function POST(req: Request) {
@@ -52,7 +34,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "bad_request" }, { status: 400 });
   }
 
-  const { capabilityId, inputs, githubToken, adoPat } = body;
+  const { capabilityId, githubToken, adoPat } = body;
   if (!githubToken || githubToken.trim().length < 8) {
     return NextResponse.json({ error: "missing_token" }, { status: 400 });
   }
@@ -69,7 +51,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "not_configured" }, { status: 501 });
   }
 
-  const built = buildParams(capabilityId, inputs);
+  const built = buildParams();
   if ("error" in built) {
     const status = built.error === "not_configured" ? 501 : 400;
     return NextResponse.json({ error: built.error }, { status });
