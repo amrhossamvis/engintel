@@ -17,6 +17,7 @@
 import { adoReadAuthHeader, adoTarget } from "@/lib/ado";
 import { AdoHttpError, adoFetchJson, adoPatchJson, adoPostJson } from "@/lib/ado-http";
 import { diffFile, type FileDiff } from "@/lib/diff";
+import { flatten, type ClassificationNode } from "@/lib/ado-workitems";
 
 const API = "7.1";
 
@@ -209,6 +210,22 @@ export async function deleteWorkItemComment(id: number, commentId: number, auth:
 export async function queryWiql(wiql: string, auth: string): Promise<number[]> {
   const root = await adoPost(`${witBase()}/wiql?api-version=7.1-preview.2`, auth, { query: wiql });
   return (root?.workItems ?? []).map((w: { id: number }) => w.id);
+}
+
+/**
+ * Fetch the full Area or Iteration classification tree, flattened into
+ * selectable `Project\Area\Sub` paths. Same underlying data as
+ * lib/ado-workitems.ts's getClassificationNodes (reuses its flatten()), but
+ * takes an already-resolved auth header instead of re-resolving from a raw
+ * PAT — matching every other function in this file, and the caller's own
+ * bring-your-own-token auth rather than falling back to az login/service PAT.
+ */
+export async function getClassificationTree(kind: "areas" | "iterations", auth: string): Promise<ClassificationNode[]> {
+  const root = await adoGet(`${witBase()}/classificationnodes/${kind}?$depth=10&api-version=7.0`, auth);
+  if (!root) return [];
+  const out: ClassificationNode[] = [];
+  flatten(root, "", out);
+  return out;
 }
 
 export type CreateWorkItemRecordInput = {

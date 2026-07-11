@@ -1,4 +1,15 @@
-export type FieldType = "url" | "text" | "textarea" | "select" | "toggle";
+export type FieldType =
+  | "url"
+  | "text"
+  | "textarea"
+  | "select"
+  | "toggle"
+  /** Dropdown populated from docs/triage/team-map.yaml via /api/ado/teams. */
+  | "team-select"
+  /** Free-text input with a live ADO area-path datalist via /api/ado/classification?kind=areas. */
+  | "ado-area-path"
+  /** Free-text input with a live ADO iteration-path datalist via /api/ado/classification?kind=iterations. */
+  | "ado-iteration-path";
 
 export type Field = {
   key: string;
@@ -221,10 +232,23 @@ export const CAPABILITIES: Capability[] = [
         required: true,
       },
       {
+        key: "team",
+        label: "Team (optional — picks the matching breakdown rulebook if one exists, else generic)",
+        type: "team-select",
+        help: "Also auto-fills the area path below when a match is found in ADO — you can still override it.",
+      },
+      {
         key: "areaPath",
         label: "Area path (optional — defaults to the work item's own area)",
-        type: "text",
+        type: "ado-area-path",
         placeholder: "Digital\\Consumer\\VOXI\\VOXI Digital",
+      },
+      {
+        key: "iterationPath",
+        label: "Starting iteration (optional — spreads generated User Stories across this and later iterations in the same PI, in priority order)",
+        type: "ado-iteration-path",
+        placeholder: "Digital\\Digital X\\PI 42\\42.3",
+        help: "Leave blank to skip iteration assignment entirely (previous behavior). Only affects created User Stories — Features anchor to this starting iteration.",
       },
       {
         key: "isTechBreakdown",

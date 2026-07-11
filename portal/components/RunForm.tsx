@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
 import { BadgeCheck, Clock, Play, Settings, X } from "lucide-react";
@@ -9,6 +9,54 @@ import { CapIcon } from "./icons";
 import { useApp } from "./AppProvider";
 import { initialsOf } from "./session";
 import { Portal } from "./Portal";
+
+type ClassificationNode = { name: string; path: string };
+
+function slug(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, "");
+}
+
+/**
+ * Find the best-matching ADO area node for a team name. Splits on " - "
+ * (team names like "MVA - Alex" name a tribe and a sub-squad, whose area is
+ * typically nested "...\MVA\Alex", not a single node named "MVA - Alex")
+ * and requires every part to appear as its own path SEGMENT somewhere in the
+ * candidate's full path — not just a substring of the leaf name. Checking
+ * only the leaf previously let an unrelated node merely named "MVA" (e.g.
+ * under a completely different team) win over the real "...\MVA\Alex" node,
+ * since "mva" is a substring of "mvaalex" regardless of where it sits in the
+ * tree. Ranks candidates so an exact-segment match beats a partial one, and
+ * a match on the node's own leaf (the most specific part, last in the split)
+ * beats one that only matched on the tribe segment.
+ */
+function findAreaMatch(teamName: string, nodes: ClassificationNode[]): ClassificationNode | null {
+  const parts = teamName
+    .split(/\s*-\s*/)
+    .map((p) => slug(p))
+    .filter(Boolean);
+  if (!parts.length) return null;
+  const leafPart = parts[parts.length - 1];
+
+  let best: { node: ClassificationNode; score: number } | null = null;
+  for (const node of nodes) {
+    const segments = node.path.split("\\").map(slug);
+    let score = 0;
+    let allMatched = true;
+    for (const part of parts) {
+      if (segments.includes(part)) score += 2;
+      else if (segments.some((s) => s.includes(part) || part.includes(s))) score += 1;
+      else {
+        allMatched = false;
+        break;
+      }
+    }
+    if (!allMatched) continue;
+    const leafSlug = segments[segments.length - 1];
+    if (leafSlug === leafPart) score += 3;
+    if (!best || score > best.score) best = { node, score };
+  }
+  return best?.node ?? null;
+}
 
 export function RunForm() {
   const { launchCap, closeLaunch } = useApp();
@@ -22,7 +70,7 @@ export function RunForm() {
 }
 
 function Inner({ cap, onClose }: { cap: Capability; onClose: () => void }) {
-  const { ready, login, adoIdentity, queueJob, openMonitor, closeLaunch } = useApp();
+  const { ready, login, adoIdentity, adoPat, queueJob, openMonitor, closeLaunch } = useApp();
   const runAs = adoIdentity ?? login ?? "your token";
   const [values, setValues] = useState<Record<string, string | boolean>>(() => {
     const init: Record<string, string | boolean> = {};
@@ -38,6 +86,60 @@ function Inner({ cap, onClose }: { cap: Capability; onClose: () => void }) {
     [cap.fields, values],
   );
   const canRun = missing.length === 0 && (cap.credGate === "none" || ready);
+
+  // Auto-fill the area path from the selected team, when both fields exist
+  // on this capability's form and the area path is still empty — never
+  // overrides a value the user has already set or typed over.
+  const teamField = cap.fields.find((f) => f.type === "team-select");
+  const areaField = cap.fields.find((f) => f.type === "ado-area-path");
+  const [areaNodes, setAreaNodes] = useState<ClassificationNode[]>([]);
+  const selectedTeam = teamField ? String(values[teamField.key] ?? "").trim() : "";
+  /** Tracks the value we last auto-filled, so re-selecting a team can still update it — only a value that differs from this (i.e. one the user typed themselves) is left alone. */
+  const lastAutoFilledArea = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!areaField) return;
+    let cancelled = false;
+    fetch(`/api/ado/classification?kind=areas`, { headers: adoPat ? { "x-ado-pat": adoPat } : {} })
+      .then((r) => r.json())
+      .then((d: { nodes?: ClassificationNode[] }) => {
+        if (!cancelled) setAreaNodes(d.nodes ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setAreaNodes([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [areaField, adoPat]);
+
+  useEffect(() => {
+    if (!teamField || !areaField || !selectedTeam) return;
+    const currentValue = String(values[areaField.key] ?? "").trim();
+    // Only stand down if the current value is something other than what we
+    // last auto-filled — that means the user typed over it themselves, so a
+    // fresh team selection shouldn't clobber their explicit choice. A value
+    // that still matches our last auto-fill (or no value at all) is fair
+    // game to update for the newly selected team.
+    if (currentValue && currentValue !== lastAutoFilledArea.current) return;
+
+    const match = findAreaMatch(selectedTeam, areaNodes);
+    if (match) {
+      if (match.path !== currentValue) {
+        lastAutoFilledArea.current = match.path;
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing form state from an external source (ADO area tree) once the team selection resolves, not a render-triggered loop
+        setValues((s) => ({ ...s, [areaField.key]: match.path }));
+      }
+    } else if (currentValue && currentValue === lastAutoFilledArea.current) {
+      // The newly selected team has no area match, and the current value is
+      // just a leftover auto-fill from a previous team (not something the
+      // user typed) — clear it rather than leaving a stale value that looks
+      // like it applies to the new team but doesn't.
+      lastAutoFilledArea.current = null;
+      setValues((s) => ({ ...s, [areaField.key]: "" }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally excludes `values` to avoid re-firing on every keystroke; re-derives only when team/areaNodes change
+  }, [selectedTeam, areaNodes, teamField, areaField]);
 
   function run() {
     if (!canRun) return;
@@ -103,6 +205,8 @@ function Inner({ cap, onClose }: { cap: Capability; onClose: () => void }) {
                 field={f}
                 value={values[f.key]}
                 onChange={(v) => setValues((s) => ({ ...s, [f.key]: v }))}
+                adoPat={adoPat}
+                areaNodes={f.type === "ado-area-path" ? areaNodes : undefined}
               />
             ))}
 
@@ -185,11 +289,68 @@ function FieldRow({
   field,
   value,
   onChange,
+  adoPat,
+  areaNodes,
 }: {
   field: Field;
   value: string | boolean;
   onChange: (v: string | boolean) => void;
+  adoPat?: string;
+  /** Pre-fetched area-path nodes, passed down when the parent form already loaded them for auto-fill. Avoids a duplicate fetch for the "ado-area-path" field specifically. */
+  areaNodes?: ClassificationNode[];
 }) {
+  const [teamOptions, setTeamOptions] = useState<string[]>([]);
+  const [iterationNodes, setIterationNodes] = useState<ClassificationNode[]>([]);
+  const [fetchedAreaNodes, setFetchedAreaNodes] = useState<ClassificationNode[]>([]);
+
+  useEffect(() => {
+    if (field.type !== "team-select") return;
+    let cancelled = false;
+    fetch("/api/ado/teams")
+      .then((r) => r.json())
+      .then((d: { teams?: string[] }) => {
+        if (!cancelled) setTeamOptions(d.teams ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setTeamOptions([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [field.type]);
+
+  useEffect(() => {
+    if (field.type !== "ado-iteration-path") return;
+    let cancelled = false;
+    fetch(`/api/ado/classification?kind=iterations`, { headers: adoPat ? { "x-ado-pat": adoPat } : {} })
+      .then((r) => r.json())
+      .then((d: { nodes?: ClassificationNode[] }) => {
+        if (!cancelled) setIterationNodes(d.nodes ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setIterationNodes([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [field.type, adoPat]);
+
+  useEffect(() => {
+    if (field.type !== "ado-area-path" || areaNodes) return; // parent already provides these when it fetched them itself
+    let cancelled = false;
+    fetch(`/api/ado/classification?kind=areas`, { headers: adoPat ? { "x-ado-pat": adoPat } : {} })
+      .then((r) => r.json())
+      .then((d: { nodes?: ClassificationNode[] }) => {
+        if (!cancelled) setFetchedAreaNodes(d.nodes ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setFetchedAreaNodes([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [field.type, adoPat, areaNodes]);
+
   if (field.type === "toggle") {
     const on = Boolean(value);
     return (
@@ -212,6 +373,8 @@ function FieldRow({
     );
   }
 
+  const listId = `dl-${field.key}`;
+
   return (
     <div>
       <label className="block text-sm font-medium mb-2">
@@ -230,6 +393,19 @@ function FieldRow({
             </option>
           ))}
         </select>
+      ) : field.type === "team-select" ? (
+        <select
+          value={String(value)}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full rounded-xl bg-[var(--canvas)] border border-[var(--hairline)] px-3.5 py-3 text-sm focus:border-red transition-colors"
+        >
+          <option value="">— none (generic instructions) —</option>
+          {teamOptions.map((t) => (
+            <option key={t} value={t}>
+              {t}
+            </option>
+          ))}
+        </select>
       ) : field.type === "textarea" ? (
         <textarea
           value={String(value)}
@@ -238,6 +414,21 @@ function FieldRow({
           rows={3}
           className="w-full rounded-xl bg-[var(--canvas)] border border-[var(--hairline)] px-3.5 py-3 text-sm placeholder:text-faint focus:border-red transition-colors resize-none"
         />
+      ) : field.type === "ado-area-path" || field.type === "ado-iteration-path" ? (
+        <>
+          <input
+            list={listId}
+            value={String(value)}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={field.placeholder}
+            className="w-full rounded-xl bg-[var(--canvas)] border border-[var(--hairline)] px-3.5 py-3 text-sm placeholder:text-faint focus:border-red transition-colors"
+          />
+          <datalist id={listId}>
+            {(field.type === "ado-area-path" ? areaNodes ?? fetchedAreaNodes : iterationNodes).map((n) => (
+              <option key={n.path} value={n.path} />
+            ))}
+          </datalist>
+        </>
       ) : (
         <input
           type={field.type === "url" ? "url" : "text"}

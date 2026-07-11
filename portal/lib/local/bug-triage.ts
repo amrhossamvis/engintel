@@ -12,9 +12,6 @@
  * discussion history, and linked-PR content only.
  */
 
-import { promises as fs } from "node:fs";
-import path from "node:path";
-import { load as loadYaml } from "js-yaml";
 import { runCopilotChat } from "@/lib/copilot";
 import { adoTarget, parseWorkItemId } from "@/lib/ado";
 import {
@@ -32,7 +29,8 @@ import {
   type WorkItemRecord,
 } from "@/lib/ado-workitem-client";
 import type { LocalCtx, LocalJobResult } from "@/lib/local";
-import { docsRoot, extractJsonObject, loadCopilotJson } from "@/lib/local/breakdown-shared";
+import { extractJsonObject, loadCopilotJson } from "@/lib/local/breakdown-shared";
+import { loadTeamMap, type TeamMapTeam, type TilRoute, type TeamMap } from "@/lib/team-map";
 
 const TRIAGE_MARKER = "[COPILOT-TRIAGE]";
 const REVIEWABLE_EXTENSIONS = [".java", ".kt", ".groovy", ".properties", ".js", ".ts", ".tsx", ".cs", ".py"];
@@ -49,18 +47,6 @@ const TIL_SIGNAL = /\b(til|fmw|siebel|wcc|webmethods)\b/i;
 const LOWER_ENV = /\b(sit|dev|int1|qc1|qa|uat|test)\b/i;
 
 type Signals = { services: string[]; errors: string[]; ids: string[]; urls: string[]; env: string; timeFrom: string; timeTo: string };
-type TeamMapTeam = {
-  name?: string;
-  area?: string;
-  section?: string;
-  teams_channel?: string;
-  eng_manager?: string;
-  lead_dev?: string;
-  po?: string;
-  services?: string[];
-};
-type TilRoute = { team?: string; use_when?: string; area_path?: string; distribution_list?: string; source_section?: string };
-type TeamMap = { teams: TeamMapTeam[]; tilRouting: TilRoute[] };
 type TeamMatch = { kind: "exact" | "shared" | "til" | "area" | "unmapped"; service: string | null; teams: TeamMapTeam[]; til: TilRoute[]; note: string };
 type Diagnosis = { service: string; confidence: "high" | "medium" | "low"; evidence: string[]; recommendedAction: string };
 type PrContext = { repoId: string; prId: number; title: string; description: string; status: string; sourceCommit: string; files: { path: string; content: string }[] };
@@ -232,16 +218,6 @@ async function searchDdLogs(query: string, timeFrom: string, timeTo: string): Pr
 }
 
 // --- team-map ------------------------------------------------------------------
-
-async function loadTeamMap(): Promise<TeamMap> {
-  const filePath = path.join(docsRoot(), "triage", "team-map.yaml");
-  const content = await fs.readFile(filePath, "utf-8");
-  const doc = (loadYaml(content) ?? {}) as Record<string, unknown>;
-  return {
-    teams: (doc.teams as TeamMapTeam[]) ?? [],
-    tilRouting: (doc.til_routing as TilRoute[]) ?? [],
-  };
-}
 
 function matchTeam(services: string[], areaPath: string, env: string, tags: string, teamMap: TeamMap): TeamMatch {
   for (const svc of services) {

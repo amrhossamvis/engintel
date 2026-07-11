@@ -15,6 +15,8 @@
  *   stories under the new Feature ("roll-up").
  */
 
+import { promises as fs } from "node:fs";
+import path from "node:path";
 import { runCopilotChat } from "@/lib/copilot";
 import { extractDocxText } from "@/lib/docx";
 import { adoTarget, parseWorkItemId } from "@/lib/ado";
@@ -22,6 +24,7 @@ import {
   addWorkItemComment,
   createWorkItemRecord,
   downloadAttachment,
+  getClassificationTree,
   getDiscussionHistory,
   getWorkItemRecord,
   relinkWorkItemParent,
@@ -36,6 +39,7 @@ import {
   cleanupTitle,
   descriptionTextToAdoHtml,
   discoverInstructionFile,
+  docsRoot,
   extractJsonObject,
   loadCopilotJson,
   normalizeAcceptanceCriteriaText,
@@ -78,6 +82,127 @@ type StoryRollupPlan = { parentType: string; sourceStoryTitle: string; epic: Epi
 type LinkedItem = { id: number; type: string; title: string; parentId: number };
 type DocxAttachment = { filename: string; text: string };
 type EmitFn = (line: string) => void;
+
+// --- team → instruction-set resolution ------------------------------------------
+
+function slugify(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+/**
+ * Resolve which breakdown-instruction set to use for a selected team/squad
+ * name. Scans docs/breakdown-instructions/ for `epic-breakdown-instructions-
+ * {suffix}.md` files (the presence of that file is what discoverInstructionFile
+ * already treats as "this team has its own rulebook" for every kind), matches
+ * the slugified team name against those suffixes — exactly first, then by
+ * prefix (so squads like "MVA - Dahab" or "Voxi Digital" correctly pick up
+ * their tribe's instructions, e.g. "mva" / "voxi") — and falls back to
+ * "generic" when nothing matches. Always logs which outcome it landed on, so
+ * it's visible in the run's live log which instructions were actually used.
+ */
+async function resolveTeamInstructionSuffix(teamName: string, emit: EmitFn): Promise<string> {
+  const trimmed = (teamName ?? "").trim();
+  if (!trimmed) {
+    emit("[breakdown] no team selected — using generic instructions");
+    return "generic";
+  }
+
+  const dir = path.join(docsRoot(), "breakdown-instructions");
+  let files: string[] = [];
+  try {
+    files = await fs.readdir(dir);
+  } catch {
+    emit(`[breakdown] could not read ${dir} — using generic instructions`);
+    return "generic";
+  }
+
+  const suffixes = new Set<string>();
+  for (const f of files) {
+    const m = f.match(/^epic-breakdown-instructions-(.+)\.md$/);
+    if (m && m[1] !== "generic") suffixes.add(m[1]);
+  }
+
+  const teamSlug = slugify(trimmed);
+
+  if (suffixes.has(teamSlug)) {
+    emit(`[breakdown] team '${trimmed}' matched instruction set '${teamSlug}' exactly`);
+    return teamSlug;
+  }
+
+  const candidates = [...suffixes].filter((s) => teamSlug.startsWith(slugify(s))).sort((a, b) => b.length - a.length);
+  if (candidates.length) {
+    emit(`[breakdown] team '${trimmed}' matched instruction set '${candidates[0]}' (closest available for this squad)`);
+    return candidates[0];
+  }
+
+  emit(`[breakdown] no instruction set found for team '${trimmed}' — using generic instructions`);
+  return "generic";
+}
+
+// --- iteration spreading ----------------------------------------------------------
+
+/**
+ * Given a starting iteration leaf like "42.3" under "...\PI 42\42.3", find
+ * every sibling iteration under the same PI whose iteration number is >= the
+ * selected one (inclusive — the starting iteration itself is available too),
+ * sorted ascending. Returns just [selectedIterationPath] if the path doesn't
+ * match the PI.iteration leaf convention, or if no siblings are found, so
+ * callers always get at least one usable iteration.
+ */
+function computeIterationSpread(selectedIterationPath: string, allIterations: { path: string }[], emit: EmitFn): string[] {
+  const trimmed = selectedIterationPath.trim();
+  if (!trimmed) return [];
+
+  const segments = trimmed.split("\\");
+  const leaf = segments[segments.length - 1];
+  const leafMatch = leaf.match(/^(\d+)\.(\d+)$/);
+  if (!leafMatch) {
+    emit(`[breakdown] iteration '${trimmed}' isn't in "PI.iteration" form (e.g. 42.3) — using it as a single fixed iteration for every story`);
+    return [trimmed];
+  }
+
+  const selectedNum = Number(leafMatch[2]);
+  const parentPath = segments.slice(0, -1).join("\\");
+
+  const siblings: { path: string; num: number }[] = [];
+  for (const node of allIterations) {
+    const nodeSegments = node.path.split("\\");
+    const nodeLeaf = nodeSegments[nodeSegments.length - 1];
+    if (nodeSegments.slice(0, -1).join("\\") !== parentPath) continue;
+    const nodeMatch = nodeLeaf.match(/^(\d+)\.(\d+)$/);
+    if (!nodeMatch) continue;
+    siblings.push({ path: node.path, num: Number(nodeMatch[2]) });
+  }
+  siblings.sort((a, b) => a.num - b.num);
+
+  const available = siblings.filter((s) => s.num >= selectedNum).map((s) => s.path);
+  if (!available.length) {
+    emit(`[breakdown] no sibling iterations found under '${parentPath}' — using '${trimmed}' as a single fixed iteration for every story`);
+    return [trimmed];
+  }
+
+  emit(`[breakdown] spreading User Stories across ${available.length} iteration(s) starting at ${trimmed}: ${available.join(", ")}`);
+  return available;
+}
+
+/** Split an ordered list into N contiguous, front-loaded-balanced chunks — story 1..k in iteration 1, k+1..2k in iteration 2, etc. */
+function distributeAcrossIterations<T>(items: T[], iterationPaths: string[]): T[][] {
+  const n = iterationPaths.length;
+  if (n === 0) return items.length ? [items] : [];
+  const base = Math.floor(items.length / n);
+  const remainder = items.length % n;
+  const buckets: T[][] = [];
+  let idx = 0;
+  for (let i = 0; i < n; i++) {
+    const count = base + (i < remainder ? 1 : 0);
+    buckets.push(items.slice(idx, idx + count));
+    idx += count;
+  }
+  return buckets;
+}
 
 function truncate(text: string, maxLen: number): string {
   return text.length <= maxLen ? text : text.slice(0, maxLen) + "\n... [truncated]";
@@ -775,6 +900,7 @@ async function createFeatureChildren(
   plan: BreakdownPlan,
   assignedTo: string | null,
   existingChildren: WorkItemRecord[],
+  iterationPaths: string[],
   auth: string,
   emit: EmitFn,
 ): Promise<{ created: CreatedWorkItemRecord[]; skipped: StorySpec[] }> {
@@ -784,6 +910,14 @@ async function createFeatureChildren(
   const areaOfValue = areaOfValueOf(parent);
   const seenTitles = new Set(existingChildren.map((s) => normalizeTitleForCompare(s.title)));
 
+  // Iteration spreading is purely a creation-time concern — it never touches
+  // what Copilot generated or how the plan validated. Stories keep their
+  // generated order; that order is what "priority" means here.
+  const storyIteration = new Map<StorySpec, string>();
+  distributeAcrossIterations(plan.userStories, iterationPaths).forEach((bucket, i) =>
+    bucket.forEach((story) => storyIteration.set(story, iterationPaths[i])),
+  );
+
   for (const story of plan.userStories) {
     const normalized = normalizeTitleForCompare(story.title);
     if (seenTitles.has(normalized)) {
@@ -791,6 +925,7 @@ async function createFeatureChildren(
       emit(`[ado] skipping duplicate User Story '${story.title}' — a child with the same title already exists under Feature ${parent.id}`);
       continue;
     }
+    const iterationPath = storyIteration.get(story);
     const item = await createWorkItemRecord(
       {
         type: "User Story",
@@ -798,6 +933,7 @@ async function createFeatureChildren(
         descriptionHtml: descriptionTextToAdoHtml(story.description),
         acceptanceCriteriaHtml: acceptanceCriteriaTextToAdoHtml(story.acceptanceCriteria),
         areaPath,
+        iterationPath,
         tags,
         extraFields: { ...(areaOfValue ? { [AREA_OF_VALUE_FIELD]: areaOfValue } : {}), ...(assignedTo ? { "System.AssignedTo": assignedTo } : {}) },
         parentId: parent.id,
@@ -805,7 +941,7 @@ async function createFeatureChildren(
       auth,
     );
     created.push(item);
-    emit(`[ado] created User Story ${item.id}: ${item.title}`);
+    emit(`[ado] created User Story ${item.id}: ${item.title}${iterationPath ? ` → ${iterationPath}` : ""}`);
     seenTitles.add(normalized);
   }
   return { created, skipped };
@@ -816,12 +952,25 @@ async function createEpicChildren(
   areaPath: string,
   plan: BreakdownPlan,
   assignedTo: string | null,
+  iterationPaths: string[],
   auth: string,
   emit: EmitFn,
 ): Promise<CreatedWorkItemRecord[]> {
   const created: CreatedWorkItemRecord[] = [];
   const tags = parent.tags || "AI-Breakdown";
   const areaOfValue = areaOfValueOf(parent);
+
+  // Spreading is Epic-wide, not per-Feature: flatten every feature's stories
+  // in generation order first, so priority order spans the whole breakdown
+  // rather than restarting at iteration 1 for each Feature. Features
+  // themselves are longer-lived groupings, so they anchor to the starting
+  // iteration rather than being spread.
+  const allStories = plan.features.flatMap((f) => f.userStories);
+  const storyIteration = new Map<StorySpec, string>();
+  distributeAcrossIterations(allStories, iterationPaths).forEach((bucket, i) =>
+    bucket.forEach((story) => storyIteration.set(story, iterationPaths[i])),
+  );
+  const featureIterationPath = iterationPaths[0];
 
   for (const feature of plan.features) {
     const createdFeature = await createWorkItemRecord(
@@ -831,6 +980,7 @@ async function createEpicChildren(
         descriptionHtml: descriptionTextToAdoHtml(feature.description),
         acceptanceCriteriaHtml: acceptanceCriteriaTextToAdoHtml(feature.acceptanceCriteria),
         areaPath,
+        iterationPath: featureIterationPath,
         tags,
         extraFields: { ...(areaOfValue ? { [AREA_OF_VALUE_FIELD]: areaOfValue } : {}), ...(assignedTo ? { "System.AssignedTo": assignedTo } : {}) },
         parentId: parent.id,
@@ -841,6 +991,7 @@ async function createEpicChildren(
     emit(`[ado] created Feature ${createdFeature.id}: ${createdFeature.title}`);
 
     for (const story of feature.userStories) {
+      const iterationPath = storyIteration.get(story);
       const createdStory = await createWorkItemRecord(
         {
           type: "User Story",
@@ -848,6 +999,7 @@ async function createEpicChildren(
           descriptionHtml: descriptionTextToAdoHtml(story.description),
           acceptanceCriteriaHtml: acceptanceCriteriaTextToAdoHtml(story.acceptanceCriteria),
           areaPath,
+          iterationPath,
           tags,
           extraFields: { ...(areaOfValue ? { [AREA_OF_VALUE_FIELD]: areaOfValue } : {}), ...(assignedTo ? { "System.AssignedTo": assignedTo } : {}) },
           parentId: createdFeature.id,
@@ -855,7 +1007,7 @@ async function createEpicChildren(
         auth,
       );
       created.push(createdStory);
-      emit(`[ado] created User Story ${createdStory.id}: ${createdStory.title}`);
+      emit(`[ado] created User Story ${createdStory.id}: ${createdStory.title}${iterationPath ? ` → ${iterationPath}` : ""}`);
     }
   }
   return created;
@@ -978,11 +1130,12 @@ export async function runFeatureBreakdown(inputs: Record<string, string | boolea
   const workItemId = Number(workItemIdStr);
 
   const areaPathOverride = typeof inputs.areaPath === "string" ? inputs.areaPath.trim() : "";
+  const iterationPathInput = typeof inputs.iterationPath === "string" ? inputs.iterationPath.trim() : "";
   const isTechBreakdown = Boolean(inputs.isTechBreakdown);
   const poNotes = typeof inputs.additionalInstructions === "string" ? inputs.additionalInstructions.trim() : "";
   const createParentComment = inputs.createParentComment !== false;
   const dryRun = Boolean(inputs.dryRun);
-  const teamName = "generic";
+  const teamName = typeof inputs.team === "string" ? inputs.team.trim() : "";
 
   emit(`[ado] loading work item ${workItemId}…`);
   const parentRaw = await getWorkItemRecord(workItemId, adoAuth, true);
@@ -995,6 +1148,11 @@ export async function runFeatureBreakdown(inputs: Record<string, string | boolea
 
   const areaPath = areaPathOverride || parentRaw.areaPath;
   emit(`[ado] parent: ${parentType} ${parentRaw.id} — ${parentRaw.title}`);
+
+  // Resolve which team's instruction rulebook to use up front — shared by
+  // both the roll-up and breakdown branches below, and logged either way so
+  // it's always visible which instructions actually drove the generation.
+  const instructionSuffix = await resolveTeamInstructionSuffix(teamName, emit);
 
   const discussion = await getDiscussionHistory(workItemId, adoAuth, MAX_PARENT_HISTORY_CHARS);
   const docxAttachments = await loadDocxAttachments(parentRaw, adoAuth, emit);
@@ -1010,7 +1168,10 @@ export async function runFeatureBreakdown(inputs: Record<string, string | boolea
 
     const areaOfValue = resolveRollupAreaOfValue(parentRaw, linkedStories, emit);
 
-    const instructionFile = await discoverInstructionFile(teamName, "user-story-rollup");
+    // Roll-up doesn't create new leaf User Stories (it re-parents existing
+    // ones and creates a single new Epic + Feature), so iteration spreading
+    // doesn't apply here — only to the breakdown branch below.
+    const instructionFile = await discoverInstructionFile(instructionSuffix, "user-story-rollup");
     emit(`[bundle] loaded roll-up instructions (${instructionFile.path.split("/").pop()})`);
 
     const systemPrompt = buildRollupSystemPrompt(instructionFile.content);
@@ -1088,7 +1249,7 @@ export async function runFeatureBreakdown(inputs: Record<string, string | boolea
     : parentType === "Epic"
       ? "epic-breakdown"
       : "feature-breakdown";
-  const instructionFile = await discoverInstructionFile(teamName, kind);
+  const instructionFile = await discoverInstructionFile(instructionSuffix, kind);
   emit(`[bundle] loaded ${kind} instructions (${instructionFile.path.split("/").pop()})`);
 
   const systemPrompt =
@@ -1111,12 +1272,28 @@ export async function runFeatureBreakdown(inputs: Record<string, string | boolea
   const assignedTo = await resolveCallerIdentity(org, adoAuth);
   if (assignedTo) emit(`[ado] assigning created items to ${assignedTo}`);
 
+  // Iteration spreading is opt-in: an empty iterationPathInput preserves the
+  // original behavior exactly (no iteration path set on created items at
+  // all). It never influences generation/validation above this point.
+  let iterationPaths: string[] = [];
+  if (iterationPathInput) {
+    try {
+      const allIterations = await getClassificationTree("iterations", adoAuth);
+      iterationPaths = computeIterationSpread(iterationPathInput, allIterations, emit);
+    } catch (ex) {
+      emit(
+        `[breakdown] could not resolve iteration spread (${ex instanceof Error ? ex.message : ex}) — using '${iterationPathInput}' as a single fixed iteration`,
+      );
+      iterationPaths = [iterationPathInput];
+    }
+  }
+
   let created: CreatedWorkItemRecord[] = [];
   let skipped: StorySpec[] = [];
   if (parentType === "Feature") {
-    ({ created, skipped } = await createFeatureChildren(parentRaw, areaPath, plan, assignedTo, existingChildren, adoAuth, emit));
+    ({ created, skipped } = await createFeatureChildren(parentRaw, areaPath, plan, assignedTo, existingChildren, iterationPaths, adoAuth, emit));
   } else {
-    created = await createEpicChildren(parentRaw, areaPath, plan, assignedTo, adoAuth, emit);
+    created = await createEpicChildren(parentRaw, areaPath, plan, assignedTo, iterationPaths, adoAuth, emit);
   }
 
   if (createParentComment) {
