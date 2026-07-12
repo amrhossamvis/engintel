@@ -16,6 +16,7 @@ import { runTestCaseGenerator } from "./testcase-ado";
 import { runFigmaTestCaseGenerator } from "./testcase-figma";
 import { runUiTestDataReviewer } from "./ui-testdata";
 import { runPrReview } from "./pr-review";
+import { runPrImpactAnalyzer } from "./pr-impact-analyzer";
 import { runBugTriage } from "./bug-triage";
 import { runFeatureBreakdown } from "./feature-breakdown";
 import { runWikiWeaver } from "./wiki-weaver";
@@ -97,6 +98,7 @@ export const LOCAL_HANDLERS: Record<string, LocalHandler> = {
   "testcase-figma": runFigmaTestCaseGenerator,
   "ui-testdata": runUiTestDataReviewer,
   "pr-review": runPrReview,
+  "pr-impact-analyzer": runPrImpactAnalyzer,
   "bug-triage": runBugTriage,
   "feature-breakdown": runFeatureBreakdown,
   "workitem-wiki-doc": runWikiWeaver,

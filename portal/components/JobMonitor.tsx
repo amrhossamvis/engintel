@@ -22,6 +22,8 @@ import type { SprintHealthOutput } from "@/lib/sprint-health";
 import { getCapability } from "@/lib/capabilities";
 import { Portal } from "./Portal";
 import { WikiWeaverReview } from "./WikiWeaverReview";
+import { PrImpactResult } from "./PrImpactResult";
+import type { PrImpactOutput } from "@/lib/local/pr-impact-analyzer";
 
 type StepVisual = "done" | "active" | "failed" | "idle";
 
@@ -71,6 +73,10 @@ function Inner({ job, onClose }: { job: Job; onClose: () => void }) {
   const failed = job.status === "failed";
   const isInline = getCapability(job.capId)?.execution === "hub-inline";
   const isLocalRun = getCapability(job.capId)?.execution === "local";
+  const prImpactMeta =
+    job.capId === "pr-impact-analyzer" && job.output && typeof job.output === "object"
+      ? (job.output as { prCommentPosted?: boolean; prCommentError?: string })
+      : null;
   // Local runs happen in-process on this server (no ADO pipeline), so the
   // 5-step ADO agent-pool progress list doesn't apply — same as hub-inline.
   const skipStepList = isInline || isLocalRun;
@@ -216,6 +222,10 @@ function Inner({ job, onClose }: { job: Job; onClose: () => void }) {
                     ? `${job.dryRun ? "Dry run — " : "Breakdown complete — "}${job.createdCount} work item(s) ${job.dryRun ? "would be created" : "created"} in Azure DevOps.${typeof job.linkedCount === "number" ? ` · ${job.linkedCount} story(ies) re-linked.` : ""}`
                     : blocked
                       ? "Review complete · changes requested — not ready to merge."
+                      : done && job.capId === "pr-impact-analyzer"
+                        ? prImpactMeta?.prCommentPosted
+                          ? "Impact analysis complete — summary posted to the PR comment thread."
+                          : "Impact analysis complete — could not post PR comment (see warning in log)."
                       : done && isInline
                         ? "Analysis complete."
                         : done
@@ -271,6 +281,10 @@ function Inner({ job, onClose }: { job: Job; onClose: () => void }) {
 
           {job.locus === "hub-inline" && job.status === "done" && job.output && job.capId === "sprint-health" ? (
             <SprintHealthResult output={job.output as SprintHealthOutput} />
+          ) : null}
+
+          {job.locus === "local" && job.status === "done" && job.output && job.capId === "pr-impact-analyzer" ? (
+            <PrImpactResult output={job.output as PrImpactOutput} />
           ) : null}
         </div>
       </motion.aside>

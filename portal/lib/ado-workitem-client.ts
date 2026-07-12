@@ -443,6 +443,29 @@ export async function getPrItemContent(repoId: string, path: string, commitId: s
   return "";
 }
 
+/**
+ * Read a file from any repository at a branch/tag/version (for cross-repo
+ * context enrichment where we are not tied to a specific PR commit).
+ */
+export async function getRepoItemContent(
+  repoId: string,
+  itemPath: string,
+  version: string,
+  auth: string,
+): Promise<string> {
+  const cleanVersion = version.trim();
+  if (!cleanVersion) return "";
+  const url =
+    `${gitRepoBase(repoId)}/items?path=${encodeURIComponent(itemPath)}&includeContent=true` +
+    `&versionDescriptor.versionType=branch&versionDescriptor.version=${encodeURIComponent(cleanVersion)}&api-version=${API}`;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- ADO REST responses are untyped at this boundary
+  const root = (await adoGet(url, auth)) as any;
+  if (!root) return "";
+  if (root.content) return String(root.content);
+  if (Array.isArray(root.value) && root.value[0]?.content) return String(root.value[0].content);
+  return "";
+}
+
 export type PrFileContext = {
   path: string;
   changeType: string;
