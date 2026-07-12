@@ -17,8 +17,13 @@ import { ExecDashboardResult } from "./ExecDashboardResult";
 import type { ExecDashboardOutput } from "@/lib/inline/exec-dashboard";
 import { ProductivityResult } from "./ProductivityResult";
 import type { ProductivityOutput } from "@/lib/productivity";
+import { SprintHealthResult } from "./SprintHealthResult";
+import type { SprintHealthOutput } from "@/lib/sprint-health";
 import { getCapability } from "@/lib/capabilities";
 import { Portal } from "./Portal";
+import { WikiWeaverReview } from "./WikiWeaverReview";
+import { PrImpactResult } from "./PrImpactResult";
+import type { PrImpactOutput } from "@/lib/local/pr-impact-analyzer";
 
 type StepVisual = "done" | "active" | "failed" | "idle";
 
@@ -59,10 +64,22 @@ export function JobMonitor() {
 function Inner({ job, onClose }: { job: Job; onClose: () => void }) {
   const logRef = useRef<HTMLDivElement>(null);
   const done = job.status === "done";
-  const blocked = job.status === "failed" && job.outcome === "blocked";
+  // Pipeline-blocked runs report status "failed" (ADO exit code convention);
+  // local-execution blocked runs report status "done" with outcome "blocked"
+  // (a local job only fails on a thrown exception, and a blocked review is a
+  // successful review, not an exception) — outcome alone covers both.
+  const blocked = job.outcome === "blocked";
   const errored = job.status === "failed" && job.outcome !== "blocked";
   const failed = job.status === "failed";
   const isInline = getCapability(job.capId)?.execution === "hub-inline";
+  const isLocalRun = getCapability(job.capId)?.execution === "local";
+  const prImpactMeta =
+    job.capId === "pr-impact-analyzer" && job.output && typeof job.output === "object"
+      ? (job.output as { prCommentPosted?: boolean; prCommentError?: string })
+      : null;
+  // Local runs happen in-process on this server (no ADO pipeline), so the
+  // 5-step ADO agent-pool progress list doesn't apply — same as hub-inline.
+  const skipStepList = isInline || isLocalRun;
 
   useEffect(() => {
     logRef.current?.scrollTo({ top: logRef.current.scrollHeight });
@@ -97,7 +114,7 @@ function Inner({ job, onClose }: { job: Job; onClose: () => void }) {
               <CapIcon name={job.icon} className="h-5 w-5" style={{ color: "var(--red)" }} />
             </div>
             <div>
-              <p className="kicker">{isInline ? "Hub · in-app run" : `ADO Run #${job.runId}`}</p>
+              <p className="kicker">{skipStepList ? "Hub · in-app run" : `ADO Run #${job.runId}`}</p>
               <h2 className="font-display text-lg font-semibold leading-tight">{job.capName}</h2>
             </div>
           </div>
@@ -112,12 +129,14 @@ function Inner({ job, onClose }: { job: Job; onClose: () => void }) {
 
         <div className="px-7 py-6">
           <div className="flex items-center justify-between mb-5">
-            <span className="kicker">{isInline ? "Status" : "Pipeline progress"}</span>
+            <span className="kicker">{skipStepList ? "Status" : "Pipeline progress"}</span>
             <span
               className="inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-wider"
-              style={{ color: done ? "var(--live)" : blocked ? "var(--soon)" : errored ? "var(--red)" : "var(--soon)" }}
+              style={{ color: blocked ? "var(--soon)" : done ? "var(--live)" : errored ? "var(--red)" : "var(--soon)" }}
             >
-              {done ? (
+              {blocked ? (
+                <CircleAlert className="h-3.5 w-3.5" />
+              ) : done ? (
                 <CircleCheck className="h-3.5 w-3.5" />
               ) : failed ? (
                 <CircleAlert className="h-3.5 w-3.5" />
@@ -134,7 +153,7 @@ function Inner({ job, onClose }: { job: Job; onClose: () => void }) {
             </span>
           </div>
 
-          {!isInline && (
+          {!skipStepList && (
             <ol className="space-y-2.5 mb-6 max-h-56 overflow-y-auto pr-1">
               {job.steps.length > 0
                 ? job.steps.map((s) => {
@@ -182,30 +201,35 @@ function Inner({ job, onClose }: { job: Job; onClose: () => void }) {
             <div
               className="mt-6 rounded-xl border p-4 flex items-start gap-3"
               style={{
-                borderColor: `color-mix(in srgb, ${done ? "var(--live)" : blocked ? "var(--soon)" : "var(--red)"} 30%, transparent)`,
-                background: `color-mix(in srgb, ${done ? "var(--live)" : blocked ? "var(--soon)" : "var(--red)"} 7%, transparent)`,
+                borderColor: `color-mix(in srgb, ${blocked ? "var(--soon)" : done ? "var(--live)" : "var(--red)"} 30%, transparent)`,
+                background: `color-mix(in srgb, ${blocked ? "var(--soon)" : done ? "var(--live)" : "var(--red)"} 7%, transparent)`,
               }}
             >
-              {done ? (
+              {blocked ? (
+                <CircleAlert className="h-5 w-5 shrink-0 mt-0.5" style={{ color: "var(--soon)" }} />
+              ) : done ? (
                 <CircleCheck className="h-5 w-5 text-live shrink-0 mt-0.5" />
               ) : (
-                <CircleAlert
-                  className="h-5 w-5 shrink-0 mt-0.5"
-                  style={{ color: blocked ? "var(--soon)" : "var(--red)" }}
-                />
+                <CircleAlert className="h-5 w-5 shrink-0 mt-0.5" style={{ color: "var(--red)" }} />
               )}
               <div className="text-sm">
                 <p className="font-medium text-ink">
-                  {done && job.wikiPages && job.wikiPages.length > 0
+                  {done && job.wikiDraft
+                    ? "Wiki page generated — review it below before publishing."
+                    : done && job.wikiPages && job.wikiPages.length > 0
                     ? `${job.wikiDryRun ? "Dry run — wiki page would be published." : "Wiki page published to Azure DevOps."}`
                     : done && typeof job.createdCount === "number"
                     ? `${job.dryRun ? "Dry run — " : "Breakdown complete — "}${job.createdCount} work item(s) ${job.dryRun ? "would be created" : "created"} in Azure DevOps.${typeof job.linkedCount === "number" ? ` · ${job.linkedCount} story(ies) re-linked.` : ""}`
-                    : done && isInline
-                      ? "Analysis complete."
-                      : done
-                        ? "Review complete — results posted to Azure DevOps."
-                        : blocked
-                          ? "Review complete · changes requested — not ready to merge."
+                    : blocked
+                      ? "Review complete · changes requested — not ready to merge."
+                      : done && job.capId === "pr-impact-analyzer"
+                        ? prImpactMeta?.prCommentPosted
+                          ? "Impact analysis complete — summary posted to the PR comment thread."
+                          : "Impact analysis complete — could not post PR comment (see warning in log)."
+                      : done && isInline
+                        ? "Analysis complete."
+                        : done
+                          ? "Review complete — results posted to Azure DevOps."
                           : "Run failed — see the log above for the failing step."}
                 </p>
                 {blocked && (
@@ -232,7 +256,7 @@ function Inner({ job, onClose }: { job: Job; onClose: () => void }) {
                     target="_blank"
                     rel="noreferrer"
                     className="inline-flex items-center gap-1.5 hover:underline mt-1.5 text-xs font-mono"
-                    style={{ color: done ? "var(--live)" : blocked ? "var(--soon)" : "var(--red)" }}
+                    style={{ color: blocked ? "var(--soon)" : done ? "var(--live)" : "var(--red)" }}
                   >
                     View in Azure DevOps <ExternalLink className="h-3 w-3" />
                   </a>
@@ -243,6 +267,8 @@ function Inner({ job, onClose }: { job: Job; onClose: () => void }) {
 
           {done && job.items && job.items.length > 0 && <BreakdownTree items={job.items} />}
 
+          {done && job.wikiDraft && <WikiWeaverReview draft={job.wikiDraft} />}
+
           {done && job.wikiPages && job.wikiPages.length > 1 && <WikiPageList pages={job.wikiPages} />}
 
           {job.locus === "hub-inline" && job.status === "done" && job.output && job.capId === "exec-dashboard" ? (
@@ -251,6 +277,14 @@ function Inner({ job, onClose }: { job: Job; onClose: () => void }) {
 
           {job.locus === "hub-inline" && job.status === "done" && job.output && job.capId === "ai-productivity" ? (
             <ProductivityResult output={job.output as ProductivityOutput} />
+          ) : null}
+
+          {job.locus === "hub-inline" && job.status === "done" && job.output && job.capId === "sprint-health" ? (
+            <SprintHealthResult output={job.output as SprintHealthOutput} />
+          ) : null}
+
+          {job.locus === "local" && job.status === "done" && job.output && job.capId === "pr-impact-analyzer" ? (
+            <PrImpactResult output={job.output as PrImpactOutput} />
           ) : null}
         </div>
       </motion.aside>

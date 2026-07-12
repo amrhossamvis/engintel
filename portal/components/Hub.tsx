@@ -14,6 +14,7 @@ import { CapabilityCard } from "./CapabilityCard";
 import { CapabilityModal } from "./CapabilityModal";
 import { RunForm } from "./RunForm";
 import { JobMonitor } from "./JobMonitor";
+import { CapabilityDisplaySurface } from "./CapabilityDisplaySurface";
 import { useApp } from "./AppProvider";
 
 const GUILD_LABEL: Record<Guild, string> = {
@@ -138,6 +139,7 @@ export function Hub() {
       <RunForm />
       <CapabilityModal />
       <JobMonitor />
+      <CapabilityDisplaySurface />
     </main>
   );
 }

@@ -1,4 +1,5 @@
 import { adoReadAuthHeader, adoTarget } from "@/lib/ado";
+import { markdownToHtml } from "@/lib/markdown";
 
 export type ClassificationNode = { name: string; path: string };
 
@@ -59,115 +60,7 @@ export async function getClassificationNodes(
   return out;
 }
 
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-}
-
-/**
- * Only http/https/mailto may become a live href. Anything else (javascript:,
- * data:, vbscript:, …) is a stored-XSS vector once ADO renders the field, so we
- * drop the link and keep the visible text.
- */
-function safeHref(url: string): string | null {
-  const trimmed = url.trim();
-  if (/[\u0000-\u001F\u007F]/.test(trimmed)) return null;
-  if (/^(https?:|mailto:)/i.test(trimmed)) return trimmed;
-  if (/^[/#?]/.test(trimmed)) return trimmed;
-  return null;
-}
-
-/** Inline markdown → HTML on already-escaped text: code, bold, italic, links. */
-function inline(s: string): string {
-  return escapeHtml(s)
-    .replace(/`([^`]+)`/g, "<code>$1</code>")
-    .replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>")
-    .replace(/\*([^*]+)\*/g, "<i>$1</i>")
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_m, txt: string, url: string) => {
-      const href = safeHref(url);
-      return href ? `<a href="${href.replace(/"/g, "&quot;")}">${txt}</a>` : txt;
-    });
-}
-
-/**
- * Convert the markdown draft to the HTML that ADO rich-text fields store.
- * Supports the subset Copilot replies use: headings, fenced code, ordered /
- * unordered lists, paragraphs, and inline bold / italic / code / links.
- */
-export function markdownToHtml(md: string): string {
-  const lines = md.replace(/\r\n/g, "\n").split("\n");
-  const out: string[] = [];
-  let para: string[] = [];
-  let i = 0;
-
-  const flushPara = () => {
-    if (para.length) {
-      out.push(`<p>${para.map(inline).join("<br>")}</p>`);
-      para = [];
-    }
-  };
-
-  while (i < lines.length) {
-    const line = lines[i];
-
-    if (/^```/.test(line)) {
-      flushPara();
-      const buf: string[] = [];
-      i++;
-      while (i < lines.length && !/^```/.test(lines[i])) buf.push(lines[i++]);
-      i++; // closing fence
-      out.push(`<pre><code>${escapeHtml(buf.join("\n"))}</code></pre>`);
-      continue;
-    }
-
-    const h = line.match(/^(#{1,6})\s+(.*)$/);
-    if (h) {
-      flushPara();
-      const lvl = Math.min(h[1].length, 4);
-      out.push(`<h${lvl}>${inline(h[2].trim())}</h${lvl}>`);
-      i++;
-      continue;
-    }
-
-    if (/^\s*[-*]\s+/.test(line)) {
-      flushPara();
-      const items: string[] = [];
-      let m: RegExpMatchArray | null;
-      while (i < lines.length && (m = lines[i].match(/^\s*[-*]\s+(.*)$/))) {
-        items.push(`<li>${inline(m[1])}</li>`);
-        i++;
-      }
-      out.push(`<ul>${items.join("")}</ul>`);
-      continue;
-    }
-
-    if (/^\s*\d+\.\s+/.test(line)) {
-      flushPara();
-      const items: string[] = [];
-      let m: RegExpMatchArray | null;
-      while (i < lines.length && (m = lines[i].match(/^\s*\d+\.\s+(.*)$/))) {
-        items.push(`<li>${inline(m[1])}</li>`);
-        i++;
-      }
-      out.push(`<ol>${items.join("")}</ol>`);
-      continue;
-    }
-
-    if (line.trim() === "") {
-      flushPara();
-      i++;
-      continue;
-    }
-
-    para.push(line);
-    i++;
-  }
-
-  flushPara();
-  return out.join("");
-}
+export { markdownToHtml };
 
 export type CreatedWorkItem = { id: number; url: string };
 

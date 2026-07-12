@@ -3,8 +3,6 @@ import {
   adoConfigured,
   azAdoBearer,
   basicFromPat,
-  parsePrUrl,
-  parseWorkItemId,
   pipelineBranchFor,
   pipelineIdFor,
   runPipeline,
@@ -17,97 +15,15 @@ type Body = {
   adoPat?: string;
 };
 
-/** Build the templateParameters for each capability from its form inputs. */
-function buildParams(
-  capabilityId: string,
-  inputs: Record<string, string | boolean>,
-): { params: Record<string, string | boolean> } | { error: string } {
-  switch (capabilityId) {
-    case "pr-review":
-    case "ui-testdata": {
-      const parsed = parsePrUrl(String(inputs.prUrl ?? ""));
-      if (!parsed) return { error: "bad_pr_url" };
-      return {
-        params: {
-          adoRepo: parsed.repo,
-          adoPrId: parsed.prId,
-          dryRun: Boolean(inputs.dryRun),
-        },
-      };
-    }
-    case "bug-triage": {
-      const bugId = parseWorkItemId(String(inputs.bugUrl ?? ""));
-      if (!bugId) return { error: "bad_work_item_url" };
-      return { params: { bugIds: bugId, dryRun: false } };
-    }
-    case "feature-breakdown": {
-      const workItemUrl = String(inputs.workItemUrl ?? "").trim();
-      if (!workItemUrl) return { error: "missing_work_item" };
-      const areaPath = String(inputs.areaPath ?? "").trim();
-      const additionalInstructions = String(inputs.additionalInstructions ?? "").trim();
-      return {
-        params: {
-          workItemUrl,
-          teamName: "generic",
-          isTechBreakdown: Boolean(inputs.isTechBreakdown),
-          createParentComment: Boolean(inputs.createParentComment),
-          dryRun: Boolean(inputs.dryRun),
-          // ADO rejects an empty string for an optional string templateParameter
-          // ("not a valid String") — omit so the pipeline's `default: ''` applies.
-          ...(areaPath ? { areaPath } : {}),
-          ...(additionalInstructions ? { poRecommendations: additionalInstructions } : {}),
-        },
-      };
-    }
-    case "business-intent": {
-      const businessIntent = String(inputs.businessIntent ?? "").trim();
-      if (!businessIntent) return { error: "missing_business_intent" };
-      const areaPath = String(inputs.areaPath ?? "").trim();
-      const iterationPath = String(inputs.iterationPath ?? "").trim();
-      if (!areaPath) return { error: "missing_area_path" };
-      if (!iterationPath) return { error: "missing_iteration_path" };
-      return {
-        params: {
-          businessIntent,
-          areaPath,
-          iterationPath,
-          teamName: String(inputs.teamName ?? "generic").trim() || "generic",
-          addGeneratedHierarchyComment: Boolean(inputs.addGeneratedHierarchyComment),
-          dryRun: Boolean(inputs.dryRun),
-        },
-      };
-    }
-    case "sprint-health": {
-      const backlogUrl = String(inputs.backlogUrl ?? "").trim();
-      if (!backlogUrl) return { error: "missing_backlog" };
-      return {
-        params: { backlogUrl, iterationNumber: String(inputs.iteration ?? "") },
-      };
-    }
-    case "testcase-ado": {
-      const workItemId = parseWorkItemId(String(inputs.workItemUrl ?? ""));
-      if (!workItemId) return { error: "bad_work_item_url" };
-      return { params: { workItemId } };
-    }
-    case "workitem-wiki-doc": {
-      const workItem = parseWorkItemId(String(inputs.workItemRef ?? ""));
-      if (!workItem) return { error: "bad_work_item_ref" };
-      const wikiParentUrl = String(inputs.wikiParentUrl ?? "").trim();
-      return {
-        params: {
-          workItem,
-          docLevel: String(inputs.docLevel ?? "Feature").trim().toLowerCase() || "feature",
-          docType: String(inputs.docType ?? "Both").trim().toLowerCase() || "both",
-          postSummaryComment: Boolean(inputs.postSummaryComment),
-          dryRun: Boolean(inputs.dryRun),
-          ...(wikiParentUrl ? { wikiParentUrl } : {}),
-        },
-      };
-    }
-    default:
-      // e.g. testcase-figma has no live pipeline yet.
-      return { error: "not_configured" };
-  }
+/**
+ * Build the templateParameters for each capability from its form inputs.
+ * Every capability now runs "local" or "hub-inline" — no catalog entry has
+ * execution: "pipeline" anymore. This route (and the ADO Pipeline
+ * trigger/status infrastructure it calls into) is currently unreachable dead
+ * code, kept only in case a future capability needs it again.
+ */
+function buildParams(): { params: Record<string, string | boolean> } | { error: string } {
+  return { error: "not_configured" };
 }
 
 export async function POST(req: Request) {
@@ -118,7 +34,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "bad_request" }, { status: 400 });
   }
 
-  const { capabilityId, inputs, githubToken, adoPat } = body;
+  const { capabilityId, githubToken, adoPat } = body;
   if (!githubToken || githubToken.trim().length < 8) {
     return NextResponse.json({ error: "missing_token" }, { status: 400 });
   }
@@ -135,7 +51,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "not_configured" }, { status: 501 });
   }
 
-  const built = buildParams(capabilityId, inputs);
+  const built = buildParams();
   if ("error" in built) {
     const status = built.error === "not_configured" ? 501 : 400;
     return NextResponse.json({ error: built.error }, { status });

@@ -14,6 +14,17 @@ export type BreakdownItem = { type: string; id: number; title: string; parent: n
 
 export type WikiPage = { title: string; url: string };
 
+/** A generated-but-not-yet-published Wiki Weaver page, awaiting the user's publish/export decision. */
+export type WikiDraft = {
+  content: string;
+  rootType: string;
+  rootId: number;
+  rootTitle: string;
+  wikiParentUrl: string;
+  postSummaryComment: boolean;
+  targetUrl: string;
+};
+
 export type Job = {
   id: number;
   runId: number;
@@ -37,9 +48,11 @@ export type Job = {
   linkedCount?: number | null;
   dryRun?: boolean;
   items?: BreakdownItem[] | null;
-  /** Wiki Weaver result, parsed from the WIKI SUMMARY / WIKI PAGES markers */
+  /** Wiki Weaver: pipeline-execution result, parsed from the WIKI SUMMARY / WIKI PAGES markers */
   wikiPages?: WikiPage[] | null;
   wikiDryRun?: boolean;
+  /** Wiki Weaver: local-execution result — generated content awaiting the user's publish/export decision */
+  wikiDraft?: WikiDraft | null;
   locus?: Execution;
   output?: unknown;
 };
@@ -91,6 +104,9 @@ type AppState = {
   launchCap: Capability | null;
   openLaunch: (cap: Capability) => void;
   closeLaunch: () => void;
+  fullscreenCap: Capability | null;
+  openFullscreen: (cap: Capability) => void;
+  closeFullscreen: () => void;
   detailCap: Capability | null;
   openDetail: (cap: Capability) => void;
   closeDetail: () => void;
@@ -122,23 +138,48 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const [jobs, setJobs] = useState<Job[]>([]);
   const [launchCap, setLaunchCap] = useState<Capability | null>(null);
+  const [fullscreenCap, setFullscreenCap] = useState<Capability | null>(null);
   const [detailCap, setDetailCap] = useState<Capability | null>(null);
   const [monitorJobId, setMonitorJobId] = useState<number | null>(null);
   const seq = useRef(0);
+
+  function openLaunch(cap: Capability) {
+    if (cap.display === "fullscreen-modal") {
+      setFullscreenCap(cap);
+      return;
+    }
+    setLaunchCap(cap);
+  }
+
+  function closeLaunch() {
+    setLaunchCap(null);
+  }
+
+  function openFullscreen(cap: Capability) {
+    setFullscreenCap(cap);
+  }
+
+  function closeFullscreen() {
+    setFullscreenCap(null);
+  }
 
   useEffect(() => {
     // One-time hydration from browser storage on mount (SSR-safe — a lazy
     // initializer would read localStorage during SSR and mismatch on hydrate).
     /* eslint-disable react-hooks/set-state-in-effect */
-    const th = (localStorage.getItem("theme") as Theme) ?? "dark";
+    const storage =
+      typeof window !== "undefined" && typeof window.localStorage?.getItem === "function"
+        ? window.localStorage
+        : null;
+    const th = (storage?.getItem("theme") as Theme) ?? "dark";
     setThemeState(th);
     document.documentElement.dataset.theme = th;
     // GitHub token persists across refresh/restart (localStorage). Trade-off:
     // written to disk on this machine. Acceptable for the local dev hub.
-    const tok = localStorage.getItem("gh_token") ?? "";
+    const tok = storage?.getItem("gh_token") ?? "";
     setGithubTokenState(tok);
     if (tok) validateToken(tok);
-    const pat = localStorage.getItem("ado_pat") ?? "";
+    const pat = storage?.getItem("ado_pat") ?? "";
     setAdoPatState(pat);
     if (pat) validateAdoPat(pat);
     recheckAdo();
@@ -211,12 +252,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   function setTheme(t: Theme) {
     setThemeState(t);
     document.documentElement.dataset.theme = t;
-    localStorage.setItem("theme", t);
+    if (typeof window !== "undefined" && typeof window.localStorage?.setItem === "function") {
+      window.localStorage.setItem("theme", t);
+    }
   }
   function setGithubToken(v: string) {
     setGithubTokenState(v);
-    if (v) localStorage.setItem("gh_token", v);
-    else localStorage.removeItem("gh_token");
+    if (typeof window !== "undefined" && typeof window.localStorage?.setItem === "function") {
+      if (v) window.localStorage.setItem("gh_token", v);
+      else window.localStorage.removeItem("gh_token");
+    }
     if (!v) {
       setTokenStatus("idle");
       setLogin(null);
@@ -251,8 +296,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }
   function setAdoPat(v: string) {
     setAdoPatState(v);
-    if (v) localStorage.setItem("ado_pat", v);
-    else localStorage.removeItem("ado_pat");
+    if (typeof window !== "undefined" && typeof window.localStorage?.setItem === "function") {
+      if (v) window.localStorage.setItem("ado_pat", v);
+      else window.localStorage.removeItem("ado_pat");
+    }
     if (!v) {
       setAdoPatStatus("idle");
       setAdoPatIdentity(null);
@@ -333,6 +380,67 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }, 4000);
   }
 
+  /** Poll a "local"-execution job (in-process on this server, no ADO pipeline). */
+  function pollLocal(id: number, jobId: string) {
+    let polls = 0;
+    const tick = setInterval(async () => {
+      polls += 1;
+      if (polls > 300) {
+        clearInterval(tick);
+        appendLog(id, "[warn] stopped polling after 15 min");
+        return;
+      }
+      try {
+        const r = await fetch(`/api/local/status?jobId=${jobId}`);
+        const data = await r.json();
+        patch(id, (j) => ({
+          ...j,
+          log: Array.isArray(data.logTail) && data.logTail.length ? data.logTail : j.log,
+        }));
+        if (data.status === "done" || data.status === "failed") {
+          clearInterval(tick);
+          const result = data.result ?? {};
+          patch(id, (j) => ({
+            ...j,
+            status: data.status,
+            webUrl: (result.webUrl as string | undefined) ?? j.webUrl,
+            output: result,
+            // Promote the well-known result fields the pipeline path already
+            // surfaces (BreakdownTree, wiki links, …) so local-execution
+            // results render with the same UI for free.
+            createdCount: typeof result.createdCount === "number" ? result.createdCount : j.createdCount,
+            linkedCount: typeof result.linkedCount === "number" ? result.linkedCount : j.linkedCount,
+            dryRun: typeof result.dryRun === "boolean" ? result.dryRun : j.dryRun,
+            // "blocked" is a successful review that found blocking findings —
+            // status stays "done", but outcome/blockingCount/mergeConfidence
+            // carry the same shape a pipeline-blocked run already surfaces.
+            outcome: (result.outcome as "blocked" | "error" | null | undefined) ?? j.outcome ?? null,
+            blockingCount: typeof result.blockingCount === "number" ? result.blockingCount : j.blockingCount,
+            mergeConfidence: typeof result.mergeConfidence === "number" ? result.mergeConfidence : j.mergeConfidence,
+            items: Array.isArray(result.items) ? result.items : j.items,
+            wikiPages: Array.isArray(result.wikiPages) ? result.wikiPages : j.wikiPages,
+            wikiDryRun: typeof result.wikiDryRun === "boolean" ? result.wikiDryRun : j.wikiDryRun,
+            wikiDraft:
+              result.awaitingPublish && typeof result.content === "string"
+                ? {
+                    content: result.content,
+                    rootType: String(result.rootType ?? ""),
+                    rootId: Number(result.rootId ?? 0),
+                    rootTitle: String(result.rootTitle ?? ""),
+                    wikiParentUrl: String(result.wikiParentUrl ?? ""),
+                    postSummaryComment: Boolean(result.postSummaryComment),
+                    targetUrl: String(result.targetUrl ?? ""),
+                  }
+                : j.wikiDraft,
+            log: data.error ? [...j.log, `[local] error: ${data.error}`] : j.log,
+          }));
+        }
+      } catch {
+        // transient — keep polling
+      }
+    }, 3000);
+  }
+
   function queueJob(cap: Capability, values: Record<string, string | boolean>) {
     seq.current += 1;
     const id = seq.current;
@@ -386,6 +494,43 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             ...j,
             status: "failed",
             log: [...j.log, `[inline] ${e instanceof Error ? e.message : "error"}`],
+          }));
+        }
+      })();
+      return id;
+    }
+
+    if (cap.execution === "local") {
+      void (async () => {
+        try {
+          const res = await fetch(`/api/local/${cap.id}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ inputs: values, githubToken, adoPat }),
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            const detail = data.message ? `${data.error}: ${data.message}` : (data.error ?? res.status);
+            patch(id, (j) => ({
+              ...j,
+              status: "failed",
+              log: [...j.log, `[local] error: ${detail}`],
+            }));
+            return;
+          }
+          patch(id, (j) => ({
+            ...j,
+            live: true,
+            locus: "local",
+            status: "running",
+            log: [...j.log, `[local] job started`],
+          }));
+          pollLocal(id, data.jobId);
+        } catch (e) {
+          patch(id, (j) => ({
+            ...j,
+            status: "failed",
+            log: [...j.log, `[local] ${e instanceof Error ? e.message : "error"}`],
           }));
         }
       })();
@@ -467,8 +612,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         activeJobs,
         queueJob,
         launchCap,
-        openLaunch: setLaunchCap,
-        closeLaunch: () => setLaunchCap(null),
+        openLaunch,
+        closeLaunch,
+        fullscreenCap,
+        openFullscreen,
+        closeFullscreen,
         detailCap,
         openDetail: setDetailCap,
         closeDetail: () => setDetailCap(null),

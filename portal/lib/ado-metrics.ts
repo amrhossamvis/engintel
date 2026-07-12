@@ -73,6 +73,32 @@ export function computeHealthScore(iterations: IterationMetrics[]): {
 
 type WorkItem = { fields: Record<string, unknown> };
 
+function wiqlQuote(value: string): string {
+  return value.replace(/'/g, "''");
+}
+
+async function fetchWorkItemsByIds(base: string, ids: number[], auth: string): Promise<WorkItem[]> {
+  if (ids.length === 0) return [];
+
+  const chunks: number[][] = [];
+  for (let i = 0; i < ids.length; i += 200) {
+    chunks.push(ids.slice(i, i + 200));
+  }
+
+  const pages = await Promise.all(
+    chunks.map(async (chunk) => {
+      const wi = await adoGet(
+        `${base}/_apis/wit/workitems?ids=${chunk.join(",")}&fields=System.WorkItemType,System.State,` +
+          `Microsoft.VSTS.Scheduling.StoryPoints,Microsoft.VSTS.Scheduling.Effort&api-version=7.0`,
+        auth,
+      ).catch(() => ({ value: [] }));
+      return (wi.value ?? []) as WorkItem[];
+    }),
+  );
+
+  return pages.flat();
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- ADO REST responses are untyped at this boundary
 async function adoGet(url: string, auth: string): Promise<any> {
   const res = await fetch(url, { headers: { Authorization: auth } });
@@ -100,60 +126,104 @@ export async function fetchTeamDashboard(
     throw e;
   });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- ADO REST responses are untyped at this boundary
-  const iterationsRaw: any[] = (iterData.value ?? []).slice(-sprintCount);
+  const allIterations: any[] = iterData.value ?? [];
 
-  const iterations: IterationMetrics[] = [];
-  for (const it of iterationsRaw) {
-    const wiql = {
-      query:
-        `SELECT [System.Id] FROM WorkItems WHERE [System.IterationPath] = '${it.path}' ` +
-        `AND [System.WorkItemType] IN ('User Story','Bug','Product Backlog Item','Task','Feature')`,
-    };
-    const wiqlRes = await fetch(`${base}/_apis/wit/wiql?api-version=7.0`, {
-      method: "POST",
-      headers: { Authorization: authHeader, "content-type": "application/json" },
-      body: JSON.stringify(wiql),
-    });
-    if (!wiqlRes.ok) throw new Error(`ado_wiql_${wiqlRes.status}`);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- ADO REST responses are untyped at this boundary
-    const ids: number[] = ((await wiqlRes.json()).workItems ?? []).map((w: any) => w.id);
+  // Match legacy behavior: choose a sprint window ending at the current iteration
+  // (or the latest started one), not simply the last N rows from team settings.
+  const now = new Date();
+  let currentIterationIndex = -1;
 
-    let items: WorkItem[] = [];
-    if (ids.length) {
-      const batch = ids.slice(0, 200).join(",");
-      const wi = await adoGet(
-        `${base}/_apis/wit/workitems?ids=${batch}&fields=System.WorkItemType,System.State,` +
-          `Microsoft.VSTS.Scheduling.StoryPoints,Microsoft.VSTS.Scheduling.Effort&api-version=7.0`,
-        authHeader,
-      );
-      items = wi.value ?? [];
+  for (let i = 0; i < allIterations.length; i++) {
+    const it = allIterations[i];
+    const startDate = it.attributes?.startDate;
+    const endDate = it.attributes?.finishDate;
+    if (!startDate || !endDate) continue;
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    if (start <= now && end >= now) {
+      currentIterationIndex = i;
+      break;
     }
-
-    const state = (w: WorkItem) => String(w.fields["System.State"]);
-    const total = items.length;
-    const completed = items.filter((w) => CLOSED.has(state(w))).length;
-    const bugs = items.filter((w) => w.fields["System.WorkItemType"] === "Bug");
-    const sp = (w: WorkItem) =>
-      Number(w.fields["Microsoft.VSTS.Scheduling.StoryPoints"] ?? w.fields["Microsoft.VSTS.Scheduling.Effort"] ?? 0);
-    const completedSp = items.filter((w) => CLOSED.has(state(w))).reduce((s, w) => s + sp(w), 0);
-
-    iterations.push({
-      iterationName: it.name,
-      iterationPath: it.path,
-      startDate: it.attributes?.startDate ?? null,
-      endDate: it.attributes?.finishDate ?? null,
-      totalWorkItems: total,
-      completedWorkItems: completed,
-      completionRate: total ? (completed / total) * 100 : 0,
-      totalStoryPoints: items.reduce((s, w) => s + sp(w), 0),
-      completedStoryPoints: completedSp,
-      velocity: completedSp,
-      bugCount: bugs.length,
-      activeBugs: bugs.filter((w) => ACTIVE.has(state(w))).length,
-      resolvedBugs: bugs.filter((w) => CLOSED.has(state(w))).length,
-      newBugs: bugs.filter((w) => NEW.has(state(w))).length,
-    });
   }
+
+  if (currentIterationIndex === -1) {
+    for (let i = allIterations.length - 1; i >= 0; i--) {
+      const startDate = allIterations[i]?.attributes?.startDate;
+      if (startDate && new Date(startDate) <= now) {
+        currentIterationIndex = i;
+        break;
+      }
+    }
+  }
+
+  if (currentIterationIndex === -1) {
+    currentIterationIndex = Math.max(0, allIterations.length - 1);
+  }
+
+  const endIndex = currentIterationIndex + 1;
+  const startIndex = Math.max(0, endIndex - sprintCount);
+  const iterationsRaw = allIterations.slice(startIndex, endIndex);
+
+  // Legacy parity: scope iteration WIQL to the team's configured area paths.
+  const teamAreasUrl = `${base}/${t}/_apis/work/teamsettings/teamfieldvalues?api-version=7.0`;
+  const teamAreas = await adoGet(teamAreasUrl, authHeader).catch(() => ({ value: [] }));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- ADO REST responses are untyped at this boundary
+  const areaPaths: string[] = (teamAreas.value ?? []).map((v: any) => String(v.value ?? "")).filter(Boolean);
+
+  let areaFilter = "";
+  if (areaPaths.length === 1) {
+    areaFilter = ` AND [System.AreaPath] UNDER '${wiqlQuote(areaPaths[0])}'`;
+  } else if (areaPaths.length > 1) {
+    const cond = areaPaths.map((p) => `[System.AreaPath] UNDER '${wiqlQuote(p)}'`).join(" OR ");
+    areaFilter = ` AND (${cond})`;
+  }
+
+  const iterations: IterationMetrics[] = await Promise.all(
+    iterationsRaw.map(async (it) => {
+      const wiql = {
+        query:
+          `SELECT [System.Id] FROM WorkItems WHERE [System.IterationPath] = '${wiqlQuote(String(it.path ?? ""))}' ` +
+          `AND [System.WorkItemType] IN ('User Story','Bug','Product Backlog Item','Task','Feature')` +
+          `${areaFilter} ` +
+          `AND [System.TeamProject] = '${wiqlQuote(project)}' ORDER BY [System.Id]`,
+      };
+      const wiqlRes = await fetch(`${base}/_apis/wit/wiql?api-version=7.0`, {
+        method: "POST",
+        headers: { Authorization: authHeader, "content-type": "application/json" },
+        body: JSON.stringify(wiql),
+      });
+      if (!wiqlRes.ok) throw new Error(`ado_wiql_${wiqlRes.status}`);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- ADO REST responses are untyped at this boundary
+      const ids: number[] = ((await wiqlRes.json()).workItems ?? []).map((w: any) => w.id);
+
+      const items = await fetchWorkItemsByIds(base, ids, authHeader);
+
+      const state = (w: WorkItem) => String(w.fields["System.State"]);
+      const total = items.length;
+      const completed = items.filter((w) => CLOSED.has(state(w))).length;
+      const bugs = items.filter((w) => w.fields["System.WorkItemType"] === "Bug");
+      const sp = (w: WorkItem) =>
+        Number(w.fields["Microsoft.VSTS.Scheduling.StoryPoints"] ?? w.fields["Microsoft.VSTS.Scheduling.Effort"] ?? 0);
+      const completedSp = items.filter((w) => CLOSED.has(state(w))).reduce((s, w) => s + sp(w), 0);
+
+      return {
+        iterationName: it.name,
+        iterationPath: it.path,
+        startDate: it.attributes?.startDate ?? null,
+        endDate: it.attributes?.finishDate ?? null,
+        totalWorkItems: total,
+        completedWorkItems: completed,
+        completionRate: total ? Math.round((completed / total) * 100) : 0,
+        totalStoryPoints: items.reduce((s, w) => s + sp(w), 0),
+        completedStoryPoints: completedSp,
+        velocity: completedSp,
+        bugCount: bugs.length,
+        activeBugs: bugs.filter((w) => ACTIVE.has(state(w))).length,
+        resolvedBugs: bugs.filter((w) => CLOSED.has(state(w))).length,
+        newBugs: bugs.filter((w) => NEW.has(state(w))).length,
+      } as IterationMetrics;
+    }),
+  );
 
   // Health + averages use completed sprints only — the last (in-progress) sprint
   // is excluded so a half-done current sprint doesn't drag the score down.

@@ -1,4 +1,15 @@
-export type FieldType = "url" | "text" | "textarea" | "select" | "toggle";
+export type FieldType =
+  | "url"
+  | "text"
+  | "textarea"
+  | "select"
+  | "toggle"
+  /** Dropdown populated from docs/triage/team-map.yaml via /api/ado/teams. */
+  | "team-select"
+  /** Free-text input with a live ADO area-path datalist via /api/ado/classification?kind=areas. */
+  | "ado-area-path"
+  /** Free-text input with a live ADO iteration-path datalist via /api/ado/classification?kind=iterations. */
+  | "ado-iteration-path";
 
 export type Field = {
   key: string;
@@ -17,6 +28,7 @@ export type Guild = "mobile" | "web" | "java" | "full-stack" | "product" | "test
 export type Provider = "ado" | "github" | "jira" | "datadog" | "internal";
 export type Execution = "pipeline" | "hub-inline" | "local";
 export type Source = "native" | "hub-a";
+export type Display = "job-monitor" | "fullscreen-modal";
 
 // Fixed taxonomy (NOT derived) so empty guilds still render as views.
 export const GUILDS: Guild[] = ["mobile", "web", "java", "full-stack", "product", "testing", "cross-guild"];
@@ -51,6 +63,8 @@ export type Capability = {
   guild: Guild;
   provider: Provider[];
   execution: Execution;
+  /** Presentation surface in the portal runtime (default is job monitor side panel). */
+  display?: Display;
   source: Source;
   credGate: "copilot" | "none";
 };
@@ -80,19 +94,17 @@ export const CAPABILITIES: Capability[] = [
       "It picks up production signals — logs, history and linked PRs — diagnoses the failing service and routes the bug to its owning team, shortening incident recovery.",
     tagline: "Diagnose the service and route the bug to its owning team",
     description:
-      "Pulls bug context, screenshots, history and linked PRs, correlates DataDog logs, then diagnoses the affected service and owning team and posts the triage back to the work item.",
+      "Pulls bug context, discussion history and linked PRs, correlates DataDog logs, then diagnoses the affected service and owning team and posts the triage back to the work item.",
     category: "Quality & Review",
     status: "live",
     icon: "Bug",
     tokenEnv: "COPILOT_GITHUB_TOKEN",
     estCredits: 200,
-    estDuration: "3–5 min",
-    pipeline: "cicd/pipelines/bug-triage.yml",
-    script: "ado_copilot_bug_triage.py",
+    estDuration: "1–3 min",
     guild: "cross-guild",
-    provider: ["ado", "datadog"],
-    execution: "pipeline",
-    source: "native",
+    provider: ["github", "ado", "datadog"],
+    execution: "local",
+    source: "hub-a",
     credGate: "copilot",
     fields: [
       {
@@ -102,6 +114,12 @@ export const CAPABILITIES: Capability[] = [
         placeholder: "https://dev.azure.com/vfuk-digital/Digital/_workitems/edit/4184017",
         help: "The bug id is parsed from the link.",
         required: true,
+      },
+      {
+        key: "dryRun",
+        label: "Dry run (no triage comment posted)",
+        type: "toggle",
+        default: false,
       },
     ],
   },
@@ -123,11 +141,10 @@ export const CAPABILITIES: Capability[] = [
     guild: "cross-guild",
     provider: ["ado"],
     execution: "hub-inline",
+    display: "fullscreen-modal",
     source: "hub-a",
     credGate: "none",
-    fields: [
-      { key: "team", label: "ADO team", type: "text", default: "VOXI Digital", placeholder: "VOXI Digital", help: "The Azure DevOps team whose sprints are scored." },
-    ],
+    fields: [],
   },
   {
     id: "ai-productivity", name: "AI Productivity Index", codename: "Monitoring",
@@ -164,13 +181,11 @@ export const CAPABILITIES: Capability[] = [
     icon: "GitPullRequest",
     tokenEnv: "COPILOT_GITHUB_TOKEN",
     estCredits: 120,
-    estDuration: "2–4 min",
-    pipeline: "cicd/pipelines/pr-reviewer.yml",
-    script: "ado_copilot_pr_preview_application_claude.py",
+    estDuration: "1–3 min",
     guild: "cross-guild",
     provider: ["github", "ado"],
-    execution: "pipeline",
-    source: "native",
+    execution: "local",
+    source: "hub-a",
     credGate: "copilot",
     fields: [
       {
@@ -190,27 +205,64 @@ export const CAPABILITIES: Capability[] = [
     ],
   },
   {
+    id: "pr-impact-analyzer",
+    name: "PR Impact Analyzer",
+    codename: "Monitoring",
+    codenameWho: PHASE.monitoring,
+    codenameWhy:
+      "It analyzes backend pull requests, pinpoints impacted endpoints, and assigns confidence scores so operations can focus monitoring where production risk is highest.",
+    tagline: "Confidence-scored endpoint impact analysis from backend pull requests",
+    description:
+      "Reads backend PR diffs and file context, infers impacted API endpoints, and returns a confidence-scored monitoring checklist for operations. It also cross-checks linked work-item PRs and optional context repositories (OpenAPI/README probes) to improve confidence.",
+    category: "Delivery Intelligence",
+    status: "live",
+    icon: "Radar",
+    tokenEnv: "COPILOT_GITHUB_TOKEN",
+    estCredits: 140,
+    estDuration: "1-3 min",
+    guild: "cross-guild",
+    provider: ["github", "ado"],
+    execution: "local",
+    source: "hub-a",
+    credGate: "copilot",
+    fields: [
+      {
+        key: "prUrl",
+        label: "Pull Request URL",
+        type: "url",
+        placeholder: "https://dev.azure.com/vfuk-digital/Digital/_git/repo/pullrequest/12345",
+        help: "Org, project, repo and PR id are parsed from the link.",
+        required: true,
+      },
+      {
+        key: "contextRepos",
+        label: "Optional context repos (comma or newline separated)",
+        type: "textarea",
+        placeholder: "shared-contracts-repo, edge-gateway-repo",
+        help: "Each repo is probed for OpenAPI/README endpoint references to improve confidence.",
+      },
+    ],
+  },
+  {
     id: "feature-breakdown",
-    name: "Feature Breakdown",
+    name: "Backlog Breakdown & Roll-up",
     codename: "Plan",
     codenameWho: PHASE.plan,
     codenameWhy:
       "It decomposes an epic or feature into implementable stories and tasks with acceptance criteria — backlog readiness before build begins.",
-    tagline: "Epic → Feature → Story decomposition",
+    tagline: "Epic/Feature decomposition, or User Story roll-up in reverse",
     description:
-      "Reverse-engineers an epic or feature into a structured backlog with acceptance criteria, applying team-specific breakdown instructions. Creates child work items in ADO.",
+      "Reverse-engineers an epic or feature into a structured backlog with acceptance criteria, applying team-specific breakdown instructions. Given a User Story instead, rolls it up (with its linked stories) into a new parent Epic and Feature. Creates/links work items in ADO.",
     category: "Agile & Backlog",
     status: "live",
     icon: "Layers",
     tokenEnv: "COPILOT_GITHUB_TOKEN",
     estCredits: 350,
-    estDuration: "4–8 min",
-    pipeline: "cicd/pipelines/workitem-breakdown.yml",
-    script: "ado_copilot_workitem_breakdown.py",
+    estDuration: "2–5 min",
     guild: "product",
-    provider: ["ado"],
-    execution: "pipeline",
-    source: "native",
+    provider: ["github", "ado"],
+    execution: "local",
+    source: "hub-a",
     credGate: "copilot",
     fields: [
       {
@@ -221,10 +273,23 @@ export const CAPABILITIES: Capability[] = [
         required: true,
       },
       {
+        key: "team",
+        label: "Team (optional — picks the matching breakdown rulebook if one exists, else generic)",
+        type: "team-select",
+        help: "Also auto-fills the area path below when a match is found in ADO — you can still override it.",
+      },
+      {
         key: "areaPath",
         label: "Area path (optional — defaults to the work item's own area)",
-        type: "text",
+        type: "ado-area-path",
         placeholder: "Digital\\Consumer\\VOXI\\VOXI Digital",
+      },
+      {
+        key: "iterationPath",
+        label: "Starting iteration (optional — spreads generated User Stories across this and later iterations in the same PI, in priority order)",
+        type: "ado-iteration-path",
+        placeholder: "Digital\\Digital X\\PI 42\\42.3",
+        help: "Leave blank to skip iteration assignment entirely (previous behavior). Only affects created User Stories — Features anchor to this starting iteration.",
       },
       {
         key: "isTechBreakdown",
@@ -268,13 +333,11 @@ export const CAPABILITIES: Capability[] = [
     icon: "Sparkles",
     tokenEnv: "COPILOT_GITHUB_TOKEN",
     estCredits: 350,
-    estDuration: "4–8 min",
-    pipeline: "cicd/pipelines/business-intent.yml",
-    script: "ado_copilot_business_intent_item_creation.py",
+    estDuration: "1–3 min",
     guild: "product",
     provider: ["ado"],
-    execution: "pipeline",
-    source: "native",
+    execution: "local",
+    source: "hub-a",
     credGate: "copilot",
     fields: [
       {
@@ -325,26 +388,24 @@ export const CAPABILITIES: Capability[] = [
   },
   {
     id: "workitem-wiki-doc",
-    name: "Wiki Weaver",
+    name: "Documentation Weaver",
     codename: "Development",
     codenameWho: PHASE.development,
     codenameWhy:
       "It turns a delivery hierarchy already in ADO into living, readable documentation — the documentation/knowledge-generation half of the Development phase.",
-    tagline: "Epic/Feature/Story hierarchy → one wiki page, business + tech",
+    tagline: "Epic/Feature/Story hierarchy → one page, wiki or Word",
     description:
-      "Takes a User Story, Feature or Epic link (or just the id), climbs to the top-level parent, reads its description/acceptance criteria/comments/attached design docs, then reads every child item sharing the same area path — including linked PRs for stories — and publishes one fully detailed wiki page covering business and technical documentation.",
+      "Takes a User Story, Feature or Epic link (or just the id), climbs to the top-level parent, reads its description/acceptance criteria/comments/attached design docs, then reads every item in its real hierarchy — including linked PRs for stories — and drafts one fully detailed business + technical documentation page for your review before you publish it to the wiki or export it as a Word doc.",
     category: "Enablement",
     status: "live",
     icon: "BookOpen",
     tokenEnv: "COPILOT_GITHUB_TOKEN",
     estCredits: 400,
-    estDuration: "5–10 min",
-    pipeline: "cicd/pipelines/workitem-doc-generator.yml",
-    script: "ado_copilot_workitem_doc_generator.py",
+    estDuration: "3–7 min",
     guild: "cross-guild",
-    provider: ["ado"],
-    execution: "pipeline",
-    source: "native",
+    provider: ["github", "ado"],
+    execution: "local",
+    source: "hub-a",
     credGate: "copilot",
     fields: [
       {
@@ -380,15 +441,9 @@ export const CAPABILITIES: Capability[] = [
       },
       {
         key: "postSummaryComment",
-        label: "Post link-back comment on the parent item",
+        label: "Post link-back comment on the parent item once published",
         type: "toggle",
         default: true,
-      },
-      {
-        key: "dryRun",
-        label: "Dry run (preview, no wiki page published)",
-        type: "toggle",
-        default: false,
       },
     ],
   },
@@ -401,34 +456,32 @@ export const CAPABILITIES: Capability[] = [
       "It watches live delivery signals mid-flight — WIP, stale items, blockers and PR wait — detecting anomalies early and coaching the squad to stay healthy.",
     tagline: "Live delivery-health signals",
     description:
-      "Scans the team backlog and iteration for WIP overload, stale items, blocked work and PR wait times, then coaches the squad with prioritised actions.",
+      "Scans the team backlog and iteration for WIP overload, stale items, blocked work and PR wait times, then coaches the squad with prioritised actions. Read-only — no AI call, no ADO writes.",
     category: "Delivery Intelligence",
     status: "soon",
-    targetRelease: "Q3 2026",
     icon: "Activity",
-    tokenEnv: "COPILOT_GITHUB_TOKEN",
-    estCredits: 180,
-    estDuration: "2–5 min",
-    pipeline: "cicd/pipelines/sprint-health.yml",
-    script: "ado_sprint_health_coach.py",
+    estCredits: 0,
+    estDuration: "5–15 sec",
     guild: "cross-guild",
     provider: ["ado"],
-    execution: "pipeline",
-    source: "native",
-    credGate: "copilot",
+    execution: "hub-inline",
+    source: "hub-a",
+    credGate: "none",
     fields: [
       {
         key: "backlogUrl",
         label: "Team backlog URL",
         type: "url",
         placeholder: "https://dev.azure.com/vfuk-digital/Digital/_backlogs/backlog/MVA-Alex",
+        help: "A team backlog or sprint-taskboard URL — the team name is parsed from it.",
         required: true,
       },
       {
         key: "iteration",
-        label: "Iteration path (optional)",
+        label: "Iteration (optional)",
         type: "text",
-        placeholder: "Digital\\PI 41\\41.1",
+        placeholder: "41.1",
+        help: "Leave blank to score the team's current sprint.",
       },
     ],
   },
@@ -439,21 +492,19 @@ export const CAPABILITIES: Capability[] = [
     codenameWho: PHASE.testing,
     codenameWhy:
       "It generates structured test cases and automation code straight from a work item — test design and scripting lifted off manual effort, ready to run.",
-    tagline: "Test cases + automation code from a work item",
+    tagline: "P1/Critical test cases from a work item",
     description:
-      "Generates structured test cases and automation code (page objects, test scripts) from a user story or feature. Pushes generated code to a branch in your target repo and posts test cases back to the ADO work item.",
+      "Generates structured P1/Critical test cases from a user story's description and acceptance criteria, then creates them as Test Case work items linked back to the source item.",
     category: "Quality & Testing",
     status: "live",
     icon: "FlaskConical",
     tokenEnv: "COPILOT_GITHUB_TOKEN",
     estCredits: 150,
-    estDuration: "2–4 min",
-    pipeline: "dx-test-case-generator",
-    script: "ado_testcase_generator.py",
+    estDuration: "1–2 min",
     guild: "testing",
     provider: ["ado"],
-    execution: "pipeline",
-    source: "native",
+    execution: "local",
+    source: "hub-a",
     credGate: "copilot",
     fields: [
       {
@@ -461,13 +512,8 @@ export const CAPABILITIES: Capability[] = [
         label: "Work Item URL",
         type: "url",
         placeholder: "https://dev.azure.com/vfuk-digital/Digital/_workitems/edit/4184017",
+        help: "Accepts an edit-view link or the bare work item number.",
         required: true,
-      },
-      {
-        key: "targetRepoUrl",
-        label: "Target Repo URL (for automation code)",
-        type: "url",
-        placeholder: "https://dev.azure.com/vfuk-digital/Digital/_git/mva-app-testing",
       },
     ],
   },
@@ -478,22 +524,19 @@ export const CAPABILITIES: Capability[] = [
     codenameWho: PHASE.testing,
     codenameWhy:
       "It reads a design frame and its linked work item to produce UI test cases covering states, edge cases and data variations — coverage without the manual effort.",
-    tagline: "Test cases from a Figma design",
+    tagline: "P1/Critical UI/UX test cases from a Figma design",
     description:
-      "Reads a Figma frame plus its linked work item and produces UI test cases covering states, edge cases and data variations.",
+      "Reads a Figma frame's screens/components/comments, plus an optional linked work item, and generates P1/Critical UI/UX test cases as ADO Test Case work items.",
     category: "Quality & Testing",
-    status: "soon",
-    targetRelease: "Q4 2026",
+    status: "live",
     icon: "Frame",
     tokenEnv: "COPILOT_GITHUB_TOKEN",
     estCredits: 220,
-    estDuration: "3–6 min",
-    pipeline: "cicd/pipelines/testcase-generation.yml",
-    script: "ado-figma_testcase_generator.py",
+    estDuration: "1–3 min",
     guild: "testing",
     provider: ["ado", "internal"],
-    execution: "pipeline",
-    source: "native",
+    execution: "local",
+    source: "hub-a",
     credGate: "copilot",
     fields: [
       {
@@ -504,10 +547,18 @@ export const CAPABILITIES: Capability[] = [
         required: true,
       },
       {
+        key: "figmaToken",
+        label: "Figma personal access token",
+        type: "text",
+        help: "Your own Figma PAT — stored in your browser like your other credentials, sent per request, never on this server.",
+        required: true,
+      },
+      {
         key: "workItemUrl",
-        label: "Linked work item URL",
+        label: "Linked work item URL (optional)",
         type: "url",
         placeholder: "https://dev.azure.com/vfuk-digital/Digital/_workitems/edit/4184017",
+        help: "Accepts an edit-view link or the bare work item number. Leave blank to create unlinked test cases.",
       },
     ],
   },
@@ -522,18 +573,15 @@ export const CAPABILITIES: Capability[] = [
     description:
       "Reviews UI changes for missing or inconsistent automation test-data identifiers and flags gaps before they reach the automation suite.",
     category: "Quality & Testing",
-    status: "soon",
-    targetRelease: "Q3 2026",
+    status: "live",
     icon: "ScanSearch",
     tokenEnv: "COPILOT_GITHUB_TOKEN",
     estCredits: 90,
     estDuration: "1–3 min",
-    pipeline: "cicd/pipelines/ui-testdata-review.yml",
-    script: "ado_copilot_ui_testdata_id_reviewer.py",
     guild: "testing",
     provider: ["ado"],
-    execution: "pipeline",
-    source: "native",
+    execution: "local",
+    source: "hub-a",
     credGate: "copilot",
     fields: [
       {
