@@ -16,9 +16,12 @@ import {
   Loader,
   LogIn,
   Moon,
+  Plus,
+  RefreshCw,
   ShieldCheck,
   SlidersHorizontal,
   Sun,
+  Trash2,
   Users,
 } from "lucide-react";
 import { useApp } from "@/components/AppProvider";
@@ -27,13 +30,23 @@ import type { TokenStatus } from "@/components/AppProvider";
 const NAV = [
   { key: "credentials", label: "Credentials", icon: KeyRound, badge: (ready: boolean) => (ready ? "1/1" : "0/1") },
   { key: "appearance", label: "Appearance", icon: SlidersHorizontal },
-  { key: "teams", label: "Teams", icon: Users, soon: true },
+  { key: "teams", label: "Teams", icon: Users },
   { key: "repositories", label: "Repositories", icon: GitFork, soon: true },
   { key: "identity", label: "Jira Sign-in", icon: LogIn, soon: true },
 ];
 
+type TeamConfig = {
+  organization: string;
+  project: string;
+  team: string;
+};
+
+const TEAM_STORAGE_KEY = "ado_teams";
+const DEFAULT_ORG = "vfuk-digital";
+const DEFAULT_PROJECT = "Digital";
+
 export default function SettingsPage() {
-  const { ready } = useApp();
+  const { ready, adoPat } = useApp();
   const [section, setSection] = useState("credentials");
 
   return (
@@ -90,10 +103,214 @@ export default function SettingsPage() {
         {/* content */}
         <div>
           {section === "credentials" && <Credentials />}
+          {section === "teams" && <Teams adoPat={adoPat} />}
           {section === "appearance" && <Appearance />}
         </div>
       </div>
     </main>
+  );
+}
+
+function Teams({ adoPat }: { adoPat: string }) {
+  const [teams, setTeams] = useState<TeamConfig[]>([]);
+  const [availableTeams, setAvailableTeams] = useState<string[]>([]);
+  const [loadingList, setLoadingList] = useState(false);
+  const [listError, setListError] = useState("");
+  const [activeInputIndex, setActiveInputIndex] = useState<number | null>(null);
+  const [savedAt, setSavedAt] = useState<number | null>(null);
+
+  useEffect(() => {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(TEAM_STORAGE_KEY) ?? "[]");
+      if (!Array.isArray(parsed)) {
+        setTeams([]);
+        return;
+      }
+      const normalized = parsed
+        .map((row) => {
+          if (!row || typeof row !== "object") return null;
+          const team = String((row as { team?: unknown }).team ?? "").trim();
+          if (!team) return null;
+          return {
+            organization: String((row as { organization?: unknown }).organization ?? DEFAULT_ORG).trim() || DEFAULT_ORG,
+            project: String((row as { project?: unknown }).project ?? DEFAULT_PROJECT).trim() || DEFAULT_PROJECT,
+            team,
+          };
+        })
+        .filter((row): row is TeamConfig => Boolean(row));
+      setTeams(normalized);
+    } catch {
+      setTeams([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(TEAM_STORAGE_KEY, JSON.stringify(teams));
+  }, [teams]);
+
+  useEffect(() => {
+    void loadTeamDirectory();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- load once when Teams mounts
+  }, []);
+
+  async function loadTeamDirectory() {
+    setLoadingList(true);
+    setListError("");
+    try {
+      const qs = new URLSearchParams({ organization: DEFAULT_ORG, project: DEFAULT_PROJECT });
+      const res = await fetch(`/api/exec-dashboard/teams?${qs.toString()}`, {
+        headers: adoPat ? { "x-ado-pat": adoPat } : {},
+      });
+      const payload = await res.json();
+      if (!res.ok) throw new Error(payload?.error ?? "Failed to load team list");
+      setAvailableTeams(Array.isArray(payload?.teams) ? payload.teams : []);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to load team list";
+      setListError(message);
+    } finally {
+      setLoadingList(false);
+    }
+  }
+
+  function addTeam() {
+    setTeams((prev) => [...prev, { organization: DEFAULT_ORG, project: DEFAULT_PROJECT, team: "" }]);
+  }
+
+  function removeTeam(index: number) {
+    setTeams((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function updateTeam(index: number, value: string) {
+    setTeams((prev) => prev.map((row, i) => (i === index ? { ...row, team: value } : row)));
+  }
+
+  function saveTeams() {
+    localStorage.setItem(TEAM_STORAGE_KEY, JSON.stringify(teams));
+    setSavedAt(Date.now());
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className="space-y-6"
+    >
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="font-display text-xl font-semibold">Teams</h2>
+          <p className="text-sm text-muted mt-1">
+            Configure the Azure DevOps teams used by Executive Dashboard.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => void loadTeamDirectory()}
+            disabled={loadingList}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--hairline-strong)] px-3 py-2 text-xs font-medium hover:border-red transition-colors disabled:opacity-50"
+          >
+            {loadingList ? <Loader className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+            {availableTeams.length > 0 ? `${availableTeams.length} loaded` : "Load list"}
+          </button>
+          <button
+            onClick={addTeam}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--hairline-strong)] px-3 py-2 text-xs font-medium hover:border-red transition-colors"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Add Team
+          </button>
+          <button
+            onClick={saveTeams}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--hairline-strong)] px-3 py-2 text-xs font-medium hover:border-red transition-colors"
+          >
+            <Check className="h-3.5 w-3.5" />
+            Save
+          </button>
+        </div>
+      </div>
+
+      <p className="text-xs text-muted">
+        Auto-saves as you type.
+        {savedAt ? ` Last manual save: ${new Date(savedAt).toLocaleTimeString()}` : ""}
+      </p>
+
+      {listError && (
+        <div className="flex items-start gap-2.5 rounded-xl border border-[var(--red)]/30 bg-[rgba(230,0,0,0.08)] p-3 text-xs">
+          <CircleAlert className="h-4 w-4 text-red shrink-0 mt-0.5" />
+          <p>{listError}</p>
+        </div>
+      )}
+
+      <section className="panel rounded-2xl p-5">
+        <p className="text-xs text-muted mb-4">
+          Org and project are fixed to <span className="font-mono text-ink">{DEFAULT_ORG} / {DEFAULT_PROJECT}</span>.
+        </p>
+
+        {teams.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-[var(--hairline-strong)] p-5 text-center">
+            <p className="text-sm text-muted">No teams configured yet.</p>
+            <button
+              onClick={addTeam}
+              className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-[var(--hairline-strong)] px-3 py-2 text-xs font-medium hover:border-red transition-colors"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Add First Team
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {teams.map((team, idx) => (
+              <div key={idx} className="grid grid-cols-[1fr_auto] gap-2 rounded-xl border border-[var(--hairline)] bg-[var(--panel-2)] p-2.5">
+                <div>
+                  <input
+                    value={team.team}
+                    onChange={(e) => updateTeam(idx, e.target.value)}
+                    onFocus={() => setActiveInputIndex(idx)}
+                    onBlur={() => {
+                      setTimeout(() => setActiveInputIndex((cur) => (cur === idx ? null : cur)), 120);
+                    }}
+                    placeholder="Team name"
+                    className="w-full rounded-lg border border-[var(--hairline)] bg-[var(--panel)] px-3 py-2 text-sm"
+                  />
+                  {activeInputIndex === idx && availableTeams.length > 0 && (
+                    <div className="mt-1 max-h-40 overflow-y-auto rounded-lg border border-[var(--hairline)] bg-[var(--panel)] py-1">
+                      {availableTeams
+                        .filter((name) => name.toLowerCase().includes(team.team.toLowerCase()))
+                        .slice(0, 12)
+                        .map((name) => (
+                          <button
+                            key={name}
+                            type="button"
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              updateTeam(idx, name);
+                              setActiveInputIndex(null);
+                            }}
+                            className="block w-full px-3 py-1.5 text-left text-sm text-[var(--ink-dim)] hover:bg-white/5 hover:text-ink"
+                          >
+                            {name}
+                          </button>
+                        ))}
+                    </div>
+                  )}
+                  <p className="mt-1 text-[0.65rem] font-mono uppercase tracking-wider text-muted">
+                    {DEFAULT_ORG} / {DEFAULT_PROJECT}
+                  </p>
+                </div>
+                <button
+                  onClick={() => removeTeam(idx)}
+                  className="grid h-9 w-9 place-items-center rounded-lg text-muted hover:bg-white/5 hover:text-red transition-colors"
+                  aria-label="Remove team"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+    </motion.div>
   );
 }
 

@@ -28,6 +28,7 @@ export type Guild = "mobile" | "web" | "java" | "full-stack" | "product" | "test
 export type Provider = "ado" | "github" | "jira" | "datadog" | "internal";
 export type Execution = "pipeline" | "hub-inline" | "local";
 export type Source = "native" | "hub-a";
+export type Display = "job-monitor" | "fullscreen-modal";
 
 // Fixed taxonomy (NOT derived) so empty guilds still render as views.
 export const GUILDS: Guild[] = ["mobile", "web", "java", "full-stack", "product", "testing", "cross-guild"];
@@ -62,6 +63,8 @@ export type Capability = {
   guild: Guild;
   provider: Provider[];
   execution: Execution;
+  /** Presentation surface in the portal runtime (default is job monitor side panel). */
+  display?: Display;
   source: Source;
   credGate: "copilot" | "none";
 };
@@ -138,11 +141,10 @@ export const CAPABILITIES: Capability[] = [
     guild: "cross-guild",
     provider: ["ado"],
     execution: "hub-inline",
+    display: "fullscreen-modal",
     source: "hub-a",
     credGate: "none",
-    fields: [
-      { key: "team", label: "ADO team", type: "text", default: "VOXI Digital", placeholder: "VOXI Digital", help: "The Azure DevOps team whose sprints are scored." },
-    ],
+    fields: [],
   },
   {
     id: "ai-productivity", name: "AI Productivity Index", codename: "Monitoring",
