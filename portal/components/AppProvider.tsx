@@ -104,6 +104,9 @@ type AppState = {
   launchCap: Capability | null;
   openLaunch: (cap: Capability) => void;
   closeLaunch: () => void;
+  fullscreenCap: Capability | null;
+  openFullscreen: (cap: Capability) => void;
+  closeFullscreen: () => void;
   detailCap: Capability | null;
   openDetail: (cap: Capability) => void;
   closeDetail: () => void;
@@ -135,23 +138,48 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const [jobs, setJobs] = useState<Job[]>([]);
   const [launchCap, setLaunchCap] = useState<Capability | null>(null);
+  const [fullscreenCap, setFullscreenCap] = useState<Capability | null>(null);
   const [detailCap, setDetailCap] = useState<Capability | null>(null);
   const [monitorJobId, setMonitorJobId] = useState<number | null>(null);
   const seq = useRef(0);
+
+  function openLaunch(cap: Capability) {
+    if (cap.display === "fullscreen-modal") {
+      setFullscreenCap(cap);
+      return;
+    }
+    setLaunchCap(cap);
+  }
+
+  function closeLaunch() {
+    setLaunchCap(null);
+  }
+
+  function openFullscreen(cap: Capability) {
+    setFullscreenCap(cap);
+  }
+
+  function closeFullscreen() {
+    setFullscreenCap(null);
+  }
 
   useEffect(() => {
     // One-time hydration from browser storage on mount (SSR-safe — a lazy
     // initializer would read localStorage during SSR and mismatch on hydrate).
     /* eslint-disable react-hooks/set-state-in-effect */
-    const th = (localStorage.getItem("theme") as Theme) ?? "dark";
+    const storage =
+      typeof window !== "undefined" && typeof window.localStorage?.getItem === "function"
+        ? window.localStorage
+        : null;
+    const th = (storage?.getItem("theme") as Theme) ?? "dark";
     setThemeState(th);
     document.documentElement.dataset.theme = th;
     // GitHub token persists across refresh/restart (localStorage). Trade-off:
     // written to disk on this machine. Acceptable for the local dev hub.
-    const tok = localStorage.getItem("gh_token") ?? "";
+    const tok = storage?.getItem("gh_token") ?? "";
     setGithubTokenState(tok);
     if (tok) validateToken(tok);
-    const pat = localStorage.getItem("ado_pat") ?? "";
+    const pat = storage?.getItem("ado_pat") ?? "";
     setAdoPatState(pat);
     if (pat) validateAdoPat(pat);
     recheckAdo();
@@ -224,12 +252,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   function setTheme(t: Theme) {
     setThemeState(t);
     document.documentElement.dataset.theme = t;
-    localStorage.setItem("theme", t);
+    if (typeof window !== "undefined" && typeof window.localStorage?.setItem === "function") {
+      window.localStorage.setItem("theme", t);
+    }
   }
   function setGithubToken(v: string) {
     setGithubTokenState(v);
-    if (v) localStorage.setItem("gh_token", v);
-    else localStorage.removeItem("gh_token");
+    if (typeof window !== "undefined" && typeof window.localStorage?.setItem === "function") {
+      if (v) window.localStorage.setItem("gh_token", v);
+      else window.localStorage.removeItem("gh_token");
+    }
     if (!v) {
       setTokenStatus("idle");
       setLogin(null);
@@ -264,8 +296,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }
   function setAdoPat(v: string) {
     setAdoPatState(v);
-    if (v) localStorage.setItem("ado_pat", v);
-    else localStorage.removeItem("ado_pat");
+    if (typeof window !== "undefined" && typeof window.localStorage?.setItem === "function") {
+      if (v) window.localStorage.setItem("ado_pat", v);
+      else window.localStorage.removeItem("ado_pat");
+    }
     if (!v) {
       setAdoPatStatus("idle");
       setAdoPatIdentity(null);
@@ -578,8 +612,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         activeJobs,
         queueJob,
         launchCap,
-        openLaunch: setLaunchCap,
-        closeLaunch: () => setLaunchCap(null),
+        openLaunch,
+        closeLaunch,
+        fullscreenCap,
+        openFullscreen,
+        closeFullscreen,
         detailCap,
         openDetail: setDetailCap,
         closeDetail: () => setDetailCap(null),
