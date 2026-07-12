@@ -156,7 +156,7 @@ export const CAPABILITIES: Capability[] = [
     category: "Delivery Intelligence", icon: "Activity",
     guild: "cross-guild", provider: ["ado", "github"],
     execution: "hub-inline", source: "hub-a", credGate: "none",
-    estCredits: 0, estDuration: "5–15 sec", status: "live",
+    estCredits: 0, estDuration: "5–15 sec", status: "soon",
     fields: [
       { key: "team", label: "ADO team", type: "text", default: "VOXI Digital", placeholder: "VOXI Digital", help: "The Azure DevOps team whose sprints are scored." },
       { key: "copilotAcceptanceRate", label: "Copilot acceptance rate % (optional)", type: "text" },
@@ -177,7 +177,7 @@ export const CAPABILITIES: Capability[] = [
     description:
       "Reads the PR diff, linked work items and repo coding guidelines, then posts inline + summary review comments. Blocks merge only on high-severity, high-confidence findings.",
     category: "Quality & Review",
-    status: "live",
+    status: "soon",
     icon: "GitPullRequest",
     tokenEnv: "COPILOT_GITHUB_TOKEN",
     estCredits: 120,
