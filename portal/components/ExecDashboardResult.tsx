@@ -390,7 +390,11 @@ export function ExecDashboardResult({ output }: { output: ExecDashboardOutput })
 
   // Read GitHub PAT from localStorage (set via Settings page)
   const githubPat =
-    typeof window !== "undefined" ? (localStorage.getItem("github_pat_token") ?? "") : "";
+    typeof window !== "undefined"
+      ? (typeof window.localStorage?.getItem === "function"
+          ? (window.localStorage.getItem("github_pat_token") ?? window.localStorage.getItem("gh_token") ?? "")
+          : "")
+      : "";
 
   async function generateOrgInsight() {
     setOrgLoading(true);

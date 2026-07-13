@@ -2,12 +2,23 @@ import { Fragment, type ReactNode } from "react";
 
 /**
  * Minimal, injection-safe markdown renderer. Builds React nodes directly — no
- * dangerouslySetInnerHTML — so stored SKILL.md content can never inject markup.
- * Supports the subset SKILL.md uses: h1-h4, fenced code, ul/ol, blockquote,
+ * dangerouslySetInnerHTML — so stored SKILL.md / generated-content markdown
+ * can never inject markup. Supports the subset SKILL.md and Wiki Weaver's
+ * generated pages use: h1-4, fenced code, ul/ol, blockquote, pipe tables,
  * paragraphs, and inline bold / italic / code / links.
  */
 export function Markdown({ source }: { source: string }) {
   return <div className="md space-y-4">{renderBlocks(source)}</div>;
+}
+
+function isTableRow(line: string): boolean {
+  return /^\s*\|.*\|\s*$/.test(line);
+}
+function isTableSeparator(line: string): boolean {
+  return /^\s*\|?(\s*:?-+:?\s*\|)+\s*:?-+:?\s*\|?\s*$/.test(line);
+}
+function splitTableRow(line: string): string[] {
+  return line.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").map((c) => c.trim());
 }
 
 function renderBlocks(src: string): ReactNode[] {
@@ -53,6 +64,41 @@ function renderBlocks(src: string): ReactNode[] {
         <p key={key++} className={cls}>{renderInline(h[2])}</p>,
       );
       i++;
+      continue;
+    }
+
+    // Table (pipe-delimited header row + |---|---| separator + body rows)
+    if (isTableRow(line) && i + 1 < lines.length && isTableSeparator(lines[i + 1])) {
+      const headerCells = splitTableRow(line);
+      i += 2; // header + separator row
+      const bodyRows: string[][] = [];
+      while (i < lines.length && isTableRow(lines[i])) bodyRows.push(splitTableRow(lines[i++]));
+      out.push(
+        <div key={key++} className="overflow-x-auto">
+          <table className="w-full text-sm border-collapse">
+            <thead>
+              <tr>
+                {headerCells.map((c, ci) => (
+                  <th key={ci} className="border px-2.5 py-1.5 text-left font-semibold" style={{ borderColor: "var(--hairline)" }}>
+                    {renderInline(c)}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {bodyRows.map((row, ri) => (
+                <tr key={ri}>
+                  {row.map((c, ci) => (
+                    <td key={ci} className="border px-2.5 py-1.5 align-top" style={{ borderColor: "var(--hairline)" }}>
+                      {renderInline(c)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>,
+      );
       continue;
     }
 

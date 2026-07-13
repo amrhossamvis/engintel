@@ -32,9 +32,7 @@ const API = "api-version=7.1-preview.1";
 const PIPELINE_BRANCH = process.env.PIPELINE_BRANCH ?? "refs/heads/main";
 
 /** Hardcoded pipeline definition IDs (fallback when env var is not set) */
-const PIPELINE_DEFAULTS: Record<string, number> = {
-  "testcase-ado": 13634,
-};
+const PIPELINE_DEFAULTS: Record<string, number> = {};
 
 /** capabilityId → ADO pipeline definition id, from env (PIPELINE_<ID>) or hardcoded default */
 export function pipelineIdFor(capabilityId: string): number | null {

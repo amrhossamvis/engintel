@@ -31,30 +31,34 @@ portal/                  Next.js 16 app (App Router)
 
 **Execution models**
 
-- **Pipeline** — the capability triggers an Azure DevOps pipeline that runs a Copilot CLI script and writes results back to the work item / PR.
+- **Local** — the capability runs entirely in-process on the Next.js server, calling the GitHub Copilot chat-completions API directly (no CLI, no external pipeline) and writing results back to ADO itself.
+- **Pipeline** — the capability triggers an Azure DevOps pipeline that runs a Copilot CLI script and writes results back to the work item / PR. No live capability uses this anymore (the last one, Documentation Weaver, moved to `local`); kept as a supported model for a future capability that needs it.
 - **Hub-inline** — read-only analytics computed inside the app directly from ADO (no pipeline, no credits).
 
 ---
 
 ## Capabilities
 
-Each capability carries an Egyptian-pantheon codename that nods to what it does. **7 live · 24 total.**
+Each capability is tagged with the SDLC phase it belongs to (Plan, Design, Development, Testing, Release, Monitoring). **10 live · 24 total.**
 
 ### Live
 
-| Capability | Codename | Category | Execution | What it does |
+| Capability | Phase | Category | Execution | What it does |
 |-----------|----------|----------|-----------|--------------|
-| **PR Reviewer** | Maat | Quality & Review | Pipeline | Reads the PR diff, linked work items and repo coding guidelines, then posts inline + summary review comments. Blocks merge only on high-severity, high-confidence findings. |
-| **Bug Triage** | Anubis | Quality & Review | Pipeline | Pulls bug context, screenshots, history and linked PRs, correlates DataDog logs, then diagnoses the affected service + owning team and posts the triage back to the work item. |
-| **Feature Breakdown** | Ptah | Agile & Backlog | Pipeline | Reverse-engineers an epic or feature into a structured backlog with acceptance criteria, applying team-specific rules. Creates child work items in ADO. |
-| **Business Intent Builder** | Atum | Agile & Backlog | Pipeline | Turns a plain-language business intent into a complete Epic → Feature → Story hierarchy in ADO, applying team breakdown rulebooks. |
-| **Wiki Weaver** | Development | Enablement | Pipeline | Climbs a User Story/Feature/Epic link (or bare id) to its top parent, reads its description/acceptance criteria/comments/attached design docs plus every child item on the same area path (and linked PRs for stories), then publishes one business + tech wiki page. |
-| **Executive Dashboard** | Ra | Delivery Intelligence | Hub-inline | Reads a team's last 6 ADO sprints and computes a RAG health score from completion, velocity stability and bug resolution, with trend charts. Read-only. |
-| **AI Productivity Index** | Hapi | Delivery Intelligence | Hub-inline | Scores a team's last 6 sprints into one 0–100 index across delivery, quality, velocity, PR speed and Copilot adoption, plus a £ ROI estimate. Read-only. |
+| **PR Reviewer** | Development | Quality & Review | Local | Reads the PR diff, linked work items and repo coding guidelines, then posts inline + summary review comments. Blocks merge only on high-severity, high-confidence findings. |
+| **Bug Triage** | Monitoring | Quality & Review | Local | Pulls bug context, discussion history and linked PRs, correlates DataDog logs, then diagnoses the affected service + owning team and posts the triage back to the work item. |
+| **Backlog Breakdown & Roll-up** | Plan | Agile & Backlog | Local | Reverse-engineers an epic or feature into a structured backlog with acceptance criteria, applying team-specific rules; given a User Story instead, rolls it up (with its linked stories) into a new parent Epic and Feature. Creates/links work items in ADO. |
+| **Business Intent Builder** | Plan | Agile & Backlog | Local | Turns a plain-language business intent into a complete Epic → Feature → Story hierarchy in ADO, applying team breakdown rulebooks. |
+| **Documentation Weaver** | Development | Enablement | Local | Climbs a User Story/Feature/Epic link (or bare id) to its top parent, reads its description/acceptance criteria/comments/attached design docs plus every item in the real hierarchy beneath it (falling back to same-area-path items if no hierarchy children exist), including linked PRs for stories, then drafts one business + tech page for review before you publish it to the wiki or export it as a Word doc. |
+| **Executive Dashboard** | Monitoring | Delivery Intelligence | Hub-inline | Reads a team's last 6 ADO sprints and computes a RAG health score from completion, velocity stability and bug resolution, with trend charts. Read-only. |
+| **AI Productivity Index** | Monitoring | Delivery Intelligence | Hub-inline | Scores a team's last 6 sprints into one 0–100 index across delivery, quality, velocity, PR speed and Copilot adoption, plus a £ ROI estimate. Read-only. |
+| **Test Case & Automation Generator** | Testing | Quality & Testing | Local | Generates structured P1/Critical test cases from a user story's description and acceptance criteria, then creates them as Test Case work items linked back to the source item. |
+| **Figma Test Cases** | Testing | Quality & Testing | Local | Reads a Figma frame's screens/components/comments, plus an optional linked work item, and generates P1/Critical UI/UX test cases as ADO Test Case work items. |
+| **UI Test Data Reviewer** | Testing | Quality & Testing | Local | Reviews UI changes for missing or inconsistent automation test-data identifiers and flags gaps before they reach the automation suite. |
 
 ### Coming soon
 
-Sprint Health Coach · Test Case Generator · Figma Test Cases · UI Test Data Reviewer · Story Extractor · Mobile Crash Intelligence · App Store Release Risk Scorer · Mobile CI/CD Intelligence · Mobile Code Review Assistant · Mobile Test Gap Analyzer · Mobile Onboarding Accelerator · Delivery Intelligence Platform · Release Risk Scorer · Dependency & Blocker Radar · Test Gap Analyzer · Developer Onboarding Accelerator · Engineering Knowledge Copilot
+Sprint Health Coach · Story Extractor · Mobile Crash Intelligence · App Store Release Risk Scorer · Mobile CI/CD Intelligence · Mobile Code Review Assistant · Mobile Test Gap Analyzer · Mobile Onboarding Accelerator · Delivery Intelligence Platform · Release Risk Scorer · Dependency & Blocker Radar · Test Gap Analyzer · Developer Onboarding Accelerator · Engineering Knowledge Copilot
 
 The full catalog (fields, credits, pipelines, status) lives in [`portal/lib/capabilities.ts`](portal/lib/capabilities.ts).
 
@@ -106,7 +110,9 @@ Key variables (`.env.local` is git-ignored):
 |----------|-----------|-------|
 | `ADO_ORG`, `ADO_PROJECT` | ADO data | Default to `vfuk-digital` / `Digital`. |
 | `AZDO_PAT` | ADO fallback | Shared service token — only used when no per-user PAT and `az` is signed out. Per-user identity is set in the app (**Settings → Azure DevOps access**), not here. |
-| `PIPELINE_*` | Pipeline capabilities | Pipeline definition id per capability. Find the id in the pipeline URL (`…/_build?definitionId=<ID>`). |
+| `PIPELINE_*` | Not currently needed | No live capability runs `execution: "pipeline"` anymore — every one runs `local` or `hub-inline`. Kept for a future pipeline-executed capability, if ever needed. |
+| `COPILOT_GITHUB_TOKEN` | Local/hub-inline capabilities | Optional server-side fallback; normally each user pastes their own GitHub Copilot token in **Settings**, sent per request. |
+| `DD_APP_KEY`, `DD_API_KEY`, `DD_SITE` | Bug Triage | Optional DataDog Logs Search correlation — skipped gracefully when `DD_APP_KEY` is unset. |
 | `DATABASE_URL` | Idea Box + Skills | Postgres connection string. Leave empty to run without those boards. |
 | `IDEAS_ADMINS` | Idea Box curation | Comma-separated UPNs allowed to change status/impact/pin. Empty → open (prototype). |
 
@@ -176,7 +182,7 @@ Open **<http://localhost:3000>**. Compose wires `DATABASE_URL` to the bundled Po
 2. **Configure credentials** in Settings — your GitHub Copilot token, plus ADO access via `az login` or your own Azure DevOps PAT. Both stay in your browser and are sent per-run; no shared credential pool.
 3. **Pick a capability** from the hub.
 4. **Point it at a target** — a PR, work item, ADO team, or business intent.
-5. **It runs under your own token** — pipeline capabilities kick off an ADO pipeline; hub-inline capabilities compute results directly.
+5. **It runs under your own token** — pipeline capabilities kick off an ADO pipeline; local and hub-inline capabilities run directly in the app.
 6. **Results are returned in-app** or written back to the work item / PR.
 
 ---
@@ -193,4 +199,4 @@ Open **<http://localhost:3000>**. Compose wires `DATABASE_URL` to the bundled Po
 
 ## Status
 
-**7 capabilities live** (PR Reviewer, Bug Triage, Feature Breakdown, Business Intent Builder, Wiki Weaver, Executive Dashboard, AI Productivity Index) · **17 more on the roadmap** across Quality, Agile & Backlog, Delivery Intelligence, Mobile, Testing, and Enablement.
+**10 capabilities live** (PR Reviewer, Bug Triage, Backlog Breakdown & Roll-up, Business Intent Builder, Documentation Weaver, Executive Dashboard, AI Productivity Index, Test Case & Automation Generator, Figma Test Cases, UI Test Data Reviewer) · **14 more on the roadmap** across Quality, Agile & Backlog, Delivery Intelligence, Mobile, Testing, and Enablement.

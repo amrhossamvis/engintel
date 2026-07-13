@@ -38,12 +38,17 @@ const INLINE_JOB: Job = {
   },
 };
 
+// No catalog capability is pipeline-executed anymore (the direct-REST
+// migration covers all 8 + Wiki Weaver) — use a capId that doesn't match any
+// catalog entry so getCapability() returns undefined and JobMonitor falls
+// through to its default (pipeline-chrome) rendering path, which is the
+// behavior this regression test actually exercises.
 const PIPELINE_JOB: Job = {
   id: 2,
   runId: 555,
-  capId: "pr-review",
-  capName: "PR Reviewer",
-  icon: "GitPullRequest",
+  capId: "unknown-legacy-pipeline-capability",
+  capName: "Legacy Pipeline Capability",
+  icon: "BookOpen",
   status: "done",
   stage: 0,
   steps: [],

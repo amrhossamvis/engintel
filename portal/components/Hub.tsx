@@ -14,6 +14,7 @@ import { CapabilityCard } from "./CapabilityCard";
 import { CapabilityModal } from "./CapabilityModal";
 import { RunForm } from "./RunForm";
 import { JobMonitor } from "./JobMonitor";
+import { CapabilityDisplaySurface } from "./CapabilityDisplaySurface";
 import { useApp } from "./AppProvider";
 
 const GUILD_LABEL: Record<Guild, string> = {
@@ -28,17 +29,39 @@ const GUILD_LABEL: Record<Guild, string> = {
 
 const liveFirst = (list: Capability[]) =>
   [...list].sort((a, b) => Number(b.status === "live") - Number(a.status === "live"));
+
+const LIVE_CAPABILITY_ORDER = [
+  "exec-dashboard",
+  "feature-breakdown",
+  "bug-triage",
+  "testcase-ado",
+  "workitem-wiki-doc",
+  "pr-impact-analyzer",
+  "business-intent",
+  "ai-productivity",
+] as const;
+
+const orderedLiveCapabilities = (): Capability[] => {
+  const live = CAPABILITIES.filter((cap) => cap.status === "live");
+  const byId = new Map(live.map((cap) => [cap.id, cap] as const));
+  const ordered = LIVE_CAPABILITY_ORDER.map((id) => byId.get(id)).filter(
+    (cap): cap is Capability => Boolean(cap && cap.status === "live"),
+  );
+  const pinnedIds = new Set(ordered.map((cap) => cap.id));
+  const remaining = live.filter((cap) => !pinnedIds.has(cap.id));
+  return [...ordered, ...remaining];
+};
 // Selectable primary guilds (cross-guild is ambient — always included, not a tab)
 const SELECTABLE_GUILDS: Guild[] = ["mobile", "web", "testing", "product", "java", "full-stack"];
 
 export function Hub() {
   const { openLaunch } = useApp();
-  const [tab, setTab] = useState<Guild | "common" | "live">("common");
+  const [tab, setTab] = useState<Guild | "common" | "live">("live");
 
-  const liveCount = CAPABILITIES.filter((c) => c.status === "live").length;
+  const liveCount = orderedLiveCapabilities().length;
 
   const shown = useMemo(() => {
-    if (tab === "live") return liveFirst(CAPABILITIES.filter((c) => c.status === "live"));
+    if (tab === "live") return orderedLiveCapabilities();
     return liveFirst(tab === "common" ? commonCapabilities() : ownCapabilitiesForGuild(tab));
   }, [tab]);
 
@@ -138,6 +161,7 @@ export function Hub() {
       <RunForm />
       <CapabilityModal />
       <JobMonitor />
+      <CapabilityDisplaySurface />
     </main>
   );
 }
