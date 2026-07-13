@@ -515,6 +515,12 @@ export const CAPABILITIES: Capability[] = [
         help: "Accepts an edit-view link or the bare work item number.",
         required: true,
       },
+      {
+        key: "generateCode",
+        label: "Generate MVA automation code",
+        type: "toggle",
+        help: "When enabled and the work item contains UI mockup images, generates Page Object and Test class scaffolding and pushes to a feature branch.",
+      },
     ],
   },
   {
